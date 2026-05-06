@@ -1217,26 +1217,27 @@
         function sendToReportSheet(item, action) {
             const payload = {
                 action: action,
-                "LINE": item.line,
-                "CC NO": item.ccNo || item.orderNo || "",
-                "CUSTOMER": item.customer || "",
-                "SPEC": item.spec || "",
-                "SIZE": item.size || "",
-                "WEIGHT": item.weight || "",
-                "PRODUCT SIZE": item.productWidth || "",
-                "QTY FINISH GOOD": item.qtyFG || "",
-                "QTY NOT GOOD": item.qtyNG || "",
-                "START PROCESS": item.startTime || "",
-                "END PROCESS": item.finishedAt || "",
-                "KENDALA": item.kendala ? `${item.kendala} (${item.kendalaWaktu || 0}m)` : "",
-                "REMARK": item.remark || ""
+                "LINE": item.line || "-",
+                "CC NO": item.ccNo || item.orderNo || "-",
+                "CUSTOMER": item.customer || "-",
+                // Kita tes paksa: Ambil dari item.spec, jika kosong pakai kata "KOSONG DI WEB"
+                "SPEC": item.spec || "KOSONG DI WEB", 
+                "SIZE": item.size || "-",
+                "WEIGHT": item.weight || "-",
+                "PRODUCT SIZE": item.productWidth || "-",
+                "QTY FINISH GOOD": item.qtyFG || 0,
+                "QTY NOT GOOD": item.qtyNG || 0,
+                "START PROCESS": item.startTime || "-",
+                "END PROCESS": item.finishedAt || "-",
+                "KENDALA": item.kendala || "-",
+                "REMARK": item.remark || "-"
             };
+        
             fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'no-cors', // Penting agar tidak kena CORS error
                 body: JSON.stringify(payload)
-            }).catch(err => console.error("Report Error:", err));
+            });
         }
     </script>
 </body>
