@@ -1097,12 +1097,25 @@
             if (!qtyFG) return showToast("Qty FG wajib diisi!", "error");
 
             item.status = "COMPLETED";
-            item.finishedAt = new Date().toLocaleTimeString();
+            
+            // Perbaikan format jam agar lebih stabil di Google Sheets
+            const sekarang = new Date();
+            item.finishedAt = sekarang.getHours().toString().padStart(2, '0') + ":" + 
+                              sekarang.getMinutes().toString().padStart(2, '0') + ":" + 
+                              sekarang.getSeconds().toString().padStart(2, '0');
+
+            // AMBIL DATA DARI INPUTAN MODAL
             item.productWidth = document.getElementById('finish-width').value;
             item.qtyFG = qtyFG;
             item.qtyNG = document.getElementById('finish-qty-ng').value || 0;
             item.speed = document.getElementById('finish-speed').value;
             item.remark = document.getElementById('finish-remark').value;
+
+            // --- TAMBAHKAN INI JIKA ADA INPUTAN SPEC DI MODAL ---
+            // item.spec = document.getElementById('finish-spec').value; 
+            
+            // JIKA SPEC SUDAH ADA DI DATA AWAL, pastikan kodenya tidak menimpa item.spec menjadi kosong
+            console.log("Cek Spec sebelum kirim:", item.spec); 
 
             completedItems.unshift(item);
             appData.splice(idx, 1);
@@ -1114,6 +1127,7 @@
             renderTable();
             updateStats();
         }
+
 
         // ================= UTILITIES & CHARTS =================
         function updateStats() {
