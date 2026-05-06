@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSSI - DOWNSHEAR LIVE MONITORING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .line-active { background-color: #00843d !important; color: white !important; }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .chart-container { position: relative; height: 120px; width: 100%; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen pb-10">
+
+    <!-- Header -->
+    <header class="bg-[#1e293b] text-white p-4 sticky top-0 z-40 shadow-xl border-b-[4px] border-[#00843d]">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="bg-white p-1 rounded-lg w-12 h-8 flex items-center justify-center font-bold text-[#00843d]">HSSI</div>
+                <div>
+                    <h1 class="text-lg font-black italic uppercase leading-none">DOWNSHEAR MONITORING</h1>
+                    <p id="sync-status" class="text-[9px] text-emerald-400 font-bold mt-1 uppercase tracking-tighter">MENUNGGU SINKRONISASI...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <div class="flex-1 flex bg-white/10 rounded-lg border border-white/20 overflow-hidden">
+                    <input type="text" id="manualInput" placeholder="Input CC No..." class="bg-transparent text-xs px-4 py-2 outline-none focus:ring-1 focus:ring-emerald-500 text-white w-full" onkeypress="if(event.key === 'Enter') processScan(this.value)">
+                    <button onclick="toggleScanner()" class="bg-[#00843d] px-3 hover:bg-emerald-600 transition-colors">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <button onclick="fetchAllData()" id="refreshBtn" class="bg-slate-700 p-2 rounded-lg hover:bg-slate-600 transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4">
+        
+        <!-- Scanner Overlay -->
+        <div id="scanner-container" class="hidden mb-6 bg-black rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl relative aspect-video max-w-xl mx-auto">
+            <div id="reader" style="width: 100%;"></div>
+            <button onclick="toggleScanner()" class="absolute top-4 right-4 bg-rose-600 text-white p-2 rounded-full z-10">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Per-Line Performance Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- DS1 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 1</p>
+                        <h2 id="ton-ds1" class="text-3xl font-black text-[#00843d] tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds1"></canvas></div>
+                </div>
+                <p id="count-ds1" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+
+            <!-- DS2 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 2</p>
+                        <h2 id="ton-ds2" class="text-3xl font-black text-sky-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds2"></canvas></div>
+                </div>
+                <p id="count-ds2" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+
+            <!-- DS3 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 3</p>
+                        <h2 id="ton-ds3" class="text-3xl font-black text-amber-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds3"></canvas></div>
+                </div>
+                <p id="count-ds3" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+        </div>
+
+        <!-- Global Summary -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-[#1e293b] text-white p-4 rounded-2xl shadow-lg flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Total Antrian</p>
+                    <p id="stat-total" class="text-2xl font-black">0</p>
+                </div>
+                <i data-lucide="list-ordered" class="w-8 h-8 text-slate-700"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] font-bold text-sky-500 uppercase">Sedang Proses</p>
+                    <p id="stat-process" class="text-2xl font-black text-sky-600">0</p>
+                </div>
+                <i data-lucide="loader-2" class="w-8 h-8 text-sky-100"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 flex justify-between items-center hidden md:flex">
+                <div>
+                    <p class="text-[9px] font-bold text-emerald-500 uppercase">Total Tonase Hari Ini</p>
+                    <p id="stat-ton-total" class="text-2xl font-black text-emerald-600">0.00</p>
+                </div>
+                <i data-lucide="scale" class="w-8 h-8 text-emerald-100"></i>
+            </div>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="flex flex-wrap gap-2 mb-4 items-center">
+            <div class="flex bg-white p-1 rounded-xl border border-slate-200">
+                <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all line-active">All</button>
+                <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 1</button>
+                <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 2</button>
+                <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 3</button>
+            </div>
+            <div class="relative flex-1 min-w-[200px]">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Size..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+        </div>
+
+        <!-- Table Data -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Line</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Order / Customer</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">CC No</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Size</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Berat (KG)</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Kendala Produksi</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Status</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-50">
+                        <tr><td colspan="8" class="py-20 text-center text-slate-400 font-medium italic">Mengambil data dari Google Sheets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Laporan Kendala -->
+    <div id="modal-kendala" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl p-8 border border-slate-200 animate-fade-in relative">
+            <h3 class="text-xl font-black italic text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="text-rose-500 w-6 h-6"></i> Laporkan Kendala
+            </h3>
+            
+            <div class="mb-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">Identitas Item</p>
+                <p id="modal-cc-info" class="text-sm font-bold text-slate-700">-</p>
+            </div>
+
+            <div class="relative mb-6">
+                <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-rose-500 outline-none pr-10">
+                    <option value="" disabled selected>Pilih Jenis Kendala</option>
+                    <option value="TBM">TBM</option>
+                    <option value="PACKING COIL BACK">PACKING COIL BACK</option>
+                    <option value="WAITING MC">WAITING MC</option>
+                    <option value="WAITING CRANE">WAITING CRANE</option>
+                    <option value="WINDER TOP/END">WINDER TOP/END</option>
+                    <option value="CLEANING MACHINE">CLEANING MACHINE</option>
+                    <option value="PROBLEM MACHINE">PROBLEM MACHINE</option>
+                    <option value="OTHER">OTHER (Lainnya)</option>
+                </select>
+                <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5"></i>
+            </div>
+            
+            <div id="kendala-other-container" class="hidden mb-8 animate-fade-in">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Ketik Detail Kendala</label>
+                <input type="text" id="kendala-other-input" placeholder="Masukkan kendala..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <div class="mb-8 animate-fade-in">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Lama Kendala (Menit)</label>
+                <input type="number" id="kendala-waktu-input" placeholder="Contoh: 15" min="0" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeKendalaModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
+                <button onclick="saveKendala()" class="py-4 bg-rose-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-200">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Finish Report -->
+    <div id="modal-finish" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl p-8 border border-slate-200 animate-fade-in relative my-8">
+            <h3 class="text-xl font-black italic text-emerald-700 uppercase tracking-tight mb-6 flex items-center gap-2">
+                <i data-lucide="check-square" class="text-emerald-500 w-6 h-6"></i> Laporan Produksi (Finish)
+            </h3>
+            
+            <div class="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <p class="text-[10px] font-black text-slate-500 uppercase mb-1">Identitas Order</p>
+                <p id="finish-order-info" class="text-sm font-bold text-slate-800">-</p>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <!-- Product Width -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Product Width (Otomatis dari Plan)</label>
+                    <input type="text" id="finish-width" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- QTY Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Finish Good (FG)</label>
+                        <input type="number" id="finish-qty-fg" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Not Good (NG)</label>
+                        <input type="number" id="finish-qty-ng" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+                    </div>
+                </div>
+
+                <!-- Line Speed -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Line Speed</label>
+                    <input type="text" id="finish-speed" placeholder="Contoh: 150 m/min" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Remark -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Remark / Catatan Tambahan</label>
+                    <textarea id="finish-remark" rows="2" placeholder="Ketikan catatan jika ada..." class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeFinishModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
+                <button onclick="submitFinish()" class="py-4 bg-emerald-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">Submit & Finish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest hidden animate-slide-up text-white">
+        <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SHEET_CONFIG = {
+            DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
+            DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
+            DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
+        };
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA5sIFiykoWA7dDUhxeut-hjf5SmdxivuN9H8mra9HpE_abbegONCa7JQrys5Z9f1A/exec";
+
+        let appData = [];
+        let completedItems = [];
+        let activeLine = 'ALL';
+        let searchQuery = '';
+        let selectedItemId = null;
+        let finishingItemId = null;
+        let charts = {};
+        let html5QrCode = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initAllCharts();
+            fetchAllData();
+        });
+
+        // ================= FETCH DATA =================
+        async function fetchAllData() {
+            const btn = document.getElementById('refreshBtn');
+            if(btn) btn.classList.add('animate-spin');
+            
+            let newData = [];
+            let failedLines = [];
+
+            const fetchPromises = Object.keys(SHEET_CONFIG).map(async (line) => {
+                try {
+                    // Gunakan URL persis dengan cache-buster untuk menghindari 404
+                    const url = `${SHEET_CONFIG[line]}&t=${Date.now()}`;
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`Akses ditolak (${res.status})`);
+                    
+                    const text = await res.text();
+                    const lineItems = parseSheetCSV(line, text);
+                    newData = [...newData, ...lineItems];
+                } catch (e) {
+                    console.error(`Gagal tarik data ${line}:`, e);
+                    failedLines.push(line);
+                }
+            });
+
+            await Promise.allSettled(fetchPromises);
+            
+            // Pertahankan state lama (status, kendala, waktu) agar tidak reset saat direfresh
+            appData = newData.map(newItem => {
+                const existing = appData.find(oldItem => oldItem.orderNo === newItem.orderNo && oldItem.line === newItem.line);
+                if (existing) {
+                    return { ...newItem, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu };
+                }
+                return newItem;
+            }).filter(item => !completedItems.some(c => c.orderNo === item.orderNo && c.line === item.line));
+            
+            renderTable();
+            updateStats();
+            
+            const statusEl = document.getElementById('sync-status');
+            const now = new Date().toLocaleTimeString();
+            if (failedLines.length > 0) {
+                statusEl.innerText = `⚠️ GAGAL: ${failedLines.join(', ')} (${now})`;
+                statusEl.classList.replace('text-emerald-400', 'text-rose-400');
+            } else {
+                statusEl.innerText = `✅ SEMUA LINE TERHUBUNG (${now})`;
+                statusEl.classList.replace('text-rose-400', 'text-emerald-400');
+            }
+            
+            if(btn) btn.classList.remove('animate-spin');
+        }
+
+        function parseSheetCSV(line, csvText) {
+            const rows = csvText.split(/\r?\n/).map(row => {
+                // Parsing CSV yang aman jika ada koma di dalam tanda kutip
+                let arr = [];
+                let current = "";
+                let inQuotes = false;
+                for(let char of row) {
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) { arr.push(current.trim()); current = ""; }
+                    else current += char;
+                }
+                arr.push(current.trim());
+                return arr;
+            });
+
+            if (rows.length < 1) return [];
+
+            let headerIdx = rows.findIndex(row => 
+                row.some(cell => {
+                    const c = cell.toUpperCase();
+                    return c.includes('ORDER') || c.includes('CC NO');
+                })
+            );
+            if (headerIdx === -1) headerIdx = 0;
+            const headers = rows[headerIdx].map(h => h.toUpperCase());
+            
+            const col = {
+                order: headers.findIndex(h => h === 'PROCESS ORDER NO' || h === 'ORDER NO' || h === 'ORDER'),
+                cust: headers.findIndex(h => h === 'CUSTOMER' || h.includes('PEMBELI') || h.includes('NAME')),
+                cc: headers.findIndex(h => h === 'CC NO' || h === 'CC.'),
+                size: headers.findIndex(h => h === 'SIZE'), 
+                kg: headers.findIndex(h => h === 'BERAT' || h === 'NETTO' || h === 'WEIGHT')
+            };
+
+            // Fallbacks jika nama header eksak tidak ditemukan
+            if(col.order === -1) col.order = headers.findIndex(h => h.includes('ORDER'));
+            if(col.size === -1) col.size = headers.findIndex(h => h.includes('SIZE') || h.includes('TEBAL') || h.includes('UKURAN'));
+            if(col.cc === -1) col.cc = headers.findIndex(h => h.includes('CC') || h.includes('PACKING'));
+            if(col.kg === -1) col.kg = headers.findIndex(h => h.includes('KG') || h.includes('NETTO'));
+
+            return rows.slice(headerIdx + 1)
+                .filter(row => row[col.order] && row[col.order] !== "")
+                .map((row, i) => {
+                    const sizeVal = col.size !== -1 ? row[col.size] : "-";
+                    // Tarik Lebar Otomatis
+                    let prodWidth = sizeVal;
+                    if(sizeVal.includes('/')) prodWidth = sizeVal.split('/')[0].trim();
+                    else if(sizeVal.includes('x') || sizeVal.includes('X')) prodWidth = sizeVal.split(/x|X/)[0].trim();
+
+                    return {
+                        id: `${line}-${i}-${Date.now()}`,
+                        line: line,
+                        orderNo: col.order !== -1 ? row[col.order] : "N/A",
+                        customer: col.cust !== -1 ? row[col.cust] : "-",
+                        ccNo: col.cc !== -1 ? row[col.cc] : "",
+                        size: sizeVal,
+                        productWidth: prodWidth,
+                        weight: col.kg !== -1 ? (parseFloat(row[col.kg].replace(/,/g, '')) || 0) : 0,
+                        status: "WAITING",
+                        kendala: "",
+                        kendalaWaktu: ""
+                    };
+                });
+        }
+
+        // ================= RENDERING =================
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            let data = [...appData];
+            
+            if (activeLine !== 'ALL') data = data.filter(i => i.line === activeLine);
+            if (searchQuery) {
+                data = data.filter(i => 
+                    i.orderNo.toLowerCase().includes(searchQuery) || 
+                    i.ccNo.toLowerCase().includes(searchQuery) ||
+                    i.size.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Tidak ada data antrian</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => {
+                let statusClass = "bg-slate-100 text-slate-400";
+                if(item.status === 'ON PROCESS') statusClass = "bg-sky-100 text-sky-600 animate-pulse";
+                if(item.kendala) statusClass = "bg-rose-100 text-rose-600";
+
+                return `
+                <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">${item.orderNo}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase">${item.customer}</div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-slate-500">${item.ccNo || "-"}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 bg-slate-100 rounded-md text-slate-600 font-semibold text-[10px]">${item.size}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold">${item.weight.toLocaleString()}</td>
+                    <td class="px-6 py-4">
+                        <div onclick="openKendalaModal('${item.id}')" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold text-slate-500 cursor-pointer hover:bg-slate-100 flex flex-col transition-colors">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="${item.kendala ? 'text-rose-600 font-black' : ''}">${item.kendala || "Tulis kendala..."}</span>
+                                <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                            </div>
+                            ${item.kendalaWaktu ? `<span class="text-[9px] text-rose-400 mt-1 uppercase tracking-widest">${item.kendalaWaktu} Menit</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${statusClass}">${item.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="processScan('${item.ccNo || item.orderNo}')" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${item.status === 'ON PROCESS' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-sky-500 text-white shadow-md'}">
+                            ${item.status === 'ON PROCESS' ? 'FINISH' : 'START'}
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+            lucide.createIcons();
+        }
+
+        // ================= KENDALA MODAL LOGIC =================
+        function openKendalaModal(id) {
+            selectedItemId = id;
+            const item = appData.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-cc-info').innerText = `${item.orderNo} | ${item.ccNo}`;
+            const select = document.getElementById('kendala-select');
+            const otherContainer = document.getElementById('kendala-other-container');
+            const otherInput = document.getElementById('kendala-other-input');
+            const standard = ["TBM", "PACKING COIL BACK", "WAITING MC", "WAITING CRANE", "WINDER TOP/END", "CLEANING MACHINE", "PROBLEM MACHINE"];
+            
+            if (!item.kendala) {
+                select.value = "";
+                otherContainer.classList.add('hidden');
+                otherInput.value = "";
+            } else if (standard.includes(item.kendala)) {
+                select.value = item.kendala;
+                otherContainer.classList.add('hidden');
+            } else {
+                select.value = "OTHER";
+                otherContainer.classList.remove('hidden');
+                otherInput.value = item.kendala;
+            }
+            document.getElementById('kendala-waktu-input').value = item.kendalaWaktu || "";
+            document.getElementById('modal-kendala').classList.replace('hidden', 'flex');
+        }
+
+        function toggleOtherKendala() {
+            const val = document.getElementById('kendala-select').value;
+            if(val === "OTHER") {
+                document.getElementById('kendala-other-container').classList.remove('hidden');
+                document.getElementById('kendala-other-input').focus();
+            } else {
+                document.getElementById('kendala-other-container').classList.add('hidden');
+            }
+        }
+
+        function closeKendalaModal() {
+            document.getElementById('modal-kendala').classList.replace('flex', 'hidden');
+            selectedItemId = null;
+        }
+
+        function saveKendala() {
+            const sel = document.getElementById('kendala-select').value;
+            let val = sel === "OTHER" ? document.getElementById('kendala-other-input').value.trim() : sel;
+            if (!val) return showToast("Harap isi detail kendala!", "error");
+
+            const time = document.getElementById('kendala-waktu-input').value.trim();
+            const item = appData.find(i => i.id === selectedItemId);
+            if (item) {
+                item.kendala = val;
+                item.kendalaWaktu = time;
+                showToast("Kendala Berhasil Disimpan", "success");
+                sendToReportSheet(item, "ISSUE_REPORT");
+                renderTable();
+            }
+            closeKendalaModal();
+        }
+
+        // ================= FINISH MODAL LOGIC =================
+        function processScan(val) {
+            if(!val) return;
+            const item = appData.find(i => i.ccNo === val || i.orderNo === val);
+            if (!item) { showToast("Item tidak terdaftar di antrean!", "error"); return; }
+
+ <!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSSI - DOWNSHEAR LIVE MONITORING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .line-active { background-color: #00843d !important; color: white !important; }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .chart-container { position: relative; height: 120px; width: 100%; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen pb-10">
+
+    <!-- Header -->
+    <header class="bg-[#1e293b] text-white p-4 sticky top-0 z-40 shadow-xl border-b-[4px] border-[#00843d]">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="bg-white p-1 rounded-lg w-12 h-8 flex items-center justify-center font-bold text-[#00843d]">HSSI</div>
+                <div>
+                    <h1 class="text-lg font-black italic uppercase leading-none">DOWNSHEAR MONITORING</h1>
+                    <p id="sync-status" class="text-[9px] text-emerald-400 font-bold mt-1 uppercase tracking-tighter">MENUNGGU SINKRONISASI...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <div class="flex-1 flex bg-white/10 rounded-lg border border-white/20 overflow-hidden">
+                    <input type="text" id="manualInput" placeholder="Input CC No..." class="bg-transparent text-xs px-4 py-2 outline-none focus:ring-1 focus:ring-emerald-500 text-white w-full" onkeypress="if(event.key === 'Enter') processScan(this.value)">
+                    <button onclick="toggleScanner()" class="bg-[#00843d] px-3 hover:bg-emerald-600 transition-colors">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <button onclick="fetchAllData()" id="refreshBtn" class="bg-slate-700 p-2 rounded-lg hover:bg-slate-600 transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4">
+        
+        <!-- Scanner Overlay -->
+        <div id="scanner-container" class="hidden mb-6 bg-black rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl relative aspect-video max-w-xl mx-auto">
+            <div id="reader" style="width: 100%;"></div>
+            <button onclick="toggleScanner()" class="absolute top-4 right-4 bg-rose-600 text-white p-2 rounded-full z-10">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Per-Line Performance Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- DS1 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 1</p>
+                        <h2 id="ton-ds1" class="text-3xl font-black text-[#00843d] tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds1"></canvas></div>
+                </div>
+                <p id="count-ds1" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+
+            <!-- DS2 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 2</p>
+                        <h2 id="ton-ds2" class="text-3xl font-black text-sky-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds2"></canvas></div>
+                </div>
+                <p id="count-ds2" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+
+            <!-- DS3 Card -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 3</p>
+                        <h2 id="ton-ds3" class="text-3xl font-black text-amber-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2>
+                    </div>
+                    <div class="w-16 h-16"><canvas id="chart-ds3"></canvas></div>
+                </div>
+                <p id="count-ds3" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+            </div>
+        </div>
+
+        <!-- Global Summary -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-[#1e293b] text-white p-4 rounded-2xl shadow-lg flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Total Antrian</p>
+                    <p id="stat-total" class="text-2xl font-black">0</p>
+                </div>
+                <i data-lucide="list-ordered" class="w-8 h-8 text-slate-700"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-sky-500 flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] font-bold text-sky-500 uppercase">Sedang Proses</p>
+                    <p id="stat-process" class="text-2xl font-black text-sky-600">0</p>
+                </div>
+                <i data-lucide="loader-2" class="w-8 h-8 text-sky-100"></i>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 flex justify-between items-center hidden md:flex">
+                <div>
+                    <p class="text-[9px] font-bold text-emerald-500 uppercase">Total Tonase Hari Ini</p>
+                    <p id="stat-ton-total" class="text-2xl font-black text-emerald-600">0.00</p>
+                </div>
+                <i data-lucide="scale" class="w-8 h-8 text-emerald-100"></i>
+            </div>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="flex flex-wrap gap-2 mb-4 items-center">
+            <div class="flex bg-white p-1 rounded-xl border border-slate-200">
+                <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all line-active">All</button>
+                <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 1</button>
+                <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 2</button>
+                <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 3</button>
+            </div>
+            <div class="relative flex-1 min-w-[200px]">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Size..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+        </div>
+
+        <!-- Table Data -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Line</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Order / Customer</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">CC No</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Size</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Berat (KG)</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase">Kendala Produksi</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Status</th>
+                            <th class="px-6 py-4 font-bold text-slate-500 uppercase text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-50">
+                        <tr><td colspan="8" class="py-20 text-center text-slate-400 font-medium italic">Mengambil data dari Google Sheets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Laporan Kendala -->
+    <div id="modal-kendala" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl p-8 border border-slate-200 animate-fade-in relative">
+            <h3 class="text-xl font-black italic text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="text-rose-500 w-6 h-6"></i> Laporkan Kendala
+            </h3>
+            
+            <div class="mb-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">Identitas Item</p>
+                <p id="modal-cc-info" class="text-sm font-bold text-slate-700">-</p>
+            </div>
+
+            <div class="relative mb-6">
+                <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-rose-500 outline-none pr-10">
+                    <option value="" disabled selected>Pilih Jenis Kendala</option>
+                    <option value="TBM">TBM</option>
+                    <option value="PACKING COIL BACK">PACKING COIL BACK</option>
+                    <option value="WAITING MC">WAITING MC</option>
+                    <option value="WAITING CRANE">WAITING CRANE</option>
+                    <option value="WINDER TOP/END">WINDER TOP/END</option>
+                    <option value="CLEANING MACHINE">CLEANING MACHINE</option>
+                    <option value="PROBLEM MACHINE">PROBLEM MACHINE</option>
+                    <option value="OTHER">OTHER (Lainnya)</option>
+                </select>
+                <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5"></i>
+            </div>
+            
+            <div id="kendala-other-container" class="hidden mb-8 animate-fade-in">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Ketik Detail Kendala</label>
+                <input type="text" id="kendala-other-input" placeholder="Masukkan kendala..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <div class="mb-8 animate-fade-in">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Lama Kendala (Menit)</label>
+                <input type="number" id="kendala-waktu-input" placeholder="Contoh: 15" min="0" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeKendalaModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
+                <button onclick="saveKendala()" class="py-4 bg-rose-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-200">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Finish Report -->
+    <div id="modal-finish" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl p-8 border border-slate-200 animate-fade-in relative my-8">
+            <h3 class="text-xl font-black italic text-emerald-700 uppercase tracking-tight mb-6 flex items-center gap-2">
+                <i data-lucide="check-square" class="text-emerald-500 w-6 h-6"></i> Laporan Produksi (Finish)
+            </h3>
+            
+            <div class="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <p class="text-[10px] font-black text-slate-500 uppercase mb-1">Identitas Order</p>
+                <p id="finish-order-info" class="text-sm font-bold text-slate-800">-</p>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <!-- Product Width -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Product Width (Otomatis dari Plan)</label>
+                    <input type="text" id="finish-width" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- QTY Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Finish Good (FG)</label>
+                        <input type="number" id="finish-qty-fg" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Not Good (NG)</label>
+                        <input type="number" id="finish-qty-ng" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
+                    </div>
+                </div>
+
+                <!-- Line Speed -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Line Speed</label>
+                    <input type="text" id="finish-speed" placeholder="Contoh: 150 m/min" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Remark -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Remark / Catatan Tambahan</label>
+                    <textarea id="finish-remark" rows="2" placeholder="Ketikan catatan jika ada..." class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeFinishModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
+                <button onclick="submitFinish()" class="py-4 bg-emerald-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">Submit & Finish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest hidden animate-slide-up text-white">
+        <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SHEET_CONFIG = {
+            DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
+            DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
+            DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
+        };
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDl-25d9WeAoi6-PR4jmugmciEKiUzXHn7Z8IvGqyORqClOvqTErXSgUfgwQaj3qVo/exec";
+
+        let appData = [];
+        let completedItems = [];
+        let activeLine = 'ALL';
+        let searchQuery = '';
+        let selectedItemId = null;
+        let finishingItemId = null;
+        let charts = {};
+        let html5QrCode = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initAllCharts();
+            fetchAllData();
+        });
+
+        // ================= FETCH DATA =================
+        async function fetchAllData() {
+            const btn = document.getElementById('refreshBtn');
+            if(btn) btn.classList.add('animate-spin');
+            
+            let newData = [];
+            let failedLines = [];
+
+            const fetchPromises = Object.keys(SHEET_CONFIG).map(async (line) => {
+                try {
+                    // Gunakan URL persis dengan cache-buster untuk menghindari 404
+                    const url = `${SHEET_CONFIG[line]}&t=${Date.now()}`;
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`Akses ditolak (${res.status})`);
+                    
+                    const text = await res.text();
+                    const lineItems = parseSheetCSV(line, text);
+                    newData = [...newData, ...lineItems];
+                } catch (e) {
+                    console.error(`Gagal tarik data ${line}:`, e);
+                    failedLines.push(line);
+                }
+            });
+
+            await Promise.allSettled(fetchPromises);
+            
+            // Pertahankan state lama (status, kendala, waktu) agar tidak reset saat direfresh
+            appData = newData.map(newItem => {
+                const existing = appData.find(oldItem => oldItem.orderNo === newItem.orderNo && oldItem.line === newItem.line);
+                if (existing) {
+                    return { ...newItem, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu };
+                }
+                return newItem;
+            }).filter(item => !completedItems.some(c => c.orderNo === item.orderNo && c.line === item.line));
+            
+            renderTable();
+            updateStats();
+            
+            const statusEl = document.getElementById('sync-status');
+            const now = new Date().toLocaleTimeString();
+            if (failedLines.length > 0) {
+                statusEl.innerText = `⚠️ GAGAL: ${failedLines.join(', ')} (${now})`;
+                statusEl.classList.replace('text-emerald-400', 'text-rose-400');
+            } else {
+                statusEl.innerText = `✅ SEMUA LINE TERHUBUNG (${now})`;
+                statusEl.classList.replace('text-rose-400', 'text-emerald-400');
+            }
+            
+            if(btn) btn.classList.remove('animate-spin');
+        }
+
+        function parseSheetCSV(line, csvText) {
+            const rows = csvText.split(/\r?\n/).map(row => {
+                // Parsing CSV yang aman jika ada koma di dalam tanda kutip
+                let arr = [];
+                let current = "";
+                let inQuotes = false;
+                for(let char of row) {
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) { arr.push(current.trim()); current = ""; }
+                    else current += char;
+                }
+                arr.push(current.trim());
+                return arr;
+            });
+
+            if (rows.length < 1) return [];
+
+            let headerIdx = rows.findIndex(row => 
+                row.some(cell => {
+                    const c = cell.toUpperCase();
+                    return c.includes('ORDER') || c.includes('CC NO');
+                })
+            );
+            if (headerIdx === -1) headerIdx = 0;
+            const headers = rows[headerIdx].map(h => h.toUpperCase());
+            
+            const col = {
+                order: headers.findIndex(h => h === 'PROCESS ORDER NO' || h === 'ORDER NO' || h === 'ORDER'),
+                cust: headers.findIndex(h => h === 'CUSTOMER' || h.includes('PEMBELI') || h.includes('NAME')),
+                cc: headers.findIndex(h => h === 'CC NO' || h === 'CC.'),
+                size: headers.findIndex(h => h === 'SIZE'), 
+                kg: headers.findIndex(h => h === 'BERAT' || h === 'NETTO' || h === 'WEIGHT')
+            };
+
+            // Fallbacks jika nama header eksak tidak ditemukan
+            if(col.order === -1) col.order = headers.findIndex(h => h.includes('ORDER'));
+            if(col.size === -1) col.size = headers.findIndex(h => h.includes('SIZE') || h.includes('TEBAL') || h.includes('UKURAN'));
+            if(col.cc === -1) col.cc = headers.findIndex(h => h.includes('CC') || h.includes('PACKING'));
+            if(col.kg === -1) col.kg = headers.findIndex(h => h.includes('KG') || h.includes('NETTO'));
+
+            return rows.slice(headerIdx + 1)
+                .filter(row => row[col.order] && row[col.order] !== "")
+                .map((row, i) => {
+                    const sizeVal = col.size !== -1 ? row[col.size] : "-";
+                    // Tarik Lebar Otomatis
+                    let prodWidth = sizeVal;
+                    if(sizeVal.includes('/')) prodWidth = sizeVal.split('/')[0].trim();
+                    else if(sizeVal.includes('x') || sizeVal.includes('X')) prodWidth = sizeVal.split(/x|X/)[0].trim();
+
+                    return {
+                        id: `${line}-${i}-${Date.now()}`,
+                        line: line,
+                        orderNo: col.order !== -1 ? row[col.order] : "N/A",
+                        customer: col.cust !== -1 ? row[col.cust] : "-",
+                        ccNo: col.cc !== -1 ? row[col.cc] : "",
+                        size: sizeVal,
+                        productWidth: prodWidth,
+                        weight: col.kg !== -1 ? (parseFloat(row[col.kg].replace(/,/g, '')) || 0) : 0,
+                        status: "WAITING",
+                        kendala: "",
+                        kendalaWaktu: ""
+                    };
+                });
+        }
+
+        // ================= RENDERING =================
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            let data = [...appData];
+            
+            if (activeLine !== 'ALL') data = data.filter(i => i.line === activeLine);
+            if (searchQuery) {
+                data = data.filter(i => 
+                    i.orderNo.toLowerCase().includes(searchQuery) || 
+                    i.ccNo.toLowerCase().includes(searchQuery) ||
+                    i.size.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Tidak ada data antrian</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => {
+                let statusClass = "bg-slate-100 text-slate-400";
+                if(item.status === 'ON PROCESS') statusClass = "bg-sky-100 text-sky-600 animate-pulse";
+                if(item.kendala) statusClass = "bg-rose-100 text-rose-600";
+
+                return `
+                <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">${item.orderNo}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase">${item.customer}</div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-slate-500">${item.ccNo || "-"}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 bg-slate-100 rounded-md text-slate-600 font-semibold text-[10px]">${item.size}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold">${item.weight.toLocaleString()}</td>
+                    <td class="px-6 py-4">
+                        <div onclick="openKendalaModal('${item.id}')" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold text-slate-500 cursor-pointer hover:bg-slate-100 flex flex-col transition-colors">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="${item.kendala ? 'text-rose-600 font-black' : ''}">${item.kendala || "Tulis kendala..."}</span>
+                                <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                            </div>
+                            ${item.kendalaWaktu ? `<span class="text-[9px] text-rose-400 mt-1 uppercase tracking-widest">${item.kendalaWaktu} Menit</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${statusClass}">${item.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="processScan('${item.ccNo || item.orderNo}')" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${item.status === 'ON PROCESS' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-sky-500 text-white shadow-md'}">
+                            ${item.status === 'ON PROCESS' ? 'FINISH' : 'START'}
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+            lucide.createIcons();
+        }
+
+        // ================= KENDALA MODAL LOGIC =================
+        function openKendalaModal(id) {
+            selectedItemId = id;
+            const item = appData.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-cc-info').innerText = `${item.orderNo} | ${item.ccNo}`;
+            const select = document.getElementById('kendala-select');
+            const otherContainer = document.getElementById('kendala-other-container');
+            const otherInput = document.getElementById('kendala-other-input');
+            const standard = ["TBM", "PACKING COIL BACK", "WAITING MC", "WAITING CRANE", "WINDER TOP/END", "CLEANING MACHINE", "PROBLEM MACHINE"];
+            
+            if (!item.kendala) {
+                select.value = "";
+                otherContainer.classList.add('hidden');
+                otherInput.value = "";
+            } else if (standard.includes(item.kendala)) {
+                select.value = item.kendala;
+                otherContainer.classList.add('hidden');
+            } else {
+                select.value = "OTHER";
+                otherContainer.classList.remove('hidden');
+                otherInput.value = item.kendala;
+            }
+            document.getElementById('kendala-waktu-input').value = item.kendalaWaktu || "";
+            document.getElementById('modal-kendala').classList.replace('hidden', 'flex');
+        }
+
+        function toggleOtherKendala() {
+            const val = document.getElementById('kendala-select').value;
+            if(val === "OTHER") {
+                document.getElementById('kendala-other-container').classList.remove('hidden');
+                document.getElementById('kendala-other-input').focus();
+            } else {
+                document.getElementById('kendala-other-container').classList.add('hidden');
+            }
+        }
+
+        function closeKendalaModal() {
+            document.getElementById('modal-kendala').classList.replace('flex', 'hidden');
+            selectedItemId = null;
+        }
+
+        function saveKendala() {
+            const sel = document.getElementById('kendala-select').value;
+            let val = sel === "OTHER" ? document.getElementById('kendala-other-input').value.trim() : sel;
+            if (!val) return showToast("Harap isi detail kendala!", "error");
+
+            const time = document.getElementById('kendala-waktu-input').value.trim();
+            const item = appData.find(i => i.id === selectedItemId);
+            if (item) {
+                item.kendala = val;
+                item.kendalaWaktu = time;
+                showToast("Kendala Berhasil Disimpan", "success");
+                sendToReportSheet(item, "ISSUE_REPORT");
+                renderTable();
+            }
+            closeKendalaModal();
+        }
+
+        // ================= FINISH MODAL LOGIC =================
+        function processScan(val) {
+            if(!val) return;
+            const item = appData.find(i => i.ccNo === val || i.orderNo === val);
+            if (!item) { showToast("Item tidak terdaftar di antrean!", "error"); return; }
+
+            if (item.status === "WAITING") {
+                item.status = "ON PROCESS";
+                item.startTime = new Date().toLocaleTimeString();
+                showToast(`START: ${item.orderNo}`, "success");
+                sendToReportSheet(item, "START");
+            } else {
+                openFinishModal(item.id);
+            }
+            document.getElementById('manualInput').value = '';
+            renderTable();
+            updateStats();
+        }
+
+        function openFinishModal(id) {
+            finishingItemId = id;
+            const item = appData.find(i => i.id === id);
+            document.getElementById('finish-order-info').innerText = `${item.orderNo} | ${item.ccNo}`;
+            document.getElementById('finish-width').value = item.productWidth || "";
+            document.getElementById('finish-qty-fg').value = "";
+            document.getElementById('finish-qty-ng').value = "";
+            document.getElementById('finish-speed').value = "";
+            document.getElementById('finish-remark').value = "";
+            document.getElementById('modal-finish').classList.replace('hidden', 'flex');
+        }
+
+        function closeFinishModal() {
+            document.getElementById('modal-finish').classList.replace('flex', 'hidden');
+            finishingItemId = null;
+        }
+
+        function submitFinish() {
+            if (!finishingItemId) return;
+            const idx = appData.findIndex(item => item.id === finishingItemId);
+            if (idx === -1) return;
+
+            const item = appData[idx];
+            const qtyFG = document.getElementById('finish-qty-fg').value;
+            
+            if (!qtyFG) return showToast("Qty FG wajib diisi!", "error");
+
+            item.status = "COMPLETED";
+            item.finishedAt = new Date().toLocaleTimeString();
+            item.productWidth = document.getElementById('finish-width').value;
+            item.qtyFG = qtyFG;
+            item.qtyNG = document.getElementById('finish-qty-ng').value || 0;
+            item.speed = document.getElementById('finish-speed').value;
+            item.remark = document.getElementById('finish-remark').value;
+
+            completedItems.unshift(item);
+            appData.splice(idx, 1);
+
+            showToast(`${item.ccNo || item.orderNo} Selesai!`, 'success');
+            sendToReportSheet(item, "FINISH");
+            
+            closeFinishModal();
+            renderTable();
+            updateStats();
+        }
+
+        // ================= UTILITIES & CHARTS =================
+        function updateStats() {
+            const totalKg = completedItems.reduce((acc, curr) => acc + curr.weight, 0);
+            document.getElementById('stat-total').innerText = appData.length + completedItems.length;
+            document.getElementById('stat-process').innerText = appData.filter(i => i.status === 'ON PROCESS').length;
+            document.getElementById('stat-ton-total').innerText = (totalKg / 1000).toFixed(2);
+            
+            ['DS1', 'DS2', 'DS3'].forEach(line => {
+                const lineCompleted = completedItems.filter(i => i.line === line);
+                const lineWaiting = appData.filter(i => i.line === line);
+                const lineTon = lineCompleted.reduce((acc, curr) => acc + curr.weight, 0) / 1000;
+                
+                const tonEl = document.getElementById(`ton-${line.toLowerCase()}`);
+                const countEl = document.getElementById(`count-${line.toLowerCase()}`);
+                
+                if (tonEl) tonEl.innerHTML = `${lineTon.toFixed(2)} <span class="text-xs font-normal text-slate-400 italic">Ton</span>`;
+                if (countEl) countEl.innerText = `${lineCompleted.length} Coil Selesai`;
+                
+                if(charts[line]) {
+                    charts[line].data.datasets[0].data = [lineWaiting.length || 1, lineCompleted.length];
+                    charts[line].update();
+                }
+            });
+        }
+
+        function initAllCharts() {
+            const lines = [{ id: 'DS1', color: '#00843d' }, { id: 'DS2', color: '#0284c7' }, { id: 'DS3', color: '#d97706' }];
+            lines.forEach(line => {
+                const canvas = document.getElementById(`chart-${line.id.toLowerCase()}`);
+                if (!canvas) return;
+                charts[line.id] = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['Antri', 'Selesai'], datasets: [{ data: [1, 0], backgroundColor: ['#f1f5f9', line.color], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+                });
+            });
+        }
+
+        async function toggleScanner() {
+            const container = document.getElementById('scanner-container');
+            if (!container.classList.contains('hidden')) {
+                container.classList.add('hidden');
+                if (html5QrCode) {
+                    try { if (html5QrCode.getState() !== 1) await html5QrCode.stop(); } 
+                    catch (err) { console.warn(err); } 
+                    finally { html5QrCode = null; }
+                }
+                return;
+            }
+            container.classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            try {
+                await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => { toggleScanner(); processScan(decodedText); }, () => {});
+            } catch (err) {
+                showToast("Kamera tidak dapat diakses", "error");
+                container.classList.add('hidden');
+                html5QrCode = null;
+            }
+        }
+
+        function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
+        
+        function setLine(line) {
+            activeLine = line;
+            document.querySelectorAll('.line-nav').forEach(b => b.classList.remove('line-active', 'text-white'));
+            document.getElementById(`btn-${line}`).classList.add('line-active');
+            renderTable();
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-rose-600';
+            const iconType = type === 'success' ? 'check-circle' : 'alert-circle';
+            
+            toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${bgClass}`;
+            icon.setAttribute('data-lucide', iconType);
+            document.getElementById('toast-message').innerText = message;
+            
+            lucide.createIcons();
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function sendToReportSheet(item, action) {
+            const payload = {
+                action: action,
+                "LINE": item.line,
+                "CC NO": item.ccNo || item.orderNo || "",
+                "CUSTOMER": item.customer || "",
+                "SPEC": item.spec || "",
+                "SIZE": item.size || "",
+                "WEIGHT": item.weight || "",
+                "PRODUCT SIZE": item.productWidth || "",
+                "QTY FINISH GOOD": item.qtyFG || "",
+                "QTY NOT GOOD": item.qtyNG || "",
+                "START PROCESS": item.startTime || "",
+                "END PROCESS": item.finishedAt || "",
+                "KENDALA": item.kendala ? `${item.kendala} (${item.kendalaWaktu || 0}m)` : "",
+                "REMARK": item.remark || ""
+            };
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Report Error:", err));
+        }
+    </script>
+</body>
+</html>
