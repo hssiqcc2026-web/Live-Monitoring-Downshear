@@ -3,230 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSSI - DOWNSHEAR LIVE MONITORING</title>
+    <title>HSSI - Downshear Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .line-active { background-color: #00843d !important; color: white !important; }
+        .card-stat { border-radius: 2.5rem; transition: all 0.3s ease; border: 1px solid #eef2f6; }
+        .tab-active { color: #0f172a !important; border-bottom: 3px solid #10b981; }
+        .line-active { background-color: #059669 !important; color: white !important; }
+        .table-container { border-radius: 1.5rem; background: white; border: 1px solid #eef2f6; }
+        .btn-action { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .status-badge { font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; }
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
         @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="text-slate-900 min-h-screen pb-10">
+<body class="text-slate-900 pb-20">
 
-    <header class="bg-[#1e293b] text-white p-4 sticky top-0 z-40 shadow-xl border-b-[4px] border-[#00843d]">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <div class="bg-white p-1 rounded-lg w-12 h-8 flex items-center justify-center font-bold text-[#00843d]">HSSI</div>
+                <div class="bg-white p-1.5 rounded-xl">
+                    <img src="https://placehold.co/100x40/ffffff/059669?text=HSSI" alt="Logo" class="h-8">
+                </div>
                 <div>
-                    <h1 class="text-lg font-black italic uppercase leading-none">DOWNSHEAR MONITORING</h1>
-                    <p id="sync-status" class="text-[9px] text-emerald-400 font-bold mt-1 uppercase tracking-tighter">MENUNGGU SINKRONISASI...</p>
+                    <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
+                    <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">CONNECTED TO SERVER</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <div class="flex-1 flex bg-white/10 rounded-lg border border-white/20 overflow-hidden">
-                    <input type="text" id="manualInput" placeholder="Input Order / CC No..." class="bg-transparent text-xs px-4 py-2 outline-none focus:ring-1 focus:ring-emerald-500 text-white w-full" onkeypress="if(event.key === 'Enter') processScan(this.value)">
-                    <button onclick="toggleScanner()" class="bg-[#00843d] px-3 hover:bg-emerald-600 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="relative hidden lg:block">
+                    <input type="text" id="manualInput" onchange="processScan(this.value)" placeholder="Cari / Scan CC No..." class="w-72 bg-slate-800 border border-slate-700 text-xs px-5 py-2.5 rounded-2xl outline-none text-white focus:ring-2 focus:ring-emerald-500 transition-all">
+                    <button onclick="toggleScanner()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 p-1.5 rounded-lg text-white hover:bg-emerald-500 transition-all">
                         <i data-lucide="camera" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <button onclick="fetchAllData()" id="refreshBtn" class="bg-slate-700 p-2 rounded-lg hover:bg-slate-600 transition-all">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <button onclick="fetchAllData()" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400 group-active:rotate-180 transition-transform"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- DS 1 -->
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
-                <div class="flex justify-between items-start mb-4">
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 1</p><h2 id="ton-ds1" class="text-3xl font-black text-[#00843d] tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2></div>
-                    <div class="w-16 h-16"><canvas id="chart-ds1"></canvas></div>
+    <main class="max-w-[1600px] mx-auto p-4 md:p-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
+                <div>
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 1</p>
+                    <div class="flex items-baseline gap-2">
+                        <h2 id="ton-ds1" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
+                    </div>
+                    <p id="count-ds1" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
                 </div>
-                <p id="count-ds1" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+                <div class="w-20 h-20 relative"><canvas id="chart-ds1"></canvas></div>
             </div>
-            <!-- DS 2 -->
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
-                <div class="flex justify-between items-start mb-4">
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 2</p><h2 id="ton-ds2" class="text-3xl font-black text-sky-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2></div>
-                    <div class="w-16 h-16"><canvas id="chart-ds2"></canvas></div>
+            <!-- ... DS2 and DS3 Stat Cards follow the same pattern ... -->
+            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
+                <div>
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 2</p>
+                    <div class="flex items-baseline gap-2">
+                        <h2 id="ton-ds2" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
+                    </div>
+                    <p id="count-ds2" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
                 </div>
-                <p id="count-ds2" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+                <div class="w-20 h-20 relative"><canvas id="chart-ds2"></canvas></div>
             </div>
-            <!-- DS 3 -->
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-200">
-                <div class="flex justify-between items-start mb-4">
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output DS 3</p><h2 id="ton-ds3" class="text-3xl font-black text-amber-600 tracking-tighter">0.00 <span class="text-xs font-normal text-slate-400 italic">Ton</span></h2></div>
-                    <div class="w-16 h-16"><canvas id="chart-ds3"></canvas></div>
+            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
+                <div>
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 3</p>
+                    <div class="flex items-baseline gap-2">
+                        <h2 id="ton-ds3" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
+                    </div>
+                    <p id="count-ds3" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
                 </div>
-                <p id="count-ds3" class="text-[9px] font-bold text-slate-400 uppercase">0 Coil Selesai</p>
+                <div class="w-20 h-20 relative"><canvas id="chart-ds3"></canvas></div>
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 mb-4 items-center">
-            <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all line-active">All</button>
-                <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 1</button>
-                <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 2</button>
-                <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-slate-400">DS 3</button>
-            </div>
-            <div class="relative flex-1 min-w-[200px]">
-                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Spec / Place..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm">
+        <!-- Main Navigation -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
+            <div class="inline-flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-200">
+                <button onclick="setMainMenu('WAITING')" id="btn-menu-WAITING" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md">WAITING LIST</button>
+                <button onclick="setMainMenu('FINISH')" id="btn-menu-FINISH" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700">FINISH PROCESS</button>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="flex flex-col md:flex-row gap-6 mb-8 items-center">
+            <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+                <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all line-active">All</button>
+                <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 1</button>
+                <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 2</button>
+                <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 3</button>
+            </div>
+            <div class="relative flex-1 w-full">
+                <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Spec..." class="w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold shadow-sm outline-none transition-all">
+            </div>
+        </div>
+
+        <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
             <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse text-[11px]">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 border-b border-slate-100">
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase text-center w-12">Line</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase min-w-[140px]">Order / Customer</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase min-w-[110px]">Packing No</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase min-w-[80px]">Spec</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase min-w-[80px]">Place</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase min-w-[90px]">Size</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase text-center w-24">Berat (KG)</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase text-center">Status</th>
-                            <th class="px-4 py-4 font-bold text-slate-500 uppercase text-center">Aksi</th>
+                        <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                            <th class="px-4 py-6 text-center">Line</th>
+                            <th class="px-4 py-6">Order / Customer</th>
+                            <th class="px-4 py-6">Packing No</th>
+                            <th class="px-4 py-6">Spec</th>
+                            <th class="px-4 py-6">Place</th>
+                            <th class="px-4 py-6">Size</th>
+                            <th class="px-4 py-6 text-center">Berat (KG)</th>
+                            <th class="px-4 py-6 text-center">Status</th>
+                            <th class="px-4 py-6 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-slate-50">
-                        <tr><td colspan="9" class="py-20 text-center text-slate-400 font-medium italic">Mengambil data dari spreadsheet...</td></tr>
+                        <!-- Data will be injected here -->
                     </tbody>
                 </table>
+            </div>
+
+            <div id="loading" class="hidden p-32 flex flex-col items-center justify-center">
+                <div class="w-12 h-12 border-[5px] border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sinkronisasi Database...</p>
+            </div>
+            <div id="empty-state" class="hidden p-32 flex flex-col items-center justify-center text-center">
+                <i data-lucide="package-x" class="w-16 h-16 text-slate-200 mb-4"></i>
+                <h3 class="text-sm font-black text-slate-300 uppercase italic">Tidak Ada Data Ditemukan</h3>
             </div>
         </div>
     </main>
 
-    <!-- Modal Laporan Kendala -->
-    <div id="modal-kendala" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl p-8 border border-slate-200 animate-fade-in relative">
-            <h3 class="text-xl font-black italic text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
-                <i data-lucide="alert-triangle" class="text-rose-500 w-6 h-6"></i> Laporkan Kendala
-            </h3>
-            
-            <div class="mb-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">Identitas Item</p>
-                <p id="modal-cc-info" class="text-sm font-bold text-slate-700">-</p>
+    <!-- Scanner Container -->
+    <div id="scanner-container" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
+                <h3 class="font-black italic tracking-wider">SCAN QR / BARCODE</h3>
+                <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-
-            <div class="relative mb-6">
-                <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold appearance-none focus:ring-2 focus:ring-rose-500 outline-none pr-10">
-                    <option value="" disabled selected>Pilih Jenis Kendala</option>
-                    <option value="TBM">TBM</option>
-                    <option value="PACKING COIL BACK">PACKING COIL BACK</option>
-                    <option value="WAITING MC">WAITING MC</option>
-                    <option value="WAITING CRANE">WAITING CRANE</option>
-                    <option value="WINDER TOP/END">WINDER TOP/END</option>
-                    <option value="CLEANING MACHINE">CLEANING MACHINE</option>
-                    <option value="PROBLEM MACHINE">PROBLEM MACHINE</option>
-                    <option value="OTHER">OTHER (Lainnya)</option>
-                </select>
-                <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5"></i>
-            </div>
-            
-            <div id="kendala-other-container" class="hidden mb-8 animate-fade-in">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Ketik Detail Kendala</label>
-                <input type="text" id="kendala-other-input" placeholder="Masukkan kendala..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
-            </div>
-
-            <div class="mb-8 animate-fade-in">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Lama Kendala (Menit)</label>
-                <input type="number" id="kendala-waktu-input" placeholder="Contoh: 15" min="0" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="closeKendalaModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
-                <button onclick="saveKendala()" class="py-4 bg-rose-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-200">Simpan</button>
+            <div class="p-6">
+                <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-100"></div>
+                <p class="text-xs text-center text-slate-400 mt-4 font-bold">Arahkan kamera ke QR Code / Barcode pada Coil</p>
             </div>
         </div>
     </div>
 
-    <!-- Modal Finish Report -->
-    <div id="modal-finish" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl p-8 border border-slate-200 animate-fade-in relative my-8">
-            <h3 class="text-xl font-black italic text-emerald-700 uppercase tracking-tight mb-6 flex items-center gap-2">
-                <i data-lucide="check-square" class="text-emerald-500 w-6 h-6"></i> Laporan Produksi (Finish)
-            </h3>
-            
-            <div class="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                <p class="text-[10px] font-black text-slate-500 uppercase mb-1">Identitas Order</p>
-                <p id="finish-order-info" class="text-sm font-bold text-slate-800">-</p>
+    <!-- Finish Modal -->
+    <div id="modal-finish" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
+            <div class="bg-[#0f172a] p-8 text-white flex justify-between items-start">
+                <div>
+                    <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
+                    <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
+                </div>
+                <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-
-            <div class="space-y-4 mb-8">
+            <div class="p-8 grid grid-cols-2 gap-6">
+                <div class="col-span-2 md:col-span-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Lebar Produk (MM)</label>
+                    <input type="text" id="finish-width" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                </div>
+                <div class="col-span-2 md:col-span-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
+                    <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                </div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Product Width (mm)</label>
-                    <input type="text" id="finish-width" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block text-emerald-600">Qty Finish Good (KG)</label>
+                    <input type="number" id="finish-qty-fg" class="w-full px-5 py-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Finish Good (KG)</label>
-                        <input type="number" id="finish-qty-fg" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Qty Not Good (NG)</label>
-                        <input type="number" id="finish-qty-ng" placeholder="0" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500">
-                    </div>
-                </div>
-
                 <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Line Speed</label>
-                    <input type="text" id="finish-speed" placeholder="Contoh: 150 m/min" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block text-rose-500">Qty Not Good (KG)</label>
+                    <input type="number" id="finish-qty-ng" class="w-full px-5 py-4 bg-rose-50 border border-rose-100 rounded-2xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all" value="0">
                 </div>
-
-                <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 block">Remark / Catatan Tambahan</label>
-                    <textarea id="finish-remark" rows="2" placeholder="Ketikan catatan jika ada..." class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                <div class="col-span-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Remark / Catatan</label>
+                    <textarea id="finish-remark" rows="2" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Input keterangan jika ada..."></textarea>
                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="closeFinishModal()" class="py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all">Batal</button>
-                <button onclick="submitFinish()" class="py-4 bg-emerald-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">Submit & Finish</button>
+                <div class="col-span-2 mt-4">
+                    <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        Simpan & Selesaikan
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Scanner -->
-    <div id="scanner-container" class="fixed inset-0 z-[100] hidden flex-col bg-black">
-        <div class="flex justify-between items-center p-6 text-white">
-            <h2 class="font-bold">SCANNER QR/BARCODE</h2>
-            <button onclick="toggleScanner()" class="p-2 bg-white/10 rounded-full"><i data-lucide="x"></i></button>
+    <!-- Kendala Modal -->
+    <div id="modal-kendala" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+            <div class="bg-rose-600 p-8 text-white">
+                <h3 class="text-2xl font-black italic tracking-tighter">LAPORAN KENDALA</h3>
+                <p id="modal-cc-info" class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
+            </div>
+            <div class="p-8">
+                <div class="mb-6">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jenis Kendala</label>
+                    <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500">
+                        <option value="">-- Pilih Kendala --</option>
+                        <option value="MECHANICAL">MECHANICAL ISSUE</option>
+                        <option value="ELECTRICAL">ELECTRICAL ISSUE</option>
+                        <option value="MATERIAL">MATERIAL QUALITY</option>
+                        <option value="UTILITY">POWER / AIR UTILITY</option>
+                        <option value="CRANE">CRANE WAITING</option>
+                        <option value="OTHER">OTHER (LAINNYA)</option>
+                    </select>
+                </div>
+                <div id="kendala-other-container" class="mb-6 hidden">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Detail Kendala Lainnya</label>
+                    <input type="text" id="kendala-other-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="Ketik kendala...">
+                </div>
+                <div class="mb-8">
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Durasi (Menit) - Opsional</label>
+                    <input type="number" id="kendala-waktu-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="0">
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="closeKendalaModal()" class="flex-1 px-8 py-4 rounded-2xl font-black text-slate-400 uppercase tracking-widest hover:bg-slate-100 transition-all">Batal</button>
+                    <button onclick="saveKendala()" class="flex-[2] bg-rose-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Lapor Kendala</button>
+                </div>
+            </div>
         </div>
-        <div id="reader" class="flex-1"></div>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest hidden animate-slide-up text-white">
-        <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4"></i>
-        <span id="toast-message"></span>
+    <!-- Toast Component -->
+    <div id="toast" class="hidden">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-message">Pesan</span>
     </div>
 
     <script>
         const SHEET_CONFIG = {
-            DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
-            DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
-            DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
+            WAITING: {
+                DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
+                DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
+                DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
+            },
+            FINISH: {
+                // TODO: Ganti angka gid di bawah dengan gid asli dari masing-masing tab REPORT
+                DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=11111111&single=true&output=csv",
+                DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=22222222&single=true&output=csv",
+                DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=33333333&single=true&output=csv"
+            }
         };
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDl-25d9WeAoi6-PR4jmugmciEKiUzXHn7Z8IvGqyORqClOvqTErXSgUfgwQaj3qVo/exec";
 
         let appData = [];
+        let finishData = [];
         let completedItems = [];
+        let activeMenu = 'WAITING';
         let activeLine = 'ALL';
         let searchQuery = '';
         let selectedItemId = null;
@@ -283,37 +320,63 @@
 
         async function fetchAllData() {
             const statusEl = document.getElementById('sync-status');
-            statusEl.innerText = "SINKRONISASI SEDANG BERJALAN...";
-            statusEl.classList.replace('text-emerald-400', 'text-amber-400');
+            if (statusEl) {
+                statusEl.innerText = "SINKRONISASI SEDANG BERJALAN...";
+                statusEl.classList.replace('text-emerald-400', 'text-amber-400');
+            }
             
             try {
-                const results = await Promise.all(Object.keys(SHEET_CONFIG).map(async line => {
-                    const res = await fetch(SHEET_CONFIG[line]);
-                    const text = await res.text();
-                    return parseSheetCSV(line, text);
+                // Fetch WAITING data
+                const resultsWaiting = await Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async line => {
+                    try {
+                        const res = await fetch(SHEET_CONFIG.WAITING[line]);
+                        const text = await res.text();
+                        return parseSheetCSV(line, text);
+                    } catch(e) { return []; }
                 }));
 
-                const newData = results.flat();
+                // Fetch FINISH data
+                const resultsFinish = await Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async line => {
+                    try {
+                        const res = await fetch(SHEET_CONFIG.FINISH[line]);
+                        if(!res.ok) return [];
+                        const text = await res.text();
+                        const parsed = parseSheetCSV(line, text);
+                        return parsed.map(p => ({...p, status: 'COMPLETED'})); // Set status jadi FINISH
+                    } catch(e) { return []; }
+                }));
+
+                const newWaitingData = resultsWaiting.flat();
+                finishData = resultsFinish.flat();
                 
                 // Preserve state of items in process
-                appData = newData.map(item => {
+                appData = newWaitingData.map(item => {
                     const existing = appData.find(ex => ex.ccNo === item.ccNo && ex.line === item.line);
                     return existing ? { ...item, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu } : item;
                 });
 
-                statusEl.innerText = "TERHUBUNG KE SERVER";
-                statusEl.classList.replace('text-amber-400', 'text-emerald-400');
+                if (statusEl) {
+                    statusEl.innerText = "TERHUBUNG KE SERVER";
+                    statusEl.classList.replace('text-amber-400', 'text-emerald-400');
+                }
                 renderTable();
                 updateStats();
             } catch (err) {
-                statusEl.innerText = "GANTI KONEKSI / SERVER DOWN";
-                statusEl.classList.replace('text-emerald-400', 'text-rose-400');
+                if (statusEl) {
+                    statusEl.innerText = "GANTI KONEKSI / SERVER DOWN";
+                    statusEl.classList.replace('text-emerald-400', 'text-rose-400');
+                }
             }
         }
 
         function renderTable() {
             const tbody = document.getElementById('table-body');
-            let data = activeLine === 'ALL' ? appData : appData.filter(i => i.line === activeLine);
+            if (!tbody) return;
+
+            // Pilih data berdasarkan menu aktif
+            let sourceData = activeMenu === 'WAITING' ? appData : finishData;
+
+            let data = activeLine === 'ALL' ? sourceData : sourceData.filter(i => i.line === activeLine);
             if(searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
 
             if(data.length === 0) {
@@ -340,10 +403,11 @@
                     <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size}</td>
                     <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight.toLocaleString()}</td>
                     <td class="px-4 py-4 text-center">
-                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
+                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : item.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
                         ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase tracking-tighter">⚠️ ${item.kendala}</div>` : ''}
                     </td>
                     <td class="px-4 py-4 text-center">
+                        ${activeMenu === 'WAITING' ? `
                         <div class="flex gap-1 justify-center">
                             <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status === 'ON PROCESS' ? 'bg-emerald-500' : 'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
                                 <i data-lucide="${item.status === 'ON PROCESS' ? 'check-square' : 'play'}" class="w-4 h-4"></i>
@@ -352,6 +416,9 @@
                                 <i data-lucide="alert-circle" class="w-4 h-4"></i>
                             </button>
                         </div>
+                        ` : `
+                        <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest"><i data-lucide="check-circle" class="w-4 h-4 mx-auto mb-1"></i> SELESAI</span>
+                        `}
                     </td>
                 </tr>
             `).join('');
@@ -372,7 +439,9 @@
                 openFinishModal(item.id);
             }
             
-            document.getElementById('manualInput').value = '';
+            const manualInput = document.getElementById('manualInput');
+            if (manualInput) manualInput.value = '';
+            
             renderTable();
             updateStats();
         }
@@ -421,6 +490,7 @@
 
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
+            finishData.unshift(item); // Masukkan langsung ke list finish
             
             showToast(`${item.ccNo} SELESAI`, "success");
             sendToReportSheet(item, "FINISH");
@@ -509,7 +579,7 @@
                 const tonEl = document.getElementById(`ton-${line.toLowerCase()}`);
                 const countEl = document.getElementById(`count-${line.toLowerCase()}`);
                 
-                if (tonEl) tonEl.innerHTML = `${lineTon.toFixed(2)} <span class="text-xs font-normal text-slate-400 italic">Ton</span>`;
+                if (tonEl) tonEl.innerText = lineTon.toFixed(2);
                 if (countEl) countEl.innerText = `${lineCompleted.length} Coil Selesai`;
                 
                 if(charts[line]) {
@@ -545,10 +615,32 @@
         }
 
         function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
+        
+        function setMainMenu(menu) {
+            activeMenu = menu;
+            const btnWait = document.getElementById('btn-menu-WAITING');
+            const btnFinish = document.getElementById('btn-menu-FINISH');
+            
+            if (menu === 'WAITING') {
+                btnWait.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
+                btnFinish.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+            } else {
+                btnFinish.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
+                btnWait.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+            }
+            renderTable();
+        }
+
         function setLine(line) {
             activeLine = line;
-            document.querySelectorAll('.line-nav').forEach(b => b.classList.remove('line-active', 'text-white'));
-            document.getElementById(`btn-${line}`).classList.add('line-active');
+            document.querySelectorAll('.line-nav').forEach(b => b.classList.remove('line-active', 'text-white', 'text-slate-400'));
+            document.querySelectorAll('.line-nav').forEach(b => b.classList.add('text-slate-400'));
+            
+            const activeBtn = document.getElementById(`btn-${line}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('line-active');
+            }
             renderTable();
         }
 
@@ -556,7 +648,8 @@
             const t = document.getElementById('toast');
             t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
             document.getElementById('toast-message').innerText = msg;
-            t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000);
+            t.classList.remove('hidden'); 
+            setTimeout(() => t.classList.add('hidden'), 3000);
             lucide.createIcons();
         }
 
@@ -569,7 +662,10 @@
             }
             container.classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { toggleScanner(); processScan(text); });
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { 
+                toggleScanner(); 
+                processScan(text); 
+            });
         }
     </script>
 </body>
