@@ -258,7 +258,7 @@
                 DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=33333333&single=true&output=csv"
             }
         };
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDl-25d9WeAoi6-PR4jmugmciEKiUzXHn7Z8IvGqyORqClOvqTErXSgUfgwQaj3qVo/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0plVycmt0-wxrqE3Ztc8RY2VAGgUQiULqtRpnfSBkk-MwhuIsi9Lh4LMFHOCvaf0/exec";
 
         let appData = [];
         let finishData = [];
@@ -299,19 +299,22 @@
                 spec: findIdx(['SPEC', 'MUTU', 'GRADE']),
                 place: findIdx(['PLACE', 'LOKASI', 'POS']),
                 size: findIdx(['SIZE', 'DIMENSI']),
-                kg: findIdx(['KG', 'BERAT', 'WEIGHT', 'QTY'])
+                kg: findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
             };
 
-            return rows.slice(1).filter(r => r[col.order]).map((r, i) => ({
-                id: `${line}-${i}-${r[col.order]}`,
+            // Menggunakan kolom CC NO sebagai prioritas jika kolom ORDER tidak ada di sheet Report
+            const checkCol = col.order !== -1 ? col.order : (col.cc !== -1 ? col.cc : 0);
+
+            return rows.slice(1).filter(r => r[checkCol]).map((r, i) => ({
+                id: `${line}-${i}-${col.cc !== -1 ? r[col.cc] : 'x'}`,
                 line: line,
-                orderNo: r[col.order] || "-",
-                customer: r[col.cust] || "-",
-                ccNo: r[col.cc] || "-",
-                spec: r[col.spec] || "-",
-                place: r[col.place] || "-",
-                size: r[col.size] || "-",
-                weight: parseFloat(r[col.kg]?.replace(/[^\d.]/g, '')) || 0,
+                orderNo: col.order !== -1 ? (r[col.order] || "-") : "-",
+                customer: col.cust !== -1 ? (r[col.cust] || "-") : "-",
+                ccNo: col.cc !== -1 ? (r[col.cc] || "-") : "-",
+                spec: col.spec !== -1 ? (r[col.spec] || "-") : "-",
+                place: col.place !== -1 ? (r[col.place] || "-") : "-",
+                size: col.size !== -1 ? (r[col.size] || "-") : "-",
+                weight: parseFloat(col.kg !== -1 ? r[col.kg]?.replace(/[^\d.]/g, '') : 0) || 0,
                 status: "WAITING",
                 kendala: "",
                 kendalaWaktu: ""
@@ -347,7 +350,21 @@
                 }));
 
                 const newWaitingData = resultsWaiting.flat();
-                finishData = resultsFinish.flat();
+                let fetchedFinishData = resultsFinish.flat();
+                
+                // Mencegah data hilang saat direfresh karena delay cache Google Sheet CSV
+                const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]');
+                const mergedFinish = [...fetchedFinishData];
+                
+                localFinish.forEach(lf => {
+                    // Jika data lokal belum ada di hasil fetch server, tambahkan ke layar
+                    if(!mergedFinish.find(mf => mf.ccNo === lf.ccNo)) {
+                        mergedFinish.unshift(lf);
+                    }
+                });
+
+                finishData = mergedFinish;
+                completedItems = [...finishData]; // Penting: Agar chart & tonase dashboard tidak 0 saat refresh
                 
                 // Preserve state of items in process
                 appData = newWaitingData.map(item => {
@@ -487,10 +504,14 @@
             item.qtyNG = document.getElementById('finish-qty-ng').value || 0;
             item.speed = document.getElementById('finish-speed').value;
             item.remark = document.getElementById('finish-remark').value;
+            item.weight = parseFloat(qtyFG); // Memperbarui berat di layar dengan QTY FG aktual
 
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
             finishData.unshift(item); // Masukkan langsung ke list finish
+            
+            // Menyimpan state ke Local Storage browser agar aman walau langsung di refresh
+            localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
             
             showToast(`${item.ccNo} SELESAI`, "success");
             sendToReportSheet(item, "FINISH");
@@ -590,26 +611,28 @@
         }
 
         function sendToReportSheet(item, action) {
+            // Mengambil tanggal hari ini untuk kolom DATE
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('id-ID'); // Format lokal, e.g., 10/5/2026
+
+            // Menyesuaikan payload dengan kolom di spreadsheet "PRODUCTION REPORT"
             const payload = { 
-                action, 
-                "LINE": item.line, 
-                "CC NO": item.ccNo, 
-                "ORDER NO": item.orderNo,
-                "CUSTOMER": item.customer, 
-                "SPEC": item.spec || "KOSONG DI WEB", 
-                "PLACE": item.place || "-", 
-                "SIZE": item.size, 
-                "WEIGHT": item.weight,
-                "START": item.startTime || "-",
-                "FINISH": item.finishedAt || "-",
-                "KENDALA": item.kendala || "-",
-                "DURASI KENDALA": item.kendalaWaktu || "0",
-                "LEBAR": item.productWidth || "-",
+                action, // Tetap dipertahankan agar script tahu ini data baru
+                "DATE": dateStr,
+                "CC NO": item.ccNo || "-", 
+                "CUSTOMER": item.customer || "-", 
+                "SPEC": item.spec || "-", 
+                "SIZE": item.size || "-", 
+                "WEIGHT": item.weight || 0,
+                "PRODUCT SIZE": item.productWidth || "-",
                 "QTY FG": item.qtyFG || "0",
                 "QTY NG": item.qtyNG || "0",
-                "SPEED": item.speed || "0",
-                "REMARK": item.remark || "-",
-                "TIMESTAMP": new Date().toLocaleString()
+                "START": item.startTime || "-",
+                "FINISH": item.finishedAt || "-",
+                "DOWN TIME": item.kendalaWaktu || "0", // Menggunakan durasi kendala
+                "REMARK": item.remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"), // Gabung remark dan kendala jika ada
+                "LINE SPEED": item.speed || "0",
+                "LINE": item.line || "-"
             };
             fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         }
