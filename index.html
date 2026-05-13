@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSSI - Downshear Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -64,7 +64,6 @@
                 </div>
                 <div class="w-20 h-20 relative"><canvas id="chart-ds1"></canvas></div>
             </div>
-            <!-- ... DS2 and DS3 Stat Cards follow the same pattern ... -->
             <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
                 <div>
                     <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 2</p>
@@ -127,7 +126,6 @@
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-slate-50">
-                        <!-- Data will be injected here -->
                     </tbody>
                 </table>
             </div>
@@ -252,7 +250,6 @@
                 DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
             },
             FINISH: {
-                // TODO: Ganti angka gid di bawah dengan gid asli dari masing-masing tab REPORT
                 DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1963690094&single=true&output=csv",
                 DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=43797719&single=true&output=csv",
                 DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=923781372&single=true&output=csv"
@@ -271,54 +268,204 @@
         let html5QrCode = null;
         let charts = {};
 
+        function safeCreateIcons() {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
         window.onload = () => {
-            lucide.createIcons();
+            safeCreateIcons();
             initCharts();
             fetchAllData();
         };
 
-        function parseSheetCSV(line, text) {
-            const rows = text.split(/\r?\n/).map(row => {
-                let arr = []; let cur = ""; let q = false;
-                for(let c of row) {
-                    if(c === '"') q = !q;
-                    else if(c === ',' && !q) { arr.push(cur.trim()); cur = ""; }
-                    else cur += c;
-                }
-                arr.push(cur.trim()); return arr;
-            });
+        // ─── PERBAIKAN UTAMA: Parser CSV yang lebih robust ───────────────────────────
+        function parseCSVLine(row) {
+            let arr = []; let cur = ""; let q = false;
+            for (let c of row) {
+                if (c === '"') q = !q;
+                else if (c === ',' && !q) { arr.push(cur.trim()); cur = ""; }
+                else cur += c;
+            }
+            arr.push(cur.trim());
+            return arr;
+        }
 
+        // Parser untuk sheet WAITING - dengan auto-detect baris header
+        function parseWaitingCSV(line, text) {
+            const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
-            const headers = rows[0].map(h => h.toUpperCase().replace(/\s+/g, ' '));
+
+            // Auto-detect baris header (skip judul/baris kosong di atas)
+            const HEADER_KEYWORDS = ['ORDER','CC NO','CCNO','PACKING','CUSTOMER','SPEC','SIZE','WEIGHT','QTY','PLACE'];
+            let headerRowIdx = 0;
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                const rowText = rows[i].join(' ').toUpperCase();
+                const matchCount = HEADER_KEYWORDS.filter(k => rowText.includes(k)).length;
+                if (matchCount >= 2) { headerRowIdx = i; break; }
+            }
+
+            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
 
             const col = {
                 order: findIdx(['ORDER']),
-                cust: findIdx(['CUSTOMER', 'PEMBELI']),
-                cc: findIdx(['PACKING NO', 'CC NO', 'CC.', 'IDENTITY']), 
-                spec: findIdx(['SPEC', 'MUTU', 'GRADE']),
+                cust:  findIdx(['CUSTOMER', 'PEMBELI']),
+                cc:    findIdx(['PACKING NO', 'CC NO', 'CC.', 'IDENTITY']),
+                spec:  findIdx(['SPEC', 'MUTU', 'GRADE']),
                 place: findIdx(['PLACE', 'LOKASI', 'POS']),
-                size: findIdx(['SIZE', 'DIMENSI']),
-                kg: findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
+                size:  findIdx(['SIZE', 'DIMENSI']),
+                kg:    findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
             };
 
-            // Menggunakan kolom CC NO sebagai prioritas jika kolom ORDER tidak ada di sheet Report
-            const checkCol = col.order !== -1 ? col.order : (col.cc !== -1 ? col.cc : 0);
+            // Gunakan kolom CC sebagai acuan validasi baris jika ORDER tidak ada
+            const anchorCol = col.cc !== -1 ? col.cc : (col.order !== -1 ? col.order : 0);
 
-            return rows.slice(1).filter(r => r[checkCol]).map((r, i) => ({
-                id: `${line}-${i}-${col.cc !== -1 ? r[col.cc] : 'x'}`,
-                line: line,
-                orderNo: col.order !== -1 ? (r[col.order] || "-") : "-",
-                customer: col.cust !== -1 ? (r[col.cust] || "-") : "-",
-                ccNo: col.cc !== -1 ? (r[col.cc] || "-") : "-",
-                spec: col.spec !== -1 ? (r[col.spec] || "-") : "-",
-                place: col.place !== -1 ? (r[col.place] || "-") : "-",
-                size: col.size !== -1 ? (r[col.size] || "-") : "-",
-                weight: parseFloat(col.kg !== -1 ? r[col.kg]?.replace(/[^\d.]/g, '') : 0) || 0,
-                status: "WAITING",
-                kendala: "",
-                kendalaWaktu: ""
-            }));
+            return rows.slice(headerRowIdx + 1)
+                .filter(r => r[anchorCol] && r[anchorCol].trim() !== '')
+                .map((r, i) => ({
+                    id: `${line}-W-${i}-${col.cc !== -1 ? r[col.cc] : i}`,
+                    line,
+                    orderNo:  col.order !== -1 ? (r[col.order] || "") : "",
+                    customer: col.cust  !== -1 ? (r[col.cust]  || "") : "",
+                    ccNo:     col.cc    !== -1 ? (r[col.cc]    || "") : "",
+                    spec:     col.spec  !== -1 ? (r[col.spec]  || "") : "",
+                    place:    col.place !== -1 ? (r[col.place] || "") : "",
+                    size:     col.size  !== -1 ? (r[col.size]  || "") : "",
+                    weight:   parseFloat((col.kg !== -1 ? r[col.kg] : '0')?.replace(/[^\d.]/g, '')) || 0,
+                    status: "WAITING",
+                    kendala: "",
+                    kendalaWaktu: ""
+                }));
+        }
+
+        // ─── PERBAIKAN: Parser khusus sheet FINISH/REPORT ────────────────────────────
+        // Sheet Report memiliki kolom: DATE, CC NO, CUSTOMER, SPEC, SIZE, WEIGHT,
+        // PRODUCT SIZE, QTY FG, QTY NG, START, FINISH, DOWN TIME, REMARK, LINE SPEED, LINE
+        function parseFinishCSV(line, text) {
+            const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
+            if (rows.length < 2) return [];
+
+            // ── Auto-detect baris header: cari baris yang mengandung kata kunci kolom ──
+            // Menangani spreadsheet yang punya baris judul/kosong sebelum header
+            const HEADER_KEYWORDS = ['CC NO','CCNO','DATE','QTY FG','CUSTOMER','SPEC','SIZE','WEIGHT','LINE'];
+            let headerRowIdx = 0;
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                const rowText = rows[i].join(' ').toUpperCase();
+                const matchCount = HEADER_KEYWORDS.filter(k => rowText.includes(k)).length;
+                if (matchCount >= 3) { headerRowIdx = i; break; }
+            }
+
+            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
+            const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+            console.log(`[HSSI] Sheet FINISH ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
+
+            // ── Log header ke console untuk debugging ──────────────────────────────────
+            console.group(`[HSSI] Header Sheet FINISH - ${line}`);
+            console.log('Header asli:', rows[0]);
+            console.log('Header parsed:', headers);
+
+            const col = {
+                date:        findIdx(['DATE', 'TGL', 'TANGGAL']),
+                // Diperluas: tangkap berbagai variasi nama kolom CC NO di spreadsheet
+                cc:          findIdx(['CC NO', 'CCNO', 'NO CC', 'NO. CC', 'CC.NO', 'CC NUMBER',
+                                      'PACKING NO', 'PACK NO', 'PACK. NO', 'PACKNO',
+                                      'CC.', 'IDENTITY', 'COIL NO', 'NOMOR CC', 'ID COIL']),
+                cust:        findIdx(['CUSTOMER', 'PEMBELI', 'NAMA PEMBELI', 'CUST']),
+                spec:        findIdx(['SPEC', 'MUTU', 'GRADE', 'SPESIFIKASI']),
+                size:        findIdx(['SIZE', 'DIMENSI', 'UKURAN']),
+                weight:      findIdx(['WEIGHT', 'BERAT', 'BOBOT']),
+                productSize: findIdx(['PRODUCT SIZE', 'PROD SIZE', 'LEBAR', 'WIDTH']),
+                qtyFG:       findIdx(['QTY FG', 'QTYFG', 'FG', 'FINISH GOOD', 'FINISH GOODS']),
+                qtyNG:       findIdx(['QTY NG', 'QTYNG', 'NG', 'NOT GOOD']),
+                start:       findIdx(['START', 'MULAI', 'JAM MULAI', 'WAKTU MULAI']),
+                finish:      findIdx(['FINISH', 'SELESAI', 'JAM SELESAI', 'WAKTU SELESAI']),
+                downTime:    findIdx(['DOWN TIME', 'DOWNTIME', 'DT', 'WAKTU DT']),
+                remark:      findIdx(['REMARK', 'CATATAN', 'KET', 'KETERANGAN', 'NOTE']),
+                speed:       findIdx(['LINE SPEED', 'SPEED', 'KECEPATAN']),
+                lineCol:     findIdx(['LINE']),
+                order:       findIdx(['ORDER NO', 'ORDER', 'NO ORDER', 'NOMOR ORDER'])
+            };
+
+            // Log hasil deteksi kolom
+            console.log('Hasil deteksi kolom:', {
+                'CC NO (col.cc)': col.cc === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
+                'CUSTOMER':       col.cust === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
+                'SPEC':           col.spec === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
+                'SIZE':           col.size === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
+                'QTY FG':         col.qtyFG === -1 ? '❌' : `✅ Kolom ${col.qtyFG} = "${headers[col.qtyFG]}"`,
+                'LINE':           col.lineCol === -1 ? '❌' : `✅ Kolom ${col.lineCol} = "${headers[col.lineCol]}"`,
+                'ORDER':          col.order === -1 ? '❌' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
+            });
+            if (col.cc === -1) {
+                console.warn(`⚠️ Kolom CC NO tidak ditemukan di sheet ${line}!`);
+                console.warn('Nama kolom yang tersedia:', headers.join(' | '));
+            }
+            console.groupEnd();
+
+            // Validasi baris: CC NO wajib ada dan bermakna
+            // Jika kolom CC tidak ditemukan, gunakan kolom pertama TAPI tandai hasil sebagai tidak valid
+            const anchorCol = col.cc !== -1 ? col.cc : -99;
+            const isValidRow = (r) => {
+                if (!r || r.length <= 1) return false;
+                if (anchorCol === -99) return false; // kolom CC tidak dikenal → tolak semua baris
+                const val = (r[anchorCol] || '').trim();
+                if (val === '' || val === '-' || val === '\u2014' || val === '--') return false;
+                if (val.length < 3) return false;
+                // Pastikan minimal ada 2 kolom lain yang bermakna (bukan baris summary/total)
+                const meaningful = r.filter(c => {
+                    const v = (c || '').trim();
+                    return v !== '' && v !== '-' && v !== '\u2014' && v !== '0';
+                });
+                return meaningful.length >= 3;
+            };
+
+            return rows.slice(headerRowIdx + 1)
+                .filter(r => isValidRow(r))
+                .map((r, i) => {
+                    const ccVal    = col.cc    !== -1 ? (r[col.cc]    || "") : "";
+                    const custVal  = col.cust  !== -1 ? (r[col.cust]  || "") : "";
+                    const specVal  = col.spec  !== -1 ? (r[col.spec]  || "") : "";
+                    const sizeVal  = col.size  !== -1 ? (r[col.size]  || "") : "";
+                    const qtyFGVal = col.qtyFG !== -1 ? (r[col.qtyFG] || "0") : "0";
+                    const weightVal = parseFloat(
+                        (col.weight !== -1 ? r[col.weight] : (col.qtyFG !== -1 ? r[col.qtyFG] : '0'))
+                        ?.replace(/[^\d.]/g, '')
+                    ) || 0;
+
+                    // Tentukan line: ambil dari kolom LINE di sheet jika ada,
+                    // jika tidak pakai parameter `line` (nama tab)
+                    let lineVal = line;
+                    if (col.lineCol !== -1 && r[col.lineCol] && r[col.lineCol].trim() !== '') {
+                        lineVal = r[col.lineCol].trim().toUpperCase();
+                        // Normalisasi: "DS 1" → "DS1"
+                        lineVal = lineVal.replace(/\s+/g, '');
+                        if (!['DS1','DS2','DS3'].includes(lineVal)) lineVal = line;
+                    }
+
+                    return {
+                        id: `${line}-F-${i}-${ccVal}`,
+                        line: lineVal,
+                        // PERBAIKAN tanda "-": orderNo diambil dari kolom ORDER jika ada,
+                        // jika tidak ada di sheet FINISH, kosongkan saja (jangan tampilkan "-")
+                        orderNo:     col.order !== -1 ? (r[col.order] || "") : "",
+                        customer:    custVal,
+                        ccNo:        ccVal,
+                        spec:        specVal,
+                        place:       col.date !== -1 ? (r[col.date] || "") : "", // tampilkan DATE di kolom Place
+                        size:        sizeVal,
+                        weight:      weightVal,
+                        productWidth: col.productSize !== -1 ? (r[col.productSize] || "") : "",
+                        qtyFG:       qtyFGVal,
+                        qtyNG:       col.qtyNG    !== -1 ? (r[col.qtyNG]    || "0") : "0",
+                        startTime:   col.start    !== -1 ? (r[col.start]    || "") : "",
+                        finishedAt:  col.finish   !== -1 ? (r[col.finish]   || "") : "",
+                        kendalaWaktu:col.downTime !== -1 ? (r[col.downTime] || "0") : "0",
+                        remark:      col.remark   !== -1 ? (r[col.remark]   || "") : "",
+                        speed:       col.speed    !== -1 ? (r[col.speed]    || "0") : "0",
+                        status: "COMPLETED"
+                    };
+                });
         }
 
         async function fetchAllData() {
@@ -326,62 +473,79 @@
             if (statusEl) {
                 statusEl.innerText = "SINKRONISASI SEDANG BERJALAN...";
                 statusEl.classList.replace('text-emerald-400', 'text-amber-400');
+                statusEl.classList.replace('text-rose-400', 'text-amber-400');
             }
-            
+
             try {
                 // Fetch WAITING data
-                const resultsWaiting = await Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async line => {
-                    try {
-                        const res = await fetch(SHEET_CONFIG.WAITING[line]);
-                        const text = await res.text();
-                        return parseSheetCSV(line, text);
-                    } catch(e) { return []; }
-                }));
+                const resultsWaiting = await Promise.all(
+                    Object.keys(SHEET_CONFIG.WAITING).map(async line => {
+                        try {
+                            const res = await fetch(SHEET_CONFIG.WAITING[line]);
+                            const text = await res.text();
+                            return parseWaitingCSV(line, text);
+                        } catch(e) { return []; }
+                    })
+                );
 
-                // Fetch FINISH data
-                const resultsFinish = await Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async line => {
-                    try {
-                        const res = await fetch(SHEET_CONFIG.FINISH[line]);
-                        if(!res.ok) return [];
-                        const text = await res.text();
-                        const parsed = parseSheetCSV(line, text);
-                        return parsed.map(p => ({...p, status: 'COMPLETED'})); // Set status jadi FINISH
-                    } catch(e) { return []; }
-                }));
+                // Fetch FINISH data — gunakan parser khusus
+                const resultsFinish = await Promise.all(
+                    Object.keys(SHEET_CONFIG.FINISH).map(async line => {
+                        try {
+                            const res = await fetch(SHEET_CONFIG.FINISH[line]);
+                            if (!res.ok) return [];
+                            const text = await res.text();
+                            return parseFinishCSV(line, text);
+                        } catch(e) { return []; }
+                    })
+                );
 
                 const newWaitingData = resultsWaiting.flat();
-                let fetchedFinishData = resultsFinish.flat();
-                
-                // Mencegah data hilang saat direfresh karena delay cache Google Sheet CSV
+                const fetchedFinishData = resultsFinish.flat();
+
+                // Merge dengan data lokal agar tidak hilang karena cache Google Sheet CSV
                 const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]');
                 const mergedFinish = [...fetchedFinishData];
-                
+
+                // Filter data lokal: buang entri lama yang CC-nya kosong / "-" (sisa bug versi lama)
+                const isValidCC = (cc) => cc && cc.trim() !== '' && cc.trim() !== '-' && cc.trim() !== '\u2014' && cc.trim().length >= 3;
+
                 localFinish.forEach(lf => {
-                    // Jika data lokal belum ada di hasil fetch server, tambahkan ke layar
-                    if(!mergedFinish.find(mf => mf.ccNo === lf.ccNo)) {
+                    if (!isValidCC(lf.ccNo)) return; // buang data tidak valid
+                    if (!mergedFinish.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) {
                         mergedFinish.unshift(lf);
                     }
                 });
 
+                // Bersihkan localStorage dari data tidak valid sekalian
+                const cleanLocal = localFinish.filter(lf => isValidCC(lf.ccNo));
+                if (cleanLocal.length !== localFinish.length) {
+                    localStorage.setItem('hssi_finish_data', JSON.stringify(cleanLocal));
+                }
+
                 finishData = mergedFinish;
-                completedItems = [...finishData]; // Penting: Agar chart & tonase dashboard tidak 0 saat refresh
-                
-                // Preserve state of items in process
+                completedItems = [...finishData];
+
+                // Pertahankan state item yang sedang ON PROCESS
                 appData = newWaitingData.map(item => {
                     const existing = appData.find(ex => ex.ccNo === item.ccNo && ex.line === item.line);
-                    return existing ? { ...item, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu } : item;
+                    return existing
+                        ? { ...item, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu }
+                        : item;
                 });
 
                 if (statusEl) {
                     statusEl.innerText = "TERHUBUNG KE SERVER";
                     statusEl.classList.replace('text-amber-400', 'text-emerald-400');
                 }
+
                 renderTable();
                 updateStats();
             } catch (err) {
+                console.error(err);
                 if (statusEl) {
                     statusEl.innerText = "GANTI KONEKSI / SERVER DOWN";
-                    statusEl.classList.replace('text-emerald-400', 'text-rose-400');
+                    statusEl.classList.replace('text-amber-400', 'text-rose-400');
                 }
             }
         }
@@ -390,41 +554,57 @@
             const tbody = document.getElementById('table-body');
             if (!tbody) return;
 
-            // Pilih data berdasarkan menu aktif
-            let sourceData = activeMenu === 'WAITING' ? appData : finishData;
+            const isFinishMenu = activeMenu === 'FINISH';
+            let sourceData = isFinishMenu ? finishData : appData;
 
             let data = activeLine === 'ALL' ? sourceData : sourceData.filter(i => i.line === activeLine);
-            if(searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
+            if (searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
 
-            if(data.length === 0) {
+            if (data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = data.map(item => `
+            tbody.innerHTML = data.map(item => {
+                // Kolom "Order / Customer": untuk FINISH sheet mungkin orderNo kosong,
+                // tampilkan customer saja atau CC No sebagai identitas utama
+                const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
+                    ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
+                    : `<div class="font-bold text-slate-500 leading-tight text-[10px] italic">—</div>`;
+
+                const custDisplay = item.customer && item.customer.trim() !== ''
+                    ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>`
+                    : '';
+
+                // Kolom "Place": untuk FINISH, tampilkan tanggal (DATE) yang tersimpan di field place
+                const placeDisplay = item.place && item.place.trim() !== ''
+                    ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
+                    : `<span class="text-slate-300 text-[9px]">—</span>`;
+
+                return `
                 <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
                     <td class="px-4 py-4 text-center">
                         <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
                     </td>
                     <td class="px-4 py-4">
-                        <div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>
-                        <div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>
+                        ${orderDisplay}
+                        ${custDisplay}
                     </td>
-                    <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo}</td>
+                    <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo || '—'}</td>
                     <td class="px-4 py-4">
-                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec}</span>
+                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
                     </td>
                     <td class="px-4 py-4">
-                        <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>
+                        ${placeDisplay}
                     </td>
-                    <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size}</td>
-                    <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight.toLocaleString()}</td>
+                    <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size || '—'}</td>
+                    <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight ? item.weight.toLocaleString() : '—'}</td>
                     <td class="px-4 py-4 text-center">
                         <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : item.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
                         ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase tracking-tighter">⚠️ ${item.kendala}</div>` : ''}
                     </td>
                     <td class="px-4 py-4 text-center">
-                        ${activeMenu === 'WAITING' ? `
+                        ${!isFinishMenu ? `
                         <div class="flex gap-1 justify-center">
                             <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status === 'ON PROCESS' ? 'bg-emerald-500' : 'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
                                 <i data-lucide="${item.status === 'ON PROCESS' ? 'check-square' : 'play'}" class="w-4 h-4"></i>
@@ -434,31 +614,35 @@
                             </button>
                         </div>
                         ` : `
-                        <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest"><i data-lucide="check-circle" class="w-4 h-4 mx-auto mb-1"></i> SELESAI</span>
+                        <div class="flex flex-col items-center gap-0.5">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
+                            ${item.finishedAt ? `<span class="text-[8px] font-black text-slate-400 uppercase">${item.finishedAt}</span>` : ''}
+                        </div>
                         `}
                     </td>
-                </tr>
-            `).join('');
-            lucide.createIcons();
+                </tr>`;
+            }).join('');
+
+            safeCreateIcons();
         }
 
         function processScan(val) {
-            if(!val) return;
+            if (!val) return;
             const item = appData.find(i => i.ccNo === val || i.orderNo === val);
             if (!item) { showToast("Item tidak terdaftar di antrean!", "error"); return; }
 
             if (item.status === "WAITING") {
                 item.status = "ON PROCESS";
                 item.startTime = new Date().toLocaleTimeString();
-                showToast(`START: ${item.orderNo}`, "success");
+                showToast(`START: ${item.ccNo}`, "success");
                 sendToReportSheet(item, "START");
             } else if (item.status === "ON PROCESS") {
                 openFinishModal(item.id);
             }
-            
+
             const manualInput = document.getElementById('manualInput');
             if (manualInput) manualInput.value = '';
-            
+
             renderTable();
             updateStats();
         }
@@ -466,17 +650,17 @@
         function openFinishModal(id) {
             finishingItemId = id;
             const item = appData.find(i => i.id === id);
-            if(!item) return;
+            if (!item) return;
 
-            document.getElementById('finish-order-info').innerText = `${item.orderNo} | ${item.ccNo}`;
+            document.getElementById('finish-order-info').innerText = `${item.orderNo || item.ccNo} | ${item.ccNo}`;
             document.getElementById('finish-width').value = item.productWidth || "";
             document.getElementById('finish-qty-fg').value = "";
             document.getElementById('finish-qty-ng').value = "";
             document.getElementById('finish-speed').value = "";
             document.getElementById('finish-remark').value = "";
-            
+
             document.getElementById('modal-finish').classList.replace('hidden', 'flex');
-            lucide.createIcons();
+            safeCreateIcons();
         }
 
         function closeFinishModal() {
@@ -495,8 +679,8 @@
 
             item.status = "COMPLETED";
             const sekarang = new Date();
-            item.finishedAt = sekarang.getHours().toString().padStart(2, '0') + ":" + 
-                              sekarang.getMinutes().toString().padStart(2, '0') + ":" + 
+            item.finishedAt = sekarang.getHours().toString().padStart(2, '0') + ":" +
+                              sekarang.getMinutes().toString().padStart(2, '0') + ":" +
                               sekarang.getSeconds().toString().padStart(2, '0');
 
             item.productWidth = document.getElementById('finish-width').value;
@@ -504,18 +688,17 @@
             item.qtyNG = document.getElementById('finish-qty-ng').value || 0;
             item.speed = document.getElementById('finish-speed').value;
             item.remark = document.getElementById('finish-remark').value;
-            item.weight = parseFloat(qtyFG); // Memperbarui berat di layar dengan QTY FG aktual
+            item.weight = parseFloat(qtyFG);
 
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
-            finishData.unshift(item); // Masukkan langsung ke list finish
-            
-            // Menyimpan state ke Local Storage browser agar aman walau langsung di refresh
+            finishData.unshift(item);
+
             localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
-            
+
             showToast(`${item.ccNo} SELESAI`, "success");
             sendToReportSheet(item, "FINISH");
-            
+
             closeFinishModal();
             renderTable();
             updateStats();
@@ -524,16 +707,16 @@
         function openKendalaModal(id) {
             selectedItemId = id;
             const item = appData.find(i => i.id === id);
-            if(!item) return;
+            if (!item) return;
 
-            document.getElementById('modal-cc-info').innerText = `${item.orderNo} | ${item.ccNo}`;
+            document.getElementById('modal-cc-info').innerText = `${item.orderNo || item.ccNo} | ${item.ccNo}`;
             document.getElementById('kendala-select').value = "";
             document.getElementById('kendala-other-input').value = "";
             document.getElementById('kendala-waktu-input').value = "";
             document.getElementById('kendala-other-container').classList.add('hidden');
-            
+
             document.getElementById('modal-kendala').classList.replace('hidden', 'flex');
-            lucide.createIcons();
+            safeCreateIcons();
         }
 
         function closeKendalaModal() {
@@ -544,29 +727,25 @@
         function toggleOtherKendala() {
             const select = document.getElementById('kendala-select');
             const otherContainer = document.getElementById('kendala-other-container');
-            if (select.value === 'OTHER') {
-                otherContainer.classList.remove('hidden');
-            } else {
-                otherContainer.classList.add('hidden');
-            }
+            otherContainer.classList.toggle('hidden', select.value !== 'OTHER');
         }
 
         function saveKendala() {
             const select = document.getElementById('kendala-select');
             let jenis = select.value;
             const waktu = document.getElementById('kendala-waktu-input').value;
-            
-            if(!jenis) return showToast("Pilih jenis kendala!", "error");
-            if(jenis === 'OTHER') {
+
+            if (!jenis) return showToast("Pilih jenis kendala!", "error");
+            if (jenis === 'OTHER') {
                 jenis = document.getElementById('kendala-other-input').value || "OTHER";
             }
 
             const item = appData.find(i => i.id === selectedItemId);
-            if(item) {
+            if (item) {
                 item.kendala = jenis;
                 item.kendalaWaktu = waktu;
                 showToast("Kendala dilaporkan!");
-                sendToReportSheet(item, "KENDALA"); 
+                sendToReportSheet(item, "KENDALA");
                 renderTable();
                 closeKendalaModal();
             }
@@ -579,13 +758,13 @@
                 if (!canvas) return;
                 charts[line.id] = new Chart(canvas.getContext('2d'), {
                     type: 'doughnut',
-                    data: { 
-                        labels: ['Antri', 'Selesai'], 
-                        datasets: [{ data: [1, 0], backgroundColor: ['#f1f5f9', line.color], borderWidth: 0 }] 
+                    data: {
+                        labels: ['Antri', 'Selesai'],
+                        datasets: [{ data: [1, 0], backgroundColor: ['#f1f5f9', line.color], borderWidth: 0 }]
                     },
-                    options: { 
-                        responsive: true, maintainAspectRatio: false, cutout: '75%', 
-                        plugins: { legend: { display: false } } 
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '75%',
+                        plugins: { legend: { display: false } }
                     }
                 });
             });
@@ -595,15 +774,15 @@
             ['DS1', 'DS2', 'DS3'].forEach(line => {
                 const lineCompleted = completedItems.filter(i => i.line === line);
                 const lineWaiting = appData.filter(i => i.line === line);
-                const lineTon = lineCompleted.reduce((acc, curr) => acc + parseFloat(curr.weight), 0) / 1000;
-                
-                const tonEl = document.getElementById(`ton-${line.toLowerCase()}`);
+                const lineTon = lineCompleted.reduce((acc, curr) => acc + parseFloat(curr.weight || 0), 0) / 1000;
+
+                const tonEl   = document.getElementById(`ton-${line.toLowerCase()}`);
                 const countEl = document.getElementById(`count-${line.toLowerCase()}`);
-                
-                if (tonEl) tonEl.innerText = lineTon.toFixed(2);
+
+                if (tonEl)   tonEl.innerText   = lineTon.toFixed(2);
                 if (countEl) countEl.innerText = `${lineCompleted.length} Coil Selesai`;
-                
-                if(charts[line]) {
+
+                if (charts[line]) {
                     charts[line].data.datasets[0].data = [lineWaiting.length || 1, lineCompleted.length];
                     charts[line].update();
                 }
@@ -611,54 +790,53 @@
         }
 
         function sendToReportSheet(item, action) {
-            // Mengambil tanggal hari ini untuk kolom DATE
             const today = new Date();
-            const dateStr = today.toLocaleDateString('id-ID'); // Format lokal, e.g., 10/5/2026
+            const dateStr = today.toLocaleDateString('id-ID');
 
-            // Menyesuaikan payload dengan kolom di spreadsheet "PRODUCTION REPORT"
-            const payload = { 
-                action, // Tetap dipertahankan agar script tahu ini data baru
+            const payload = {
+                action,
                 "DATE": dateStr,
-                "CC NO": item.ccNo || "-", 
-                "CUSTOMER": item.customer || "-", 
-                "SPEC": item.spec || "-", 
-                "SIZE": item.size || "-", 
+                "CC NO": item.ccNo || "-",
+                "CUSTOMER": item.customer || "-",
+                "SPEC": item.spec || "-",
+                "SIZE": item.size || "-",
                 "WEIGHT": item.weight || 0,
                 "PRODUCT SIZE": item.productWidth || "-",
                 "QTY FG": item.qtyFG || "0",
                 "QTY NG": item.qtyNG || "0",
                 "START": item.startTime || "-",
                 "FINISH": item.finishedAt || "-",
-                "DOWN TIME": item.kendalaWaktu || "0", // Menggunakan durasi kendala
-                "REMARK": item.remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"), // Gabung remark dan kendala jika ada
+                "DOWN TIME": item.kendalaWaktu || "0",
+                "REMARK": item.remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
                 "LINE SPEED": item.speed || "0",
                 "LINE": item.line || "-"
             };
             fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         }
 
-        function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
-        
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            renderTable();
+        }
+
         function setMainMenu(menu) {
             activeMenu = menu;
-            const btnWait = document.getElementById('btn-menu-WAITING');
+            const btnWait   = document.getElementById('btn-menu-WAITING');
             const btnFinish = document.getElementById('btn-menu-FINISH');
-            
-            if (menu === 'WAITING') {
-                btnWait.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
-                btnFinish.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
-            } else {
-                btnFinish.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
-                btnWait.className = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
-            }
+            const activeClass   = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
+            const inactiveClass = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+
+            btnWait.className   = menu === 'WAITING' ? activeClass : inactiveClass;
+            btnFinish.className = menu === 'FINISH'  ? activeClass : inactiveClass;
             renderTable();
         }
 
         function setLine(line) {
             activeLine = line;
-            document.querySelectorAll('.line-nav').forEach(b => b.classList.remove('line-active', 'text-white', 'text-slate-400'));
-            document.querySelectorAll('.line-nav').forEach(b => b.classList.add('text-slate-400'));
-            
+            document.querySelectorAll('.line-nav').forEach(b => {
+                b.classList.remove('line-active', 'text-white');
+                b.classList.add('text-slate-400');
+            });
             const activeBtn = document.getElementById(`btn-${line}`);
             if (activeBtn) {
                 activeBtn.classList.remove('text-slate-400');
@@ -667,13 +845,13 @@
             renderTable();
         }
 
-        function showToast(msg, type='success') {
+        function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
-            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
+            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
             document.getElementById('toast-message').innerText = msg;
-            t.classList.remove('hidden'); 
+            t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 3000);
-            lucide.createIcons();
+            safeCreateIcons();
         }
 
         async function toggleScanner() {
@@ -685,9 +863,9 @@
             }
             container.classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { 
-                toggleScanner(); 
-                processScan(text); 
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+                toggleScanner();
+                processScan(text);
             });
         }
     </script>
