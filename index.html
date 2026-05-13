@@ -255,6 +255,8 @@
                 DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=923781372&single=true&output=csv"
             }
         };
+
+        // ── GANTI URL INI DENGAN APPS SCRIPT URL KAMU ──────────────────────────────
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0plVycmt0-wxrqE3Ztc8RY2VAGgUQiULqtRpnfSBkk-MwhuIsi9Lh4LMFHOCvaf0/exec";
 
         let appData = [];
@@ -278,7 +280,7 @@
             fetchAllData();
         };
 
-        // ─── PERBAIKAN UTAMA: Parser CSV yang lebih robust ───────────────────────────
+        // ─── CSV Parser yang robust ────────────────────────────────────────────────
         function parseCSVLine(row) {
             let arr = []; let cur = ""; let q = false;
             for (let c of row) {
@@ -290,12 +292,11 @@
             return arr;
         }
 
-        // Parser untuk sheet WAITING - dengan auto-detect baris header
+        // Parser untuk sheet WAITING
         function parseWaitingCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
 
-            // Auto-detect baris header (skip judul/baris kosong di atas)
             const HEADER_KEYWORDS = ['ORDER','CC NO','CCNO','PACKING','CUSTOMER','SPEC','SIZE','WEIGHT','QTY','PLACE'];
             let headerRowIdx = 0;
             for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -318,7 +319,6 @@
                 kg:    findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
             };
 
-            // Gunakan kolom CC sebagai acuan validasi baris jika ORDER tidak ada
             const anchorCol = col.cc !== -1 ? col.cc : (col.order !== -1 ? col.order : 0);
 
             return rows.slice(headerRowIdx + 1)
@@ -339,15 +339,14 @@
                 }));
         }
 
-        // ─── PERBAIKAN: Parser khusus sheet FINISH/REPORT ────────────────────────────
-        // Sheet Report memiliki kolom: DATE, CC NO, CUSTOMER, SPEC, SIZE, WEIGHT,
-        // PRODUCT SIZE, QTY FG, QTY NG, START, FINISH, DOWN TIME, REMARK, LINE SPEED, LINE
+        // ─── Parser khusus sheet FINISH/REPORT ────────────────────────────────────
+        // Kolom spreadsheet: DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE |
+        //                    WEIGHT | PRODUCT SIZE | QTY FG | QTY NG | START |
+        //                    FINISH | DOWN TIME | REMARK | LINE SPEED | LINE
         function parseFinishCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
 
-            // ── Auto-detect baris header: cari baris yang mengandung kata kunci kolom ──
-            // Menangani spreadsheet yang punya baris judul/kosong sebelum header
             const HEADER_KEYWORDS = ['CC NO','CCNO','DATE','QTY FG','CUSTOMER','SPEC','SIZE','WEIGHT','LINE'];
             let headerRowIdx = 0;
             for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -360,14 +359,13 @@
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
             console.log(`[HSSI] Sheet FINISH ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
 
-            // ── Log header ke console untuk debugging ──────────────────────────────────
             console.group(`[HSSI] Header Sheet FINISH - ${line}`);
-            console.log('Header asli:', rows[0]);
+            console.log('Header asli:', rows[headerRowIdx]);
             console.log('Header parsed:', headers);
 
             const col = {
                 date:        findIdx(['DATE', 'TGL', 'TANGGAL']),
-                // Diperluas: tangkap berbagai variasi nama kolom CC NO di spreadsheet
+                order:       findIdx(['ORDER NO', 'ORDER', 'NO ORDER', 'NOMOR ORDER']),
                 cc:          findIdx(['CC NO', 'CCNO', 'NO CC', 'NO. CC', 'CC.NO', 'CC NUMBER',
                                       'PACKING NO', 'PACK NO', 'PACK. NO', 'PACKNO',
                                       'CC.', 'IDENTITY', 'COIL NO', 'NOMOR CC', 'ID COIL']),
@@ -384,18 +382,15 @@
                 remark:      findIdx(['REMARK', 'CATATAN', 'KET', 'KETERANGAN', 'NOTE']),
                 speed:       findIdx(['LINE SPEED', 'SPEED', 'KECEPATAN']),
                 lineCol:     findIdx(['LINE']),
-                order:       findIdx(['ORDER NO', 'ORDER', 'NO ORDER', 'NOMOR ORDER'])
             };
 
-            // Log hasil deteksi kolom
             console.log('Hasil deteksi kolom:', {
-                'CC NO (col.cc)': col.cc === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
-                'CUSTOMER':       col.cust === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
-                'SPEC':           col.spec === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
-                'SIZE':           col.size === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
-                'QTY FG':         col.qtyFG === -1 ? '❌' : `✅ Kolom ${col.qtyFG} = "${headers[col.qtyFG]}"`,
+                'DATE':           col.date    === -1 ? '❌' : `✅ Kolom ${col.date} = "${headers[col.date]}"`,
+                'ORDER NO':       col.order   === -1 ? '❌' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
+                'CC NO (col.cc)': col.cc      === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
+                'CUSTOMER':       col.cust    === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
+                'QTY FG':         col.qtyFG   === -1 ? '❌' : `✅ Kolom ${col.qtyFG} = "${headers[col.qtyFG]}"`,
                 'LINE':           col.lineCol === -1 ? '❌' : `✅ Kolom ${col.lineCol} = "${headers[col.lineCol]}"`,
-                'ORDER':          col.order === -1 ? '❌' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
             });
             if (col.cc === -1) {
                 console.warn(`⚠️ Kolom CC NO tidak ditemukan di sheet ${line}!`);
@@ -403,16 +398,13 @@
             }
             console.groupEnd();
 
-            // Validasi baris: CC NO wajib ada dan bermakna
-            // Jika kolom CC tidak ditemukan, gunakan kolom pertama TAPI tandai hasil sebagai tidak valid
             const anchorCol = col.cc !== -1 ? col.cc : -99;
             const isValidRow = (r) => {
                 if (!r || r.length <= 1) return false;
-                if (anchorCol === -99) return false; // kolom CC tidak dikenal → tolak semua baris
+                if (anchorCol === -99) return false;
                 const val = (r[anchorCol] || '').trim();
                 if (val === '' || val === '-' || val === '\u2014' || val === '--') return false;
                 if (val.length < 3) return false;
-                // Pastikan minimal ada 2 kolom lain yang bermakna (bukan baris summary/total)
                 const meaningful = r.filter(c => {
                     const v = (c || '').trim();
                     return v !== '' && v !== '-' && v !== '\u2014' && v !== '0';
@@ -427,42 +419,35 @@
                     const custVal  = col.cust  !== -1 ? (r[col.cust]  || "") : "";
                     const specVal  = col.spec  !== -1 ? (r[col.spec]  || "") : "";
                     const sizeVal  = col.size  !== -1 ? (r[col.size]  || "") : "";
-                    const qtyFGVal = col.qtyFG !== -1 ? (r[col.qtyFG] || "0") : "0";
                     const weightVal = parseFloat(
                         (col.weight !== -1 ? r[col.weight] : (col.qtyFG !== -1 ? r[col.qtyFG] : '0'))
                         ?.replace(/[^\d.]/g, '')
                     ) || 0;
 
-                    // Tentukan line: ambil dari kolom LINE di sheet jika ada,
-                    // jika tidak pakai parameter `line` (nama tab)
                     let lineVal = line;
                     if (col.lineCol !== -1 && r[col.lineCol] && r[col.lineCol].trim() !== '') {
-                        lineVal = r[col.lineCol].trim().toUpperCase();
-                        // Normalisasi: "DS 1" → "DS1"
-                        lineVal = lineVal.replace(/\s+/g, '');
+                        lineVal = r[col.lineCol].trim().toUpperCase().replace(/\s+/g, '');
                         if (!['DS1','DS2','DS3'].includes(lineVal)) lineVal = line;
                     }
 
                     return {
                         id: `${line}-F-${i}-${ccVal}`,
                         line: lineVal,
-                        // PERBAIKAN tanda "-": orderNo diambil dari kolom ORDER jika ada,
-                        // jika tidak ada di sheet FINISH, kosongkan saja (jangan tampilkan "-")
-                        orderNo:     col.order !== -1 ? (r[col.order] || "") : "",
-                        customer:    custVal,
-                        ccNo:        ccVal,
-                        spec:        specVal,
-                        place:       col.date !== -1 ? (r[col.date] || "") : "", // tampilkan DATE di kolom Place
-                        size:        sizeVal,
-                        weight:      weightVal,
+                        orderNo:      col.order       !== -1 ? (r[col.order]       || "") : "",
+                        customer:     custVal,
+                        ccNo:         ccVal,
+                        spec:         specVal,
+                        place:        col.date        !== -1 ? (r[col.date]        || "") : "",
+                        size:         sizeVal,
+                        weight:       weightVal,
                         productWidth: col.productSize !== -1 ? (r[col.productSize] || "") : "",
-                        qtyFG:       qtyFGVal,
-                        qtyNG:       col.qtyNG    !== -1 ? (r[col.qtyNG]    || "0") : "0",
-                        startTime:   col.start    !== -1 ? (r[col.start]    || "") : "",
-                        finishedAt:  col.finish   !== -1 ? (r[col.finish]   || "") : "",
-                        kendalaWaktu:col.downTime !== -1 ? (r[col.downTime] || "0") : "0",
-                        remark:      col.remark   !== -1 ? (r[col.remark]   || "") : "",
-                        speed:       col.speed    !== -1 ? (r[col.speed]    || "0") : "0",
+                        qtyFG:        col.qtyFG       !== -1 ? (r[col.qtyFG]       || "0") : "0",
+                        qtyNG:        col.qtyNG       !== -1 ? (r[col.qtyNG]       || "0") : "0",
+                        startTime:    col.start       !== -1 ? (r[col.start]       || "") : "",
+                        finishedAt:   col.finish      !== -1 ? (r[col.finish]      || "") : "",
+                        kendalaWaktu: col.downTime    !== -1 ? (r[col.downTime]    || "0") : "0",
+                        remark:       col.remark      !== -1 ? (r[col.remark]      || "") : "",
+                        speed:        col.speed       !== -1 ? (r[col.speed]       || "0") : "0",
                         status: "COMPLETED"
                     };
                 });
@@ -477,7 +462,6 @@
             }
 
             try {
-                // Fetch WAITING data
                 const resultsWaiting = await Promise.all(
                     Object.keys(SHEET_CONFIG.WAITING).map(async line => {
                         try {
@@ -488,7 +472,6 @@
                     })
                 );
 
-                // Fetch FINISH data — gunakan parser khusus
                 const resultsFinish = await Promise.all(
                     Object.keys(SHEET_CONFIG.FINISH).map(async line => {
                         try {
@@ -503,21 +486,18 @@
                 const newWaitingData = resultsWaiting.flat();
                 const fetchedFinishData = resultsFinish.flat();
 
-                // Merge dengan data lokal agar tidak hilang karena cache Google Sheet CSV
                 const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]');
                 const mergedFinish = [...fetchedFinishData];
 
-                // Filter data lokal: buang entri lama yang CC-nya kosong / "-" (sisa bug versi lama)
                 const isValidCC = (cc) => cc && cc.trim() !== '' && cc.trim() !== '-' && cc.trim() !== '\u2014' && cc.trim().length >= 3;
 
                 localFinish.forEach(lf => {
-                    if (!isValidCC(lf.ccNo)) return; // buang data tidak valid
+                    if (!isValidCC(lf.ccNo)) return;
                     if (!mergedFinish.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) {
                         mergedFinish.unshift(lf);
                     }
                 });
 
-                // Bersihkan localStorage dari data tidak valid sekalian
                 const cleanLocal = localFinish.filter(lf => isValidCC(lf.ccNo));
                 if (cleanLocal.length !== localFinish.length) {
                     localStorage.setItem('hssi_finish_data', JSON.stringify(cleanLocal));
@@ -526,7 +506,6 @@
                 finishData = mergedFinish;
                 completedItems = [...finishData];
 
-                // Pertahankan state item yang sedang ON PROCESS
                 appData = newWaitingData.map(item => {
                     const existing = appData.find(ex => ex.ccNo === item.ccNo && ex.line === item.line);
                     return existing
@@ -566,8 +545,6 @@
             }
 
             tbody.innerHTML = data.map(item => {
-                // Kolom "Order / Customer": untuk FINISH sheet mungkin orderNo kosong,
-                // tampilkan customer saja atau CC No sebagai identitas utama
                 const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
                     ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
                     : `<div class="font-bold text-slate-500 leading-tight text-[10px] italic">—</div>`;
@@ -576,7 +553,6 @@
                     ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>`
                     : '';
 
-                // Kolom "Place": untuk FINISH, tampilkan tanggal (DATE) yang tersimpan di field place
                 const placeDisplay = item.place && item.place.trim() !== ''
                     ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
                     : `<span class="text-slate-300 text-[9px]">—</span>`;
@@ -633,7 +609,7 @@
 
             if (item.status === "WAITING") {
                 item.status = "ON PROCESS";
-                item.startTime = new Date().toLocaleTimeString();
+                item.startTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 showToast(`START: ${item.ccNo}`, "success");
                 sendToReportSheet(item, "START");
             } else if (item.status === "ON PROCESS") {
@@ -684,11 +660,11 @@
                               sekarang.getSeconds().toString().padStart(2, '0');
 
             item.productWidth = document.getElementById('finish-width').value;
-            item.qtyFG = qtyFG;
-            item.qtyNG = document.getElementById('finish-qty-ng').value || 0;
-            item.speed = document.getElementById('finish-speed').value;
-            item.remark = document.getElementById('finish-remark').value;
-            item.weight = parseFloat(qtyFG);
+            item.qtyFG        = qtyFG;
+            item.qtyNG        = document.getElementById('finish-qty-ng').value || 0;
+            item.speed        = document.getElementById('finish-speed').value;
+            item.remark       = document.getElementById('finish-remark').value;
+            item.weight       = parseFloat(qtyFG);
 
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
@@ -773,8 +749,8 @@
         function updateStats() {
             ['DS1', 'DS2', 'DS3'].forEach(line => {
                 const lineCompleted = completedItems.filter(i => i.line === line);
-                const lineWaiting = appData.filter(i => i.line === line);
-                const lineTon = lineCompleted.reduce((acc, curr) => acc + parseFloat(curr.weight || 0), 0) / 1000;
+                const lineWaiting   = appData.filter(i => i.line === line);
+                const lineTon       = lineCompleted.reduce((acc, curr) => acc + parseFloat(curr.weight || 0), 0) / 1000;
 
                 const tonEl   = document.getElementById(`ton-${line.toLowerCase()}`);
                 const countEl = document.getElementById(`count-${line.toLowerCase()}`);
@@ -789,29 +765,40 @@
             });
         }
 
+        // ─── FUNGSI KIRIM DATA KE SPREADSHEET ─────────────────────────────────────
+        // Urutan kolom disesuaikan dengan format spreadsheet:
+        // DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE | WEIGHT |
+        // PRODUCT SIZE | QTY FG | QTY NG | START | FINISH | DOWN TIME |
+        // REMARK | LINE SPEED | LINE
         function sendToReportSheet(item, action) {
             const today = new Date();
             const dateStr = today.toLocaleDateString('id-ID');
 
             const payload = {
                 action,
-                "DATE": dateStr,
-                "CC NO": item.ccNo || "-",
-                "CUSTOMER": item.customer || "-",
-                "SPEC": item.spec || "-",
-                "SIZE": item.size || "-",
-                "WEIGHT": item.weight || 0,
+                "DATE":         dateStr,
+                "ORDER NO":     item.orderNo      || "-",
+                "CC NO":        item.ccNo         || "-",
+                "CUSTOMER":     item.customer     || "-",
+                "SPEC":         item.spec         || "-",
+                "SIZE":         item.size         || "-",
+                "WEIGHT":       item.weight       || 0,
                 "PRODUCT SIZE": item.productWidth || "-",
-                "QTY FG": item.qtyFG || "0",
-                "QTY NG": item.qtyNG || "0",
-                "START": item.startTime || "-",
-                "FINISH": item.finishedAt || "-",
-                "DOWN TIME": item.kendalaWaktu || "0",
-                "REMARK": item.remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
-                "LINE SPEED": item.speed || "0",
-                "LINE": item.line || "-"
+                "QTY FG":       item.qtyFG        || "0",
+                "QTY NG":       item.qtyNG        || "0",
+                "START":        item.startTime    || "-",
+                "FINISH":       item.finishedAt   || "-",
+                "DOWN TIME":    item.kendalaWaktu || "0",
+                "REMARK":       item.remark       || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
+                "LINE SPEED":   item.speed        || "0",
+                "LINE":         item.line         || "-"
             };
-            fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
         }
 
         function handleSearch() {
