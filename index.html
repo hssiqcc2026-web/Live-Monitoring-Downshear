@@ -112,18 +112,8 @@
         <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
-                            <th class="px-4 py-6 text-center">Line</th>
-                            <th class="px-4 py-6">Order / Customer</th>
-                            <th class="px-4 py-6">Packing No</th>
-                            <th class="px-4 py-6">Spec</th>
-                            <th class="px-4 py-6">Place</th>
-                            <th class="px-4 py-6">Size</th>
-                            <th class="px-4 py-6 text-center">Berat (KG)</th>
-                            <th class="px-4 py-6 text-center">Status</th>
-                            <th class="px-4 py-6 text-center">Aksi</th>
-                        </tr>
+                    <thead id="table-head">
+                        <!-- Header di-render dinamis oleh renderTableHeader() -->
                     </thead>
                     <tbody id="table-body" class="divide-y divide-slate-50">
                     </tbody>
@@ -529,7 +519,54 @@
             }
         }
 
+        function renderTableHeader() {
+            const thead = document.getElementById('table-head');
+            if (!thead) return;
+
+            const thBase = 'px-4 py-5 whitespace-nowrap';
+            const thCenter = `${thBase} text-center`;
+
+            if (activeMenu === 'FINISH') {
+                // Header sesuai kolom Production Report spreadsheet
+                thead.innerHTML = `
+                <tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
+                    <th class="${thCenter}">Date</th>
+                    <th class="${thBase}">Order No</th>
+                    <th class="${thBase}">CC No</th>
+                    <th class="${thBase}">Customer</th>
+                    <th class="${thBase}">Spec</th>
+                    <th class="${thBase}">Size</th>
+                    <th class="${thCenter}">Weight</th>
+                    <th class="${thBase}">Product Size</th>
+                    <th class="${thCenter}">Qty FG</th>
+                    <th class="${thCenter}">Qty NG</th>
+                    <th class="${thCenter}">Start</th>
+                    <th class="${thCenter}">Finish</th>
+                    <th class="${thCenter}">Down Time</th>
+                    <th class="${thBase}">Remark</th>
+                    <th class="${thCenter}">Line Speed</th>
+                    <th class="${thCenter}">Line</th>
+                </tr>`;
+            } else {
+                // Header untuk WAITING LIST
+                thead.innerHTML = `
+                <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                    <th class="${thCenter}">Line</th>
+                    <th class="${thBase}">Order / Customer</th>
+                    <th class="${thBase}">Packing No</th>
+                    <th class="${thBase}">Spec</th>
+                    <th class="${thBase}">Place</th>
+                    <th class="${thBase}">Size</th>
+                    <th class="${thCenter}">Berat (KG)</th>
+                    <th class="${thCenter}">Status</th>
+                    <th class="${thCenter}">Aksi</th>
+                </tr>`;
+            }
+        }
+
         function renderTable() {
+            renderTableHeader();
+
             const tbody = document.getElementById('table-body');
             if (!tbody) return;
 
@@ -539,65 +576,103 @@
             let data = activeLine === 'ALL' ? sourceData : sourceData.filter(i => i.line === activeLine);
             if (searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
 
+            const colspan = isFinishMenu ? 16 : 9;
+
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${colspan}" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = data.map(item => {
-                const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
-                    ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
-                    : `<div class="font-bold text-slate-500 leading-tight text-[10px] italic">—</div>`;
+            if (isFinishMenu) {
+                // ── Render baris untuk FINISH PROCESS ──────────────────────────────
+                tbody.innerHTML = data.map(item => {
+                    const lineColor = item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600';
+                    const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
+                    const tdCenter = `${td} text-center`;
 
-                const custDisplay = item.customer && item.customer.trim() !== ''
-                    ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>`
-                    : '';
+                    return `
+                    <tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
+                        <td class="${tdCenter}">
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">${item.place || '—'}</span>
+                        </td>
+                        <td class="${td} font-bold text-slate-800">${item.orderNo || '—'}</td>
+                        <td class="${td} font-mono font-bold text-slate-700">${item.ccNo || '—'}</td>
+                        <td class="${td}">${item.customer || '—'}</td>
+                        <td class="${td}">
+                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
+                        </td>
+                        <td class="${td}">${item.size || '—'}</td>
+                        <td class="${tdCenter} font-bold">${item.weight ? item.weight.toLocaleString() : '—'}</td>
+                        <td class="${tdCenter}">${item.productWidth || '—'}</td>
+                        <td class="${tdCenter}">
+                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-bold text-[9px]">${item.qtyFG || '—'}</span>
+                        </td>
+                        <td class="${tdCenter}">
+                            <span class="px-2 py-0.5 ${parseFloat(item.qtyNG) > 0 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-400'} rounded font-bold text-[9px]">${item.qtyNG || '0'}</span>
+                        </td>
+                        <td class="${tdCenter} text-slate-500">${item.startTime || '—'}</td>
+                        <td class="${tdCenter} text-slate-500">${item.finishedAt || '—'}</td>
+                        <td class="${tdCenter}">
+                            ${parseFloat(item.kendalaWaktu) > 0
+                                ? `<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`
+                                : `<span class="text-slate-300 text-[9px]">0</span>`}
+                        </td>
+                        <td class="${td} max-w-[120px] truncate text-slate-500">${item.remark || '—'}</td>
+                        <td class="${tdCenter}">${item.speed || '—'}</td>
+                        <td class="${tdCenter}">
+                            <span class="px-2 py-1 ${lineColor} text-white rounded text-[9px] font-black">${item.line}</span>
+                        </td>
+                    </tr>`;
+                }).join('');
 
-                const placeDisplay = item.place && item.place.trim() !== ''
-                    ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
-                    : `<span class="text-slate-300 text-[9px]">—</span>`;
+            } else {
+                // ── Render baris untuk WAITING LIST ────────────────────────────────
+                tbody.innerHTML = data.map(item => {
+                    const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
+                        ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
+                        : `<div class="font-bold text-slate-500 leading-tight text-[10px] italic">—</div>`;
 
-                return `
-                <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
-                    <td class="px-4 py-4 text-center">
-                        <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
-                    </td>
-                    <td class="px-4 py-4">
-                        ${orderDisplay}
-                        ${custDisplay}
-                    </td>
-                    <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo || '—'}</td>
-                    <td class="px-4 py-4">
-                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
-                    </td>
-                    <td class="px-4 py-4">
-                        ${placeDisplay}
-                    </td>
-                    <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size || '—'}</td>
-                    <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight ? item.weight.toLocaleString() : '—'}</td>
-                    <td class="px-4 py-4 text-center">
-                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : item.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
-                        ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase tracking-tighter">⚠️ ${item.kendala}</div>` : ''}
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        ${!isFinishMenu ? `
-                        <div class="flex gap-1 justify-center">
-                            <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status === 'ON PROCESS' ? 'bg-emerald-500' : 'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
-                                <i data-lucide="${item.status === 'ON PROCESS' ? 'check-square' : 'play'}" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="openKendalaModal('${item.id}')" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
-                                <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        ` : `
-                        <div class="flex flex-col items-center gap-0.5">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
-                            ${item.finishedAt ? `<span class="text-[8px] font-black text-slate-400 uppercase">${item.finishedAt}</span>` : ''}
-                        </div>
-                        `}
-                    </td>
-                </tr>`;
-            }).join('');
+                    const custDisplay = item.customer && item.customer.trim() !== ''
+                        ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>`
+                        : '';
+
+                    const placeDisplay = item.place && item.place.trim() !== ''
+                        ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
+                        : `<span class="text-slate-300 text-[9px]">—</span>`;
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
+                        <td class="px-4 py-4 text-center">
+                            <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
+                        </td>
+                        <td class="px-4 py-4">
+                            ${orderDisplay}
+                            ${custDisplay}
+                        </td>
+                        <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo || '—'}</td>
+                        <td class="px-4 py-4">
+                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
+                        </td>
+                        <td class="px-4 py-4">${placeDisplay}</td>
+                        <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size || '—'}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight ? item.weight.toLocaleString() : '—'}</td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : item.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
+                            ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase tracking-tighter">⚠️ ${item.kendala}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-4 text-center">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status === 'ON PROCESS' ? 'bg-emerald-500' : 'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
+                                    <i data-lucide="${item.status === 'ON PROCESS' ? 'check-square' : 'play'}" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="openKendalaModal('${item.id}')" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
+                                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
 
             safeCreateIcons();
         }
