@@ -112,14 +112,10 @@
         <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
-                    <thead id="table-head">
-                        <!-- Header di-render dinamis oleh renderTableHeader() -->
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-50">
-                    </tbody>
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body" class="divide-y divide-slate-50"></tbody>
                 </table>
             </div>
-
             <div id="loading" class="hidden p-32 flex flex-col items-center justify-center">
                 <div class="w-12 h-12 border-[5px] border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sinkronisasi Database...</p>
@@ -149,8 +145,8 @@
 
     <!-- Finish Modal -->
     <div id="modal-finish" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
-        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
-            <div class="bg-[#0f172a] p-8 text-white flex justify-between items-start">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300 max-h-[95vh] flex flex-col">
+            <div class="bg-[#0f172a] p-8 text-white flex justify-between items-start flex-shrink-0">
                 <div>
                     <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
                     <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
@@ -159,33 +155,30 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="p-8 grid grid-cols-2 gap-6">
-                <div class="col-span-2 md:col-span-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Lebar Produk (MM)</label>
-                    <input type="text" id="finish-width" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+            <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                <div class="grid grid-cols-1 gap-6 mb-6">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
+                        <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                    </div>
                 </div>
-                <div class="col-span-2 md:col-span-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
-                    <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
+                    <button onclick="addProductRow()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Produk
+                    </button>
                 </div>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block text-emerald-600">Qty Finish Good (KG)</label>
-                    <input type="number" id="finish-qty-fg" class="w-full px-5 py-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block text-rose-500">Qty Not Good (KG)</label>
-                    <input type="number" id="finish-qty-ng" class="w-full px-5 py-4 bg-rose-50 border border-rose-100 rounded-2xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all" value="0">
-                </div>
-                <div class="col-span-2">
+                <div id="product-rows-container" class="flex flex-col gap-4 mb-6"></div>
+                <div class="mb-2">
                     <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Remark / Catatan</label>
                     <textarea id="finish-remark" rows="2" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Input keterangan jika ada..."></textarea>
                 </div>
-                <div class="col-span-2 mt-4">
-                    <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
-                        <i data-lucide="check-circle" class="w-5 h-5"></i>
-                        Simpan & Selesaikan
-                    </button>
-                </div>
+            </div>
+            <div class="px-8 pb-8 flex-shrink-0">
+                <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    Simpan & Selesaikan
+                </button>
             </div>
         </div>
     </div>
@@ -246,7 +239,6 @@
             }
         };
 
-        // ── GANTI URL INI DENGAN APPS SCRIPT URL KAMU ──────────────────────────────
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0plVycmt0-wxrqE3Ztc8RY2VAGgUQiULqtRpnfSBkk-MwhuIsi9Lh4LMFHOCvaf0/exec";
 
         let appData = [];
@@ -267,10 +259,11 @@
         window.onload = () => {
             safeCreateIcons();
             initCharts();
+            localStorage.removeItem('hssi_finish_data');
             fetchAllData();
         };
 
-        // ─── CSV Parser yang robust ────────────────────────────────────────────────
+        // ─── CSV Parser ────────────────────────────────────────────────────────────
         function parseCSVLine(row) {
             let arr = []; let cur = ""; let q = false;
             for (let c of row) {
@@ -282,7 +275,7 @@
             return arr;
         }
 
-        // Parser untuk sheet WAITING
+        // ─── Parser WAITING — BUG FIXED: console.log dipindah setelah const col ──
         function parseWaitingCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
@@ -297,17 +290,32 @@
 
             const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
 
+            // ✅ FIX: const col dideklarasikan SEBELUM digunakan di console.log
             const col = {
-                order: findIdx(['ORDER']),
+                order: (() => {
+                    const specific = headers.findIndex(h => h.includes('PROCESS ORDER') || h === 'ORDER NO' || h === 'ORDER NO.');
+                    if (specific !== -1) return specific;
+                    return headers.findIndex(h => h.includes('ORDER') && !h.includes('PACKING') && !h.includes('CC'));
+                })(),
                 cust:  findIdx(['CUSTOMER', 'PEMBELI']),
-                cc:    findIdx(['PACKING NO', 'CC NO', 'CC.', 'IDENTITY']),
-                spec:  findIdx(['SPEC', 'MUTU', 'GRADE']),
+                cc:    findIdx(['PACKING NO', 'CC NO', 'CC.', 'IDENTITY', 'PACKING']),
+                spec:  findIdx(['SPEC', 'MUTU', 'GRADE', 'COMMODITY']),
                 place: findIdx(['PLACE', 'LOKASI', 'POS']),
                 size:  findIdx(['SIZE', 'DIMENSI']),
                 kg:    findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
             };
+
+            // ✅ FIX: console.log sekarang ada di bawah const col
+            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
+            console.log(`[HSSI] WAITING ${line} - Kolom terdeteksi:`, {
+                'ORDER NO':   col.order === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
+                'CC/PACKING': col.cc    === -1 ? '❌' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
+                'CUSTOMER':   col.cust  === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
+                'SPEC':       col.spec  === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
+                'SIZE':       col.size  === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
+                'WEIGHT/QTY': col.kg    === -1 ? '❌' : `✅ Kolom ${col.kg} = "${headers[col.kg]}"`,
+            });
 
             const anchorCol = col.cc !== -1 ? col.cc : (col.order !== -1 ? col.order : 0);
 
@@ -329,10 +337,7 @@
                 }));
         }
 
-        // ─── Parser khusus sheet FINISH/REPORT ────────────────────────────────────
-        // Kolom spreadsheet: DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE |
-        //                    WEIGHT | PRODUCT SIZE | QTY FG | QTY NG | START |
-        //                    FINISH | DOWN TIME | REMARK | LINE SPEED | LINE
+        // ─── Parser FINISH ─────────────────────────────────────────────────────────
         function parseFinishCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
@@ -347,7 +352,6 @@
 
             const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-            console.log(`[HSSI] Sheet FINISH ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
 
             console.group(`[HSSI] Header Sheet FINISH - ${line}`);
             console.log('Header asli:', rows[headerRowIdx]);
@@ -458,7 +462,7 @@
                             const res = await fetch(SHEET_CONFIG.WAITING[line]);
                             const text = await res.text();
                             return parseWaitingCSV(line, text);
-                        } catch(e) { return []; }
+                        } catch(e) { console.error(`Error fetch WAITING ${line}:`, e); return []; }
                     })
                 );
 
@@ -469,31 +473,13 @@
                             if (!res.ok) return [];
                             const text = await res.text();
                             return parseFinishCSV(line, text);
-                        } catch(e) { return []; }
+                        } catch(e) { console.error(`Error fetch FINISH ${line}:`, e); return []; }
                     })
                 );
 
                 const newWaitingData = resultsWaiting.flat();
-                const fetchedFinishData = resultsFinish.flat();
 
-                const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]');
-                const mergedFinish = [...fetchedFinishData];
-
-                const isValidCC = (cc) => cc && cc.trim() !== '' && cc.trim() !== '-' && cc.trim() !== '\u2014' && cc.trim().length >= 3;
-
-                localFinish.forEach(lf => {
-                    if (!isValidCC(lf.ccNo)) return;
-                    if (!mergedFinish.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) {
-                        mergedFinish.unshift(lf);
-                    }
-                });
-
-                const cleanLocal = localFinish.filter(lf => isValidCC(lf.ccNo));
-                if (cleanLocal.length !== localFinish.length) {
-                    localStorage.setItem('hssi_finish_data', JSON.stringify(cleanLocal));
-                }
-
-                finishData = mergedFinish;
+                finishData = resultsFinish.flat();
                 completedItems = [...finishData];
 
                 appData = newWaitingData.map(item => {
@@ -527,7 +513,6 @@
             const thCenter = `${thBase} text-center`;
 
             if (activeMenu === 'FINISH') {
-                // Header sesuai kolom Production Report spreadsheet
                 thead.innerHTML = `
                 <tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
                     <th class="${thCenter}">Date</th>
@@ -548,7 +533,6 @@
                     <th class="${thCenter}">Line</th>
                 </tr>`;
             } else {
-                // Header untuk WAITING LIST
                 thead.innerHTML = `
                 <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
                     <th class="${thCenter}">Line</th>
@@ -584,7 +568,6 @@
             }
 
             if (isFinishMenu) {
-                // ── Render baris untuk FINISH PROCESS ──────────────────────────────
                 tbody.innerHTML = data.map(item => {
                     const lineColor = item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600';
                     const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
@@ -626,7 +609,6 @@
                 }).join('');
 
             } else {
-                // ── Render baris untuk WAITING LIST ────────────────────────────────
                 tbody.innerHTML = data.map(item => {
                     const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
                         ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
@@ -686,7 +668,6 @@
                 item.status = "ON PROCESS";
                 item.startTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 showToast(`START: ${item.ccNo}`, "success");
-                sendToReportSheet(item, "START");
             } else if (item.status === "ON PROCESS") {
                 openFinishModal(item.id);
             }
@@ -698,17 +679,60 @@
             updateStats();
         }
 
+        let productRowCounter = 0;
+
+        function addProductRow(qtyFG = '', qtyNG = '0', width = '') {
+            productRowCounter++;
+            const rowId = productRowCounter;
+            const container = document.getElementById('product-rows-container');
+            const isFirst = container.children.length === 0;
+
+            const div = document.createElement('div');
+            div.id = `product-row-${rowId}`;
+            div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
+            div.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>
+                    ${!isFirst ? `<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar Produk (MM)</label>
+                        <input type="text" id="width-${rowId}" value="${width}" placeholder="0"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty Finish Good (KG)</label>
+                        <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0"
+                            class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty Not Good (KG)</label>
+                        <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0"
+                            class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm">
+                    </div>
+                </div>`;
+            container.appendChild(div);
+            safeCreateIcons();
+        }
+
+        function removeProductRow(rowId) {
+            const el = document.getElementById(`product-row-${rowId}`);
+            if (el) el.remove();
+        }
+
         function openFinishModal(id) {
             finishingItemId = id;
             const item = appData.find(i => i.id === id);
             if (!item) return;
 
             document.getElementById('finish-order-info').innerText = `${item.orderNo || item.ccNo} | ${item.ccNo}`;
-            document.getElementById('finish-width').value = item.productWidth || "";
-            document.getElementById('finish-qty-fg').value = "";
-            document.getElementById('finish-qty-ng').value = "";
             document.getElementById('finish-speed').value = "";
             document.getElementById('finish-remark').value = "";
+
+            productRowCounter = 0;
+            document.getElementById('product-rows-container').innerHTML = '';
+            addProductRow();
 
             document.getElementById('modal-finish').classList.replace('hidden', 'flex');
             safeCreateIcons();
@@ -725,30 +749,83 @@
             if (idx === -1) return;
 
             const item = appData[idx];
-            const qtyFG = document.getElementById('finish-qty-fg').value;
-            if (!qtyFG) return showToast("Qty FG wajib diisi!", "error");
 
-            item.status = "COMPLETED";
-            const sekarang = new Date();
-            item.finishedAt = sekarang.getHours().toString().padStart(2, '0') + ":" +
-                              sekarang.getMinutes().toString().padStart(2, '0') + ":" +
-                              sekarang.getSeconds().toString().padStart(2, '0');
+            const container = document.getElementById('product-rows-container');
+            const rows = container.querySelectorAll('[id^="product-row-"]');
+            const products = [];
 
-            item.productWidth = document.getElementById('finish-width').value;
-            item.qtyFG        = qtyFG;
-            item.qtyNG        = document.getElementById('finish-qty-ng').value || 0;
-            item.speed        = document.getElementById('finish-speed').value;
-            item.remark       = document.getElementById('finish-remark').value;
-            item.weight       = parseFloat(qtyFG);
+            for (const row of rows) {
+                const rowId = row.id.replace('product-row-', '');
+                const widthEl = document.getElementById(`width-${rowId}`);
+                const fgEl    = document.getElementById(`fg-${rowId}`);
+                const ngEl    = document.getElementById(`ng-${rowId}`);
+                const w  = widthEl ? widthEl.value.trim() : '';
+                const fg = fgEl    ? fgEl.value.trim()    : '';
+                const ng = ngEl    ? ngEl.value.trim()    : '0';
+                if (!fg || parseFloat(fg) <= 0) {
+                    showToast(`Qty FG produk #${rowId} wajib diisi!`, "error");
+                    return;
+                }
+                products.push({ width: w, fg: parseFloat(fg), ng: parseFloat(ng) || 0 });
+            }
+
+            if (products.length === 0) {
+                showToast("Minimal 1 produk wajib diisi!", "error");
+                return;
+            }
+
+            const speed  = document.getElementById('finish-speed').value;
+            const remark = document.getElementById('finish-remark').value;
+
+            const sekarang  = new Date();
+            const finishTime = sekarang.getHours().toString().padStart(2,'0') + ":" +
+                               sekarang.getMinutes().toString().padStart(2,'0') + ":" +
+                               sekarang.getSeconds().toString().padStart(2,'0');
+            const dateStr = sekarang.toLocaleDateString('id-ID');
+
+            products.forEach((prod) => {
+                const payload = {
+                    action:         "FINISH",
+                    "DATE":         dateStr,
+                    "ORDER NO":     item.orderNo      || "-",
+                    "CC NO":        item.ccNo         || "-",
+                    "CUSTOMER":     item.customer     || "-",
+                    "SPEC":         item.spec         || "-",
+                    "SIZE":         item.size         || "-",
+                    "WEIGHT":       item.weight       || 0,
+                    "PRODUCT SIZE": prod.width        || "-",
+                    "QTY FG":       prod.fg,
+                    "QTY NG":       prod.ng,
+                    "START":        item.startTime    || "-",
+                    "FINISH":       finishTime,
+                    "DOWN TIME":    item.kendalaWaktu || "0",
+                    "REMARK":       remark            || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
+                    "LINE SPEED":   speed             || "0",
+                    "LINE":         item.line         || "-"
+                };
+                fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode:   'no-cors',
+                    body:   JSON.stringify(payload)
+                });
+            });
+
+            const totalFG = products.reduce((s, p) => s + p.fg, 0);
+            item.status       = "COMPLETED";
+            item.finishedAt   = finishTime;
+            item.productWidth = products.map(p => p.width).filter(Boolean).join(', ');
+            item.qtyFG        = totalFG;
+            item.qtyNG        = products.reduce((s, p) => s + p.ng, 0);
+            item.speed        = speed;
+            item.remark       = remark;
+            item.weight       = totalFG;
 
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
             finishData.unshift(item);
 
-            localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
-
-            showToast(`${item.ccNo} SELESAI`, "success");
-            sendToReportSheet(item, "FINISH");
+            const prodLabel = products.length > 1 ? ` (${products.length} produk)` : '';
+            showToast(`${item.ccNo} SELESAI${prodLabel}`, "success");
 
             closeFinishModal();
             renderTable();
@@ -840,12 +917,9 @@
             });
         }
 
-        // ─── FUNGSI KIRIM DATA KE SPREADSHEET ─────────────────────────────────────
-        // Urutan kolom disesuaikan dengan format spreadsheet:
-        // DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE | WEIGHT |
-        // PRODUCT SIZE | QTY FG | QTY NG | START | FINISH | DOWN TIME |
-        // REMARK | LINE SPEED | LINE
         function sendToReportSheet(item, action) {
+            if (action === "FINISH") return;
+
             const today = new Date();
             const dateStr = today.toLocaleDateString('id-ID');
 
