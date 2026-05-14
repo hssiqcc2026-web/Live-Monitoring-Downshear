@@ -12,11 +12,8 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .card-stat { border-radius: 2.5rem; transition: all 0.3s ease; border: 1px solid #eef2f6; }
-        .tab-active { color: #0f172a !important; border-bottom: 3px solid #10b981; }
         .line-active { background-color: #059669 !important; color: white !important; }
         .table-container { border-radius: 1.5rem; background: white; border: 1px solid #eef2f6; }
-        .btn-action { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .status-badge { font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; }
         .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
@@ -26,1046 +23,829 @@
 </head>
 <body class="text-slate-900 pb-20">
 
-    <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
-        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <div class="bg-white p-1.5 rounded-xl">
-                    <img src="https://placehold.co/100x40/ffffff/059669?text=HSSI" alt="Logo" class="h-8">
-                </div>
-                <div>
-                    <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
-                    <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">CONNECTED TO SERVER</p>
-                </div>
+<header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
+    <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <div class="bg-white p-1.5 rounded-xl">
+                <img src="https://placehold.co/100x40/ffffff/059669?text=HSSI" alt="Logo" class="h-8">
             </div>
-            <div class="flex items-center gap-3">
-                <div class="relative hidden lg:block">
-                    <input type="text" id="manualInput" onchange="processScan(this.value)" placeholder="Cari / Scan CC No..." class="w-72 bg-slate-800 border border-slate-700 text-xs px-5 py-2.5 rounded-2xl outline-none text-white focus:ring-2 focus:ring-emerald-500 transition-all">
-                    <button onclick="toggleScanner()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 p-1.5 rounded-lg text-white hover:bg-emerald-500 transition-all">
-                        <i data-lucide="camera" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <button onclick="fetchAllData()" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
-                    <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400 group-active:rotate-180 transition-transform"></i>
+            <div>
+                <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
+                <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">CONNECTED TO SERVER</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative hidden lg:block">
+                <input type="text" id="manualInput" onchange="processScan(this.value)" placeholder="Cari / Scan CC No..." class="w-72 bg-slate-800 border border-slate-700 text-xs px-5 py-2.5 rounded-2xl outline-none text-white focus:ring-2 focus:ring-emerald-500 transition-all">
+                <button onclick="toggleScanner()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 p-1.5 rounded-lg text-white hover:bg-emerald-500 transition-all">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
                 </button>
             </div>
+            <button onclick="fetchAllData()" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400 group-active:rotate-180 transition-transform"></i>
+            </button>
         </div>
-    </header>
+    </div>
+</header>
 
-    <main class="max-w-[1600px] mx-auto p-4 md:p-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
-                <div>
-                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 1</p>
-                    <div class="flex items-baseline gap-2">
-                        <h2 id="ton-ds1" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
-                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
-                    </div>
-                    <p id="count-ds1" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
+<main class="max-w-[1600px] mx-auto p-4 md:p-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center hover:shadow-md">
+            <div>
+                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 1</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 id="ton-ds1" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                    <span class="text-sm font-bold text-slate-400 italic">Ton</span>
                 </div>
-                <div class="w-20 h-20 relative"><canvas id="chart-ds1"></canvas></div>
+                <p id="count-ds1" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
             </div>
-            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
-                <div>
-                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 2</p>
-                    <div class="flex items-baseline gap-2">
-                        <h2 id="ton-ds2" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
-                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
-                    </div>
-                    <p id="count-ds2" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
+            <div class="w-20 h-20 relative"><canvas id="chart-ds1"></canvas></div>
+        </div>
+        <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center hover:shadow-md">
+            <div>
+                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 2</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 id="ton-ds2" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                    <span class="text-sm font-bold text-slate-400 italic">Ton</span>
                 </div>
-                <div class="w-20 h-20 relative"><canvas id="chart-ds2"></canvas></div>
+                <p id="count-ds2" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
             </div>
-            <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center group hover:shadow-md">
-                <div>
-                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 3</p>
-                    <div class="flex items-baseline gap-2">
-                        <h2 id="ton-ds3" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
-                        <span class="text-sm font-bold text-slate-400 italic">Ton</span>
-                    </div>
-                    <p id="count-ds3" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
+            <div class="w-20 h-20 relative"><canvas id="chart-ds2"></canvas></div>
+        </div>
+        <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center hover:shadow-md">
+            <div>
+                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Output DS 3</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 id="ton-ds3" class="text-5xl font-black text-slate-800 tracking-tighter">0.00</h2>
+                    <span class="text-sm font-bold text-slate-400 italic">Ton</span>
                 </div>
-                <div class="w-20 h-20 relative"><canvas id="chart-ds3"></canvas></div>
+                <p id="count-ds3" class="text-[10px] font-bold text-slate-400 uppercase mt-4">0 COIL SELESAI</p>
             </div>
-        </div>
-
-        <!-- Main Navigation -->
-        <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
-            <div class="inline-flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-200">
-                <button onclick="setMainMenu('WAITING')" id="btn-menu-WAITING" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md">WAITING LIST</button>
-                <button onclick="setMainMenu('FINISH')" id="btn-menu-FINISH" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700">FINISH PROCESS</button>
-            </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-6 mb-8 items-center">
-            <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
-                <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all line-active">All</button>
-                <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 1</button>
-                <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 2</button>
-                <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 3</button>
-            </div>
-            <div class="relative flex-1 w-full">
-                <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Spec..." class="w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold shadow-sm outline-none transition-all">
-            </div>
-        </div>
-
-        <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse">
-                    <thead id="table-head">
-                        <!-- Header di-render dinamis oleh renderTableHeader() -->
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-50">
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="loading" class="hidden p-32 flex flex-col items-center justify-center">
-                <div class="w-12 h-12 border-[5px] border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sinkronisasi Database...</p>
-            </div>
-            <div id="empty-state" class="hidden p-32 flex flex-col items-center justify-center text-center">
-                <i data-lucide="package-x" class="w-16 h-16 text-slate-200 mb-4"></i>
-                <h3 class="text-sm font-black text-slate-300 uppercase italic">Tidak Ada Data Ditemukan</h3>
-            </div>
-        </div>
-    </main>
-
-    <!-- Scanner Container -->
-    <div id="scanner-container" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
-            <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
-                <h3 class="font-black italic tracking-wider">SCAN QR / BARCODE</h3>
-                <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-100"></div>
-                <p class="text-xs text-center text-slate-400 mt-4 font-bold">Arahkan kamera ke QR Code / Barcode pada Coil</p>
-            </div>
+            <div class="w-20 h-20 relative"><canvas id="chart-ds3"></canvas></div>
         </div>
     </div>
 
-    <!-- Finish Modal -->
-    <div id="modal-finish" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
-        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300 max-h-[95vh] flex flex-col">
-            <div class="bg-[#0f172a] p-8 text-white flex justify-between items-start flex-shrink-0">
+    <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
+        <div class="inline-flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-200">
+            <button onclick="setMainMenu('WAITING')" id="btn-menu-WAITING" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md">WAITING LIST</button>
+            <button onclick="setMainMenu('FINISH')" id="btn-menu-FINISH" class="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700">FINISH PROCESS</button>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-6 mb-8 items-center">
+        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+            <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all line-active">All</button>
+            <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 1</button>
+            <button onclick="setLine('DS2')" id="btn-DS2" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 2</button>
+            <button onclick="setLine('DS3')" id="btn-DS3" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 3</button>
+        </div>
+        <div class="relative flex-1 w-full">
+            <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Spec..." class="w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold shadow-sm outline-none transition-all">
+        </div>
+    </div>
+
+    <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead id="table-head"></thead>
+                <tbody id="table-body" class="divide-y divide-slate-50"></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Scanner -->
+<div id="scanner-container" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 modal-overlay">
+    <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden">
+        <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
+            <h3 class="font-black italic tracking-wider">SCAN QR / BARCODE</h3>
+            <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-6">
+            <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-100"></div>
+            <p class="text-xs text-center text-slate-400 mt-4 font-bold">Arahkan kamera ke QR Code / Barcode pada Coil</p>
+        </div>
+    </div>
+</div>
+
+<!-- Finish Modal -->
+<div id="modal-finish" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 max-h-[95vh] flex flex-col">
+        <div class="bg-[#0f172a] p-8 text-white flex justify-between items-start flex-shrink-0">
+            <div>
+                <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
+                <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
+            </div>
+            <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+            <div class="grid grid-cols-1 gap-6 mb-6">
                 <div>
-                    <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
-                    <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
-                </div>
-                <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
-                <!-- Info umum: Speed saja, Lebar sudah per baris produk -->
-                <div class="grid grid-cols-1 gap-6 mb-6">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
-                        <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                    </div>
-                </div>
-
-                <!-- Label header produk -->
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
-                    <button onclick="addProductRow()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all">
-                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Produk
-                    </button>
-                </div>
-
-                <!-- Container baris produk -->
-                <div id="product-rows-container" class="flex flex-col gap-4 mb-6">
-                    <!-- Baris produk dirender oleh JS -->
-                </div>
-
-                <!-- Remark -->
-                <div class="mb-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Remark / Catatan</label>
-                    <textarea id="finish-remark" rows="2" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Input keterangan jika ada..."></textarea>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
+                    <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
                 </div>
             </div>
-
-            <!-- Tombol submit -->
-            <div class="px-8 pb-8 flex-shrink-0">
-                <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    Simpan & Selesaikan
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
+                <button onclick="addProductRow()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Produk
                 </button>
+            </div>
+            <div id="product-rows-container" class="flex flex-col gap-4 mb-6"></div>
+            <div class="mb-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Remark / Catatan</label>
+                <textarea id="finish-remark" rows="2" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Input keterangan jika ada..."></textarea>
+            </div>
+        </div>
+        <div class="px-8 pb-8 flex-shrink-0">
+            <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> Simpan & Selesaikan
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Kendala Modal -->
+<div id="modal-kendala" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div class="bg-rose-600 p-8 text-white">
+            <h3 class="text-2xl font-black italic tracking-tighter">LAPORAN KENDALA</h3>
+            <p id="modal-cc-info" class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
+        </div>
+        <div class="p-8">
+            <div class="mb-6">
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jenis Kendala</label>
+                <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500">
+                    <option value="">-- Pilih Kendala --</option>
+                    <option value="MECHANICAL">MECHANICAL ISSUE</option>
+                    <option value="ELECTRICAL">ELECTRICAL ISSUE</option>
+                    <option value="MATERIAL">MATERIAL QUALITY</option>
+                    <option value="UTILITY">POWER / AIR UTILITY</option>
+                    <option value="CRANE">CRANE WAITING</option>
+                    <option value="OTHER">OTHER (LAINNYA)</option>
+                </select>
+            </div>
+            <div id="kendala-other-container" class="mb-6 hidden">
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Detail Kendala Lainnya</label>
+                <input type="text" id="kendala-other-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="Ketik kendala...">
+            </div>
+            <div class="mb-8">
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Durasi (Menit) - Opsional</label>
+                <input type="number" id="kendala-waktu-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="0">
+            </div>
+            <div class="flex gap-4">
+                <button onclick="closeKendalaModal()" class="flex-1 px-8 py-4 rounded-2xl font-black text-slate-400 uppercase tracking-widest hover:bg-slate-100 transition-all">Batal</button>
+                <button onclick="saveKendala()" class="flex-[2] bg-rose-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-700 transition-all">Lapor Kendala</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Kendala Modal -->
-    <div id="modal-kendala" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
-            <div class="bg-rose-600 p-8 text-white">
-                <h3 class="text-2xl font-black italic tracking-tighter">LAPORAN KENDALA</h3>
-                <p id="modal-cc-info" class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
-            </div>
-            <div class="p-8">
-                <div class="mb-6">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jenis Kendala</label>
-                    <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500">
-                        <option value="">-- Pilih Kendala --</option>
-                        <option value="MECHANICAL">MECHANICAL ISSUE</option>
-                        <option value="ELECTRICAL">ELECTRICAL ISSUE</option>
-                        <option value="MATERIAL">MATERIAL QUALITY</option>
-                        <option value="UTILITY">POWER / AIR UTILITY</option>
-                        <option value="CRANE">CRANE WAITING</option>
-                        <option value="OTHER">OTHER (LAINNYA)</option>
-                    </select>
-                </div>
-                <div id="kendala-other-container" class="mb-6 hidden">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Detail Kendala Lainnya</label>
-                    <input type="text" id="kendala-other-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="Ketik kendala...">
-                </div>
-                <div class="mb-8">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Durasi (Menit) - Opsional</label>
-                    <input type="number" id="kendala-waktu-input" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="0">
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="closeKendalaModal()" class="flex-1 px-8 py-4 rounded-2xl font-black text-slate-400 uppercase tracking-widest hover:bg-slate-100 transition-all">Batal</button>
-                    <button onclick="saveKendala()" class="flex-[2] bg-rose-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Lapor Kendala</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up">
+    <i data-lucide="check-circle" class="w-5 h-5"></i>
+    <span id="toast-message">Pesan</span>
+</div>
 
-    <!-- Toast Component -->
-    <div id="toast" class="hidden">
-        <i data-lucide="check-circle" class="w-5 h-5"></i>
-        <span id="toast-message">Pesan</span>
-    </div>
+<script>
+const SHEET_CONFIG = {
+    WAITING: {
+        DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
+        DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
+        DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
+    },
+    FINISH: {
+        DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1963690094&single=true&output=csv",
+        DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=43797719&single=true&output=csv",
+        DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=923781372&single=true&output=csv"
+    }
+};
 
-    <script>
-        const SHEET_CONFIG = {
-            WAITING: {
-                DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
-                DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1839583056&single=true&output=csv",
-                DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=2002711566&single=true&output=csv"
-            },
-            FINISH: {
-                DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=1963690094&single=true&output=csv",
-                DS2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=43797719&single=true&output=csv",
-                DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=923781372&single=true&output=csv"
-            }
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv-6W63GHbDa1dVuNhV5DVBW8dupxBCSIFshtSLZUmXRnTz6ccQKMIcGHhkhB18C7J/exec";
+
+// ── Kolom DS PLANING — HARDCODE sesuai screenshot spreadsheet ──────────────
+// A(0)=SEQ No | B(1)=PROCESS No | C(2)=ORDER NO | D(3)=DELIVERY DATE
+// E(4)=NEXT PROCESS | F(5)=PLACE | G(6)=CC NO | H(7)=COMMODITY CODE
+// I(8)=SPEC | J(9)=OIL | K(10)=SIZE | L(11)=Product Width | M(12)=WEIGHT
+// N..S = kolom lain | T(19)=CUSTOMER
+const PLANING_COL = {
+    order:  2,   // C  = ORDER NO
+    cc:     6,   // G  = CC NO
+    spec:   8,   // I  = SPEC
+    size:   10,  // K  = SIZE
+    weight: 12,  // M  = WEIGHT
+    place:  5,   // F  = PLACE
+    cust:   19   // T  = CUSTOMER
+};
+
+let appData = [];
+let finishData = [];
+let completedItems = [];
+let activeMenu = 'WAITING';
+let activeLine = 'ALL';
+let searchQuery = '';
+let selectedItemId = null;
+let finishingItemId = null;
+let html5QrCode = null;
+let charts = {};
+
+function safeCreateIcons() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+window.onload = () => {
+    safeCreateIcons();
+    initCharts();
+    fetchAllData();
+};
+
+// ── CSV Parser ─────────────────────────────────────────────────────────────
+function parseCSVLine(row) {
+    let arr = [], cur = "", q = false;
+    for (let c of row) {
+        if (c === '"') q = !q;
+        else if (c === ',' && !q) { arr.push(cur.trim()); cur = ""; }
+        else cur += c;
+    }
+    arr.push(cur.trim());
+    return arr;
+}
+
+// ── Parser WAITING ────────────────────────────────────────────────────────
+// Menggunakan PLANING_COL hardcode PLUS auto-detect fallback untuk ORDER NO
+function parseWaitingCSV(line, text) {
+    const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
+    if (rows.length < 2) return [];
+
+    // Cari baris header
+    let headerRowIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        const t = rows[i].join(' ').toUpperCase();
+        if (t.includes('PACKING') || t.includes('ORDER NO') || t.includes('PROCESS ORDER') || t.includes('CC NO')) {
+            headerRowIdx = i;
+            break;
+        }
+    }
+
+    const headers = rows[headerRowIdx].map(h => (h || '').toUpperCase().replace(/\s+/g, ' ').trim());
+
+    // ── Auto-detect ORDER NO dari header sebagai fallback ──────────────────
+    const autoOrderIdx = headers.findIndex(h =>
+        h === 'ORDER NO' || h === 'ORDER' || h === 'NO ORDER' || h === 'PROCESS ORDER'
+    );
+
+    // ── Auto-detect CC NO dari header sebagai fallback ────────────────────
+    const autoCCIdx = headers.findIndex(h =>
+        h.includes('CC NO') || h.includes('CCNO') || h.includes('PACKING NO') || h.includes('PACK NO')
+    );
+
+    // Gunakan auto-detect jika valid, otherwise fallback ke hardcode
+    const C = {
+        order:  autoOrderIdx  !== -1 ? autoOrderIdx  : PLANING_COL.order,
+        cc:     autoCCIdx     !== -1 ? autoCCIdx     : PLANING_COL.cc,
+        spec:   PLANING_COL.spec,
+        size:   PLANING_COL.size,
+        weight: PLANING_COL.weight,
+        place:  PLANING_COL.place,
+        cust:   PLANING_COL.cust,
+    };
+
+    // Log untuk verifikasi
+    console.group(`[HSSI] parseWaitingCSV ${line}`);
+    console.log('Header row index:', headerRowIdx);
+    console.log('Kolom yang digunakan (auto-detect + hardcode):');
+    console.table({
+        'ORDER NO': { index: C.order,  header: headers[C.order]  || '???', source: autoOrderIdx !== -1 ? 'AUTO-DETECT' : 'HARDCODE' },
+        'CC NO':    { index: C.cc,     header: headers[C.cc]     || '???', source: autoCCIdx    !== -1 ? 'AUTO-DETECT' : 'HARDCODE' },
+        'SPEC':     { index: C.spec,   header: headers[C.spec]   || '???' },
+        'SIZE':     { index: C.size,   header: headers[C.size]   || '???' },
+        'WEIGHT':   { index: C.weight, header: headers[C.weight] || '???' },
+        'PLACE':    { index: C.place,  header: headers[C.place]  || '???' },
+        'CUSTOMER': { index: C.cust,   header: headers[C.cust]   || '???' },
+    });
+    console.groupEnd();
+
+    // Filter baris valid: CC No (kolom G=6 atau auto-detect) harus ada isinya
+    const anchorIdx = C.cc;
+    const filtered = rows.slice(headerRowIdx + 1)
+        .filter(r => r[anchorIdx] && r[anchorIdx].trim().length > 3);
+
+    if (filtered.length > 0) {
+        const s = filtered[0];
+        console.log(`[HSSI] ${line} — Sample data baris pertama:`, {
+            orderNo:  (s[C.order]  || '').trim(),
+            ccNo:     (s[C.cc]     || '').trim(),
+            spec:     (s[C.spec]   || '').trim(),
+            size:     (s[C.size]   || '').trim(),
+            weight:   (s[C.weight] || '').trim(),
+            customer: (s[C.cust]   || '').trim(),
+        });
+    }
+
+    return filtered.map((r, i) => {
+        const w = parseFloat((r[C.weight] || '0').replace(/[^\d.]/g, '')) || 0;
+        const rawOrder = (r[C.order] || '').trim();
+        const rawCC    = (r[C.cc]    || '').trim();
+
+        return {
+            id:             `${line}-W-${i}-${rawCC}`,
+            line,
+            orderNo:        rawOrder,
+            customer:       (r[C.cust]   || '').trim(),
+            ccNo:           rawCC,
+            spec:           (r[C.spec]   || '').trim(),
+            place:          (r[C.place]  || '').trim(),
+            size:           (r[C.size]   || '').trim(),
+            weight:         w,
+            originalWeight: w,
+            status:         'WAITING',
+            kendala:        '',
+            kendalaWaktu:   '',
+            startTime:      ''
         };
+    });
+}
 
-        // ── GANTI URL INI DENGAN APPS SCRIPT URL KAMU ──────────────────────────────
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv-6W63GHbDa1dVuNhV5DVBW8dupxBCSIFshtSLZUmXRnTz6ccQKMIcGHhkhB18C7J/exec";
+// ── Parser FINISH ──────────────────────────────────────────────────────────
+function parseFinishCSV(line, text) {
+    const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
+    if (rows.length < 2) return [];
 
-        let appData = [];
-        let finishData = [];
-        let completedItems = [];
-        let activeMenu = 'WAITING';
-        let activeLine = 'ALL';
-        let searchQuery = '';
-        let selectedItemId = null;
-        let finishingItemId = null;
-        let html5QrCode = null;
-        let charts = {};
-
-        function safeCreateIcons() {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+    const HEADER_KEYWORDS = ['CC NO','DATE','QTY FG','CUSTOMER','SPEC','ORDER'];
+    let headerRowIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const rowText = rows[i].join(' ').toUpperCase();
+        if (HEADER_KEYWORDS.filter(k => rowText.includes(k)).length >= 3) {
+            headerRowIdx = i; break;
         }
+    }
 
-        window.onload = () => {
-            safeCreateIcons();
-            initCharts();
-            fetchAllData();
-        };
+    const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, '').trim());
+    const fi = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
 
-        // ─── CSV Parser yang robust ────────────────────────────────────────────────
-        function parseCSVLine(row) {
-            let arr = []; let cur = ""; let q = false;
-            for (let c of row) {
-                if (c === '"') q = !q;
-                else if (c === ',' && !q) { arr.push(cur.trim()); cur = ""; }
-                else cur += c;
+    const col = {
+        date:     fi(['DATE','TGL']),
+        order:    fi(['ORDER NO','ORDER','NO ORDER']),
+        cc:       fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),
+        cust:     fi(['CUSTOMER','PEMBELI']),
+        spec:     fi(['SPEC','MUTU','GRADE']),
+        size:     fi(['SIZE']),
+        weight:   fi(['WEIGHT','BERAT']),
+        prodSize: fi(['PRODUCT SIZE','PROD SIZE']),
+        qtyFG:    fi(['QTY FG','QTYFG']),
+        qtyNG:    fi(['QTY NG','QTYNG']),
+        start:    fi(['START','MULAI']),
+        finish:   fi(['FINISH','SELESAI']),
+        downTime: fi(['DOWN TIME','DOWNTIME']),
+        remark:   fi(['REMARK','CATATAN']),
+        speed:    fi(['LINE SPEED','SPEED']),
+        lineCol:  fi(['LINE']),
+    };
+
+    const anchorCol = col.cc !== -1 ? col.cc : 2;
+
+    return rows.slice(headerRowIdx + 1)
+        .filter(r => {
+            if (!r || r.length <= 1) return false;
+            const val = (r[anchorCol] || '').trim();
+            return val.length >= 3 && val !== '-' && val !== '--';
+        })
+        .map((r, i) => {
+            const g = (c) => c !== -1 ? (r[c] || '').trim() : '';
+            const ccVal = g(col.cc);
+            let lineVal = line;
+            if (col.lineCol !== -1 && r[col.lineCol]) {
+                const lv = r[col.lineCol].trim().toUpperCase().replace(/\s+/g,'');
+                if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv;
             }
-            arr.push(cur.trim());
-            return arr;
-        }
-
-        // Parser untuk sheet WAITING
-        function parseWaitingCSV(line, text) {
-            const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
-            if (rows.length < 2) return [];
-
-            // Auto-detect baris header
-            const HEADER_KEYWORDS = ['PACKING','ORDER','PROCESS','CUSTOMER','SPEC','SIZE','WEIGHT','PLACE','COMMODITY','SEQ'];
-            let headerRowIdx = 0;
-            for (let i = 0; i < Math.min(rows.length, 10); i++) {
-                const rowText = rows[i].join(' ').toUpperCase();
-                const matchCount = HEADER_KEYWORDS.filter(k => rowText.includes(k)).length;
-                if (matchCount >= 3) { headerRowIdx = i; break; }
-            }
-
-            // Bersihkan header: hapus titik, kutip, spasi lebih
-            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/[."]/g, '').replace(/\s+/g, ' ').trim());
-            const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-
-            const col = {
-                order: findIdx(['PROCESS ORDER', 'ORDER NO', 'ORDER']),
-                cust:  findIdx(['CUSTOMER', 'PEMBELI']),
-                cc:    findIdx(['PACKING NO', 'PACKING', 'CC NO', 'CC', 'IDENTITY']),
-                spec:  findIdx(['COMMODITY CODE', 'COMMODITY', 'SPEC', 'MUTU', 'GRADE']),
-                place: findIdx(['PLACE', 'LOKASI', 'POS']),
-                size:  findIdx(['SIZE', 'DIMENSI']),
-                kg:    findIdx(['WEIGHT', 'BERAT', 'QTY FG', 'KG'])
+            return {
+                id: `${line}-F-${i}-${ccVal}`,
+                line: lineVal,
+                orderNo:      g(col.order),
+                customer:     g(col.cust),
+                ccNo:         ccVal,
+                spec:         g(col.spec),
+                place:        g(col.date),
+                size:         g(col.size),
+                weight:       parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0,
+                productWidth: g(col.prodSize),
+                qtyFG:        g(col.qtyFG) || '0',
+                qtyNG:        g(col.qtyNG) || '0',
+                startTime:    g(col.start),
+                finishedAt:   g(col.finish),
+                kendalaWaktu: g(col.downTime) || '0',
+                remark:       g(col.remark),
+                speed:        g(col.speed) || '0',
+                status:       'COMPLETED'
             };
+        });
+}
 
-            // Log SETELAH col dideklarasikan
-            console.log(`[HSSI] WAITING ${line} - Header baris ${headerRowIdx+1}:`, headers.join(' | '));
-            console.log(`[HSSI] WAITING ${line} - Col index:`, col);
+async function fetchAllData() {
+    const statusEl = document.getElementById('sync-status');
+    if (statusEl) {
+        statusEl.innerText = "SINKRONISASI...";
+        statusEl.className = "text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]";
+    }
+    try {
+        const [rW, rF] = await Promise.all([
+            Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async ln => {
+                try { const res = await fetch(SHEET_CONFIG.WAITING[ln]); return parseWaitingCSV(ln, await res.text()); }
+                catch { return []; }
+            })),
+            Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async ln => {
+                try { const res = await fetch(SHEET_CONFIG.FINISH[ln]); if (!res.ok) return []; return parseFinishCSV(ln, await res.text()); }
+                catch { return []; }
+            }))
+        ]);
 
-            // Fallback berdasarkan posisi kolom spreadsheet DS1 PLANING:
-            // A=SEQ | B=PROCESS | C=ORDER | D=DATE | E=NEXT | F=PLACE | G=COMMODITY | H=PACKING | I=OIL | J=SIZE | K=PW | L=WEIGHT | ... | T=CUSTOMER
-            if (col.cc    === -1) { col.cc    = 7;  console.warn(`[HSSI] WAITING ${line} - CC fallback kolom 7`); }
-            if (col.order === -1) { col.order = 2;  console.warn(`[HSSI] WAITING ${line} - ORDER fallback kolom 2`); }
-            if (col.spec  === -1) { col.spec  = 6;  console.warn(`[HSSI] WAITING ${line} - SPEC fallback kolom 6`); }
-            if (col.size  === -1) { col.size  = 9;  console.warn(`[HSSI] WAITING ${line} - SIZE fallback kolom 9`); }
-            if (col.kg    === -1) { col.kg    = 11; console.warn(`[HSSI] WAITING ${line} - WEIGHT fallback kolom 11`); }
-            if (col.cust  === -1) { col.cust  = 19; console.warn(`[HSSI] WAITING ${line} - CUSTOMER fallback kolom 19`); }
-            if (col.place === -1) { col.place = 5;  }
+        const newWaiting = rW.flat();
+        const fetchedFinish = rF.flat();
 
-            const anchorCol = col.cc;
+        const isValidCC = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
+        const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]').filter(lf => isValidCC(lf.ccNo));
+        finishData = [...fetchedFinish];
+        localFinish.forEach(lf => {
+            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) finishData.unshift(lf);
+        });
+        completedItems = [...finishData];
 
-            const filtered = rows.slice(headerRowIdx + 1)
-                .filter(r => r[anchorCol] && r[anchorCol].trim().length > 5);
+        appData = newWaiting.map(item => {
+            const ex = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
+            return ex ? { ...item, status: ex.status, startTime: ex.startTime, kendala: ex.kendala, kendalaWaktu: ex.kendalaWaktu } : item;
+        });
 
-            console.log(`[HSSI] WAITING ${line} - Baris valid: ${filtered.length}`);
-
-            return filtered.map((r, i) => ({
-                id:       `${line}-W-${i}-${r[col.cc]}`,
-                line,
-                orderNo:  (r[col.order] || "").trim(),
-                customer: (r[col.cust]  || "").trim(),
-                ccNo:     (r[col.cc]    || "").trim(),
-                spec:     (r[col.spec]  || "").trim(),
-                place:    (r[col.place] || "").trim(),
-                size:     (r[col.size]  || "").trim(),
-                weight:   parseFloat((r[col.kg] || '0').replace(/[^\d.]/g, '')) || 0,
-                status:   "WAITING",
-                kendala:  "",
-                kendalaWaktu: ""
-            }));
+        if (statusEl) {
+            statusEl.innerText = "TERHUBUNG KE SERVER";
+            statusEl.className = "text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]";
         }
+        renderTable(); updateStats();
+    } catch(err) {
+        console.error(err);
+        if (statusEl) { statusEl.innerText = "SERVER DOWN"; statusEl.className = "text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]"; }
+    }
+}
 
-        // ─── Parser khusus sheet FINISH/REPORT ────────────────────────────────────
-        // Kolom spreadsheet: DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE |
-        //                    WEIGHT | PRODUCT SIZE | QTY FG | QTY NG | START |
-        //                    FINISH | DOWN TIME | REMARK | LINE SPEED | LINE
-        function parseFinishCSV(line, text) {
-            const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
-            if (rows.length < 2) return [];
+function renderTableHeader() {
+    const thead = document.getElementById('table-head');
+    if (!thead) return;
+    const th = 'px-4 py-5 whitespace-nowrap', thC = th + ' text-center';
+    if (activeMenu === 'FINISH') {
+        thead.innerHTML = `<tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
+            <th class="${thC}">Date</th><th class="${th}">Order No</th><th class="${th}">CC No</th>
+            <th class="${th}">Customer</th><th class="${th}">Spec</th><th class="${th}">Size</th>
+            <th class="${thC}">Weight</th><th class="${th}">Product Size</th><th class="${thC}">Qty FG</th>
+            <th class="${thC}">Qty NG</th><th class="${thC}">Start</th><th class="${thC}">Finish</th>
+            <th class="${thC}">Down Time</th><th class="${th}">Remark</th><th class="${thC}">Line Speed</th><th class="${thC}">Line</th>
+        </tr>`;
+    } else {
+        thead.innerHTML = `<tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+            <th class="${thC}">Line</th><th class="${th}">Order / Customer</th><th class="${th}">Packing No</th>
+            <th class="${th}">Spec</th><th class="${th}">Place</th><th class="${th}">Size</th>
+            <th class="${thC}">Berat (KG)</th><th class="${thC}">Status</th><th class="${thC}">Aksi</th>
+        </tr>`;
+    }
+}
 
-            const HEADER_KEYWORDS = ['CC NO','CCNO','DATE','QTY FG','CUSTOMER','SPEC','SIZE','WEIGHT','LINE'];
-            let headerRowIdx = 0;
-            for (let i = 0; i < Math.min(rows.length, 10); i++) {
-                const rowText = rows[i].join(' ').toUpperCase();
-                const matchCount = HEADER_KEYWORDS.filter(k => rowText.includes(k)).length;
-                if (matchCount >= 3) { headerRowIdx = i; break; }
-            }
+function renderTable() {
+    renderTableHeader();
+    const tbody = document.getElementById('table-body');
+    if (!tbody) return;
 
-            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
-            const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-            console.log(`[HSSI] Sheet FINISH ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
+    const isFinish = activeMenu === 'FINISH';
+    let data = (isFinish ? finishData : appData).filter(i => activeLine === 'ALL' || i.line === activeLine);
+    if (searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
 
-            console.group(`[HSSI] Header Sheet FINISH - ${line}`);
-            console.log('Header asli:', rows[headerRowIdx]);
-            console.log('Header parsed:', headers);
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isFinish?16:9}" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
+        return;
+    }
 
-            const col = {
-                date:        findIdx(['DATE', 'TGL', 'TANGGAL']),
-                order:       findIdx(['ORDER NO', 'ORDER', 'NO ORDER', 'NOMOR ORDER']),
-                cc:          findIdx(['CC NO', 'CCNO', 'NO CC', 'NO. CC', 'CC.NO', 'CC NUMBER',
-                                      'PACKING NO', 'PACK NO', 'PACK. NO', 'PACKNO',
-                                      'CC.', 'IDENTITY', 'COIL NO', 'NOMOR CC', 'ID COIL']),
-                cust:        findIdx(['CUSTOMER', 'PEMBELI', 'NAMA PEMBELI', 'CUST']),
-                spec:        findIdx(['SPEC', 'MUTU', 'GRADE', 'SPESIFIKASI']),
-                size:        findIdx(['SIZE', 'DIMENSI', 'UKURAN']),
-                weight:      findIdx(['WEIGHT', 'BERAT', 'BOBOT']),
-                productSize: findIdx(['PRODUCT SIZE', 'PROD SIZE', 'LEBAR', 'WIDTH']),
-                qtyFG:       findIdx(['QTY FG', 'QTYFG', 'FG', 'FINISH GOOD', 'FINISH GOODS']),
-                qtyNG:       findIdx(['QTY NG', 'QTYNG', 'NG', 'NOT GOOD']),
-                start:       findIdx(['START', 'MULAI', 'JAM MULAI', 'WAKTU MULAI']),
-                finish:      findIdx(['FINISH', 'SELESAI', 'JAM SELESAI', 'WAKTU SELESAI']),
-                downTime:    findIdx(['DOWN TIME', 'DOWNTIME', 'DT', 'WAKTU DT']),
-                remark:      findIdx(['REMARK', 'CATATAN', 'KET', 'KETERANGAN', 'NOTE']),
-                speed:       findIdx(['LINE SPEED', 'SPEED', 'KECEPATAN']),
-                lineCol:     findIdx(['LINE']),
-            };
-
-            console.log('Hasil deteksi kolom:', {
-                'DATE':           col.date    === -1 ? '❌' : `✅ Kolom ${col.date} = "${headers[col.date]}"`,
-                'ORDER NO':       col.order   === -1 ? '❌' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
-                'CC NO (col.cc)': col.cc      === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
-                'CUSTOMER':       col.cust    === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
-                'QTY FG':         col.qtyFG   === -1 ? '❌' : `✅ Kolom ${col.qtyFG} = "${headers[col.qtyFG]}"`,
-                'LINE':           col.lineCol === -1 ? '❌' : `✅ Kolom ${col.lineCol} = "${headers[col.lineCol]}"`,
-            });
-            if (col.cc === -1) {
-                console.warn(`⚠️ Kolom CC NO tidak ditemukan di sheet ${line}!`);
-                console.warn('Nama kolom yang tersedia:', headers.join(' | '));
-            }
-            console.groupEnd();
-
-            const anchorCol = col.cc !== -1 ? col.cc : -99;
-            const isValidRow = (r) => {
-                if (!r || r.length <= 1) return false;
-                if (anchorCol === -99) return false;
-                const val = (r[anchorCol] || '').trim();
-                if (val === '' || val === '-' || val === '\u2014' || val === '--') return false;
-                if (val.length < 3) return false;
-                const meaningful = r.filter(c => {
-                    const v = (c || '').trim();
-                    return v !== '' && v !== '-' && v !== '\u2014' && v !== '0';
-                });
-                return meaningful.length >= 3;
-            };
-
-            return rows.slice(headerRowIdx + 1)
-                .filter(r => isValidRow(r))
-                .map((r, i) => {
-                    const ccVal    = col.cc    !== -1 ? (r[col.cc]    || "") : "";
-                    const custVal  = col.cust  !== -1 ? (r[col.cust]  || "") : "";
-                    const specVal  = col.spec  !== -1 ? (r[col.spec]  || "") : "";
-                    const sizeVal  = col.size  !== -1 ? (r[col.size]  || "") : "";
-                    const weightVal = parseFloat(
-                        (col.weight !== -1 ? r[col.weight] : (col.qtyFG !== -1 ? r[col.qtyFG] : '0'))
-                        ?.replace(/[^\d.]/g, '')
-                    ) || 0;
-
-                    let lineVal = line;
-                    if (col.lineCol !== -1 && r[col.lineCol] && r[col.lineCol].trim() !== '') {
-                        lineVal = r[col.lineCol].trim().toUpperCase().replace(/\s+/g, '');
-                        if (!['DS1','DS2','DS3'].includes(lineVal)) lineVal = line;
-                    }
-
-                    return {
-                        id: `${line}-F-${i}-${ccVal}`,
-                        line: lineVal,
-                        orderNo:      col.order       !== -1 ? (r[col.order]       || "") : "",
-                        customer:     custVal,
-                        ccNo:         ccVal,
-                        spec:         specVal,
-                        place:        col.date        !== -1 ? (r[col.date]        || "") : "",
-                        size:         sizeVal,
-                        weight:       weightVal,
-                        productWidth: col.productSize !== -1 ? (r[col.productSize] || "") : "",
-                        qtyFG:        col.qtyFG       !== -1 ? (r[col.qtyFG]       || "0") : "0",
-                        qtyNG:        col.qtyNG       !== -1 ? (r[col.qtyNG]       || "0") : "0",
-                        startTime:    col.start       !== -1 ? (r[col.start]       || "") : "",
-                        finishedAt:   col.finish      !== -1 ? (r[col.finish]      || "") : "",
-                        kendalaWaktu: col.downTime    !== -1 ? (r[col.downTime]    || "0") : "0",
-                        remark:       col.remark      !== -1 ? (r[col.remark]      || "") : "",
-                        speed:        col.speed       !== -1 ? (r[col.speed]       || "0") : "0",
-                        status: "COMPLETED"
-                    };
-                });
-        }
-
-        async function fetchAllData() {
-            const statusEl = document.getElementById('sync-status');
-            if (statusEl) {
-                statusEl.innerText = "SINKRONISASI SEDANG BERJALAN...";
-                statusEl.classList.replace('text-emerald-400', 'text-amber-400');
-                statusEl.classList.replace('text-rose-400', 'text-amber-400');
-            }
-
-            try {
-                const resultsWaiting = await Promise.all(
-                    Object.keys(SHEET_CONFIG.WAITING).map(async line => {
-                        try {
-                            const res = await fetch(SHEET_CONFIG.WAITING[line]);
-                            const text = await res.text();
-                            return parseWaitingCSV(line, text);
-                        } catch(e) { return []; }
-                    })
-                );
-
-                const resultsFinish = await Promise.all(
-                    Object.keys(SHEET_CONFIG.FINISH).map(async line => {
-                        try {
-                            const res = await fetch(SHEET_CONFIG.FINISH[line]);
-                            if (!res.ok) return [];
-                            const text = await res.text();
-                            return parseFinishCSV(line, text);
-                        } catch(e) { return []; }
-                    })
-                );
-
-                const newWaitingData = resultsWaiting.flat();
-                const fetchedFinishData = resultsFinish.flat();
-
-                // Merge dengan localStorage agar data finish yang baru saja disubmit
-                // tetap tampil sebelum Google Sheets CSV ter-update (butuh ~1 menit)
-                const isValidCC = (cc) => cc && cc.trim() !== '' && cc.trim() !== '-' && cc.trim().length >= 3;
-                const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]').filter(lf => isValidCC(lf.ccNo));
-                const mergedFinish = [...fetchedFinishData];
-                localFinish.forEach(lf => {
-                    if (!mergedFinish.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) {
-                        mergedFinish.unshift(lf);
-                    }
-                });
-
-                finishData = mergedFinish;
-                completedItems = [...finishData];
-
-                // Pertahankan state ON PROCESS yang sedang berjalan di sesi ini
-                appData = newWaitingData.map(item => {
-                    const existing = appData.find(ex => ex.ccNo === item.ccNo && ex.line === item.line);
-                    return existing
-                        ? { ...item, status: existing.status, startTime: existing.startTime, kendala: existing.kendala, kendalaWaktu: existing.kendalaWaktu }
-                        : item;
-                });
-
-                if (statusEl) {
-                    statusEl.innerText = "TERHUBUNG KE SERVER";
-                    statusEl.classList.replace('text-amber-400', 'text-emerald-400');
-                }
-
-                renderTable();
-                updateStats();
-            } catch (err) {
-                console.error(err);
-                if (statusEl) {
-                    statusEl.innerText = "GANTI KONEKSI / SERVER DOWN";
-                    statusEl.classList.replace('text-amber-400', 'text-rose-400');
-                }
-            }
-        }
-
-        function renderTableHeader() {
-            const thead = document.getElementById('table-head');
-            if (!thead) return;
-
-            const thBase = 'px-4 py-5 whitespace-nowrap';
-            const thCenter = `${thBase} text-center`;
-
-            if (activeMenu === 'FINISH') {
-                // Header sesuai kolom Production Report spreadsheet
-                thead.innerHTML = `
-                <tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
-                    <th class="${thCenter}">Date</th>
-                    <th class="${thBase}">Order No</th>
-                    <th class="${thBase}">CC No</th>
-                    <th class="${thBase}">Customer</th>
-                    <th class="${thBase}">Spec</th>
-                    <th class="${thBase}">Size</th>
-                    <th class="${thCenter}">Weight</th>
-                    <th class="${thBase}">Product Size</th>
-                    <th class="${thCenter}">Qty FG</th>
-                    <th class="${thCenter}">Qty NG</th>
-                    <th class="${thCenter}">Start</th>
-                    <th class="${thCenter}">Finish</th>
-                    <th class="${thCenter}">Down Time</th>
-                    <th class="${thBase}">Remark</th>
-                    <th class="${thCenter}">Line Speed</th>
-                    <th class="${thCenter}">Line</th>
-                </tr>`;
-            } else {
-                // Header untuk WAITING LIST
-                thead.innerHTML = `
-                <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
-                    <th class="${thCenter}">Line</th>
-                    <th class="${thBase}">Order / Customer</th>
-                    <th class="${thBase}">Packing No</th>
-                    <th class="${thBase}">Spec</th>
-                    <th class="${thBase}">Place</th>
-                    <th class="${thBase}">Size</th>
-                    <th class="${thCenter}">Berat (KG)</th>
-                    <th class="${thCenter}">Status</th>
-                    <th class="${thCenter}">Aksi</th>
-                </tr>`;
-            }
-        }
-
-        function renderTable() {
-            renderTableHeader();
-
-            const tbody = document.getElementById('table-body');
-            if (!tbody) return;
-
-            const isFinishMenu = activeMenu === 'FINISH';
-            let sourceData = isFinishMenu ? finishData : appData;
-
-            let data = activeLine === 'ALL' ? sourceData : sourceData.filter(i => i.line === activeLine);
-            if (searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
-
-            const colspan = isFinishMenu ? 16 : 9;
-
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${colspan}" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
-                return;
-            }
-
-            if (isFinishMenu) {
-                // ── Render baris untuk FINISH PROCESS ──────────────────────────────
-                tbody.innerHTML = data.map(item => {
-                    const lineColor = item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600';
-                    const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
-                    const tdCenter = `${td} text-center`;
-
-                    return `
-                    <tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
-                        <td class="${tdCenter}">
-                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">${item.place || '—'}</span>
-                        </td>
-                        <td class="${td} font-bold text-slate-800">${item.orderNo || '—'}</td>
-                        <td class="${td} font-mono font-bold text-slate-700">${item.ccNo || '—'}</td>
-                        <td class="${td}">${item.customer || '—'}</td>
-                        <td class="${td}">
-                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
-                        </td>
-                        <td class="${td}">${item.size || '—'}</td>
-                        <td class="${tdCenter} font-bold">${item.weight ? item.weight.toLocaleString() : '—'}</td>
-                        <td class="${tdCenter}">${item.productWidth || '—'}</td>
-                        <td class="${tdCenter}">
-                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-bold text-[9px]">${item.qtyFG || '—'}</span>
-                        </td>
-                        <td class="${tdCenter}">
-                            <span class="px-2 py-0.5 ${parseFloat(item.qtyNG) > 0 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-400'} rounded font-bold text-[9px]">${item.qtyNG || '0'}</span>
-                        </td>
-                        <td class="${tdCenter} text-slate-500">${item.startTime || '—'}</td>
-                        <td class="${tdCenter} text-slate-500">${item.finishedAt || '—'}</td>
-                        <td class="${tdCenter}">
-                            ${parseFloat(item.kendalaWaktu) > 0
-                                ? `<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`
-                                : `<span class="text-slate-300 text-[9px]">0</span>`}
-                        </td>
-                        <td class="${td} max-w-[120px] truncate text-slate-500">${item.remark || '—'}</td>
-                        <td class="${tdCenter}">${item.speed || '—'}</td>
-                        <td class="${tdCenter}">
-                            <span class="px-2 py-1 ${lineColor} text-white rounded text-[9px] font-black">${item.line}</span>
-                        </td>
-                    </tr>`;
-                }).join('');
-
-            } else {
-                // ── Render baris untuk WAITING LIST ────────────────────────────────
-                tbody.innerHTML = data.map(item => {
-                    const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
-                        ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
-                        : `<div class="font-bold text-slate-500 leading-tight text-[10px] italic">—</div>`;
-
-                    const custDisplay = item.customer && item.customer.trim() !== ''
-                        ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[120px]">${item.customer}</div>`
-                        : '';
-
-                    const placeDisplay = item.place && item.place.trim() !== ''
-                        ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
-                        : `<span class="text-slate-300 text-[9px]">—</span>`;
-
-                    return `
-                    <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
-                        <td class="px-4 py-4 text-center">
-                            <span class="px-2 py-1 ${item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600'} text-white rounded text-[9px] font-black">${item.line}</span>
-                        </td>
-                        <td class="px-4 py-4">
-                            ${orderDisplay}
-                            ${custDisplay}
-                        </td>
-                        <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo || '—'}</td>
-                        <td class="px-4 py-4">
-                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec || '—'}</span>
-                        </td>
-                        <td class="px-4 py-4">${placeDisplay}</td>
-                        <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size || '—'}</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight ? item.weight.toLocaleString() : '—'}</td>
-                        <td class="px-4 py-4 text-center">
-                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status === 'ON PROCESS' ? 'bg-sky-100 text-sky-600 border border-sky-200' : item.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}">${item.status}</span>
-                            ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase tracking-tighter">⚠️ ${item.kendala}</div>` : ''}
-                        </td>
-                        <td class="px-4 py-4 text-center">
-                            <div class="flex gap-1 justify-center">
-                                <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status === 'ON PROCESS' ? 'bg-emerald-500' : 'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
-                                    <i data-lucide="${item.status === 'ON PROCESS' ? 'check-square' : 'play'}" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="openKendalaModal('${item.id}')" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
-                                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
-                }).join('');
-            }
-
-            safeCreateIcons();
-        }
-
-        function processScan(val) {
-            if (!val) return;
-            const item = appData.find(i => i.ccNo === val || i.orderNo === val);
-            if (!item) { showToast("Item tidak terdaftar di antrean!", "error"); return; }
-
-            if (item.status === "WAITING") {
-                item.status = "ON PROCESS";
-                item.startTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                showToast(`START: ${item.ccNo}`, "success");
-                // Data hanya dikirim ke spreadsheet saat FINISH, bukan saat START
-            } else if (item.status === "ON PROCESS") {
-                openFinishModal(item.id);
-            }
-
-            const manualInput = document.getElementById('manualInput');
-            if (manualInput) manualInput.value = '';
-
-            renderTable();
-            updateStats();
-        }
-
-        // ── Counter untuk ID baris produk ─────────────────────────────────────────
-        let productRowCounter = 0;
-
-        function addProductRow(qtyFG = '', qtyNG = '0', width = '') {
-            productRowCounter++;
-            const rowId = productRowCounter;
-            const container = document.getElementById('product-rows-container');
-            const isFirst = container.children.length === 0;
-
-            const div = document.createElement('div');
-            div.id = `product-row-${rowId}`;
-            div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
-            div.innerHTML = `
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>
-                    ${!isFirst ? `<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
-                </div>
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar Produk (MM)</label>
-                        <input type="text" id="width-${rowId}" value="${width}" placeholder="0"
-                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+    if (isFinish) {
+        tbody.innerHTML = data.map(item => {
+            const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
+            const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap', tdc = td+' text-center';
+            return `<tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
+                <td class="${tdc}"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">${item.place||'—'}</span></td>
+                <td class="${td} font-bold text-slate-800">${item.orderNo||'—'}</td>
+                <td class="${td} font-mono font-bold">${item.ccNo||'—'}</td>
+                <td class="${td}">${item.customer||'—'}</td>
+                <td class="${td}"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec||'—'}</span></td>
+                <td class="${td}">${item.size||'—'}</td>
+                <td class="${tdc} font-bold">${item.weight?item.weight.toLocaleString():'—'}</td>
+                <td class="${tdc}">${item.productWidth||'—'}</td>
+                <td class="${tdc}"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-bold text-[9px]">${item.qtyFG||'—'}</span></td>
+                <td class="${tdc}"><span class="px-2 py-0.5 ${parseFloat(item.qtyNG)>0?'bg-rose-50 text-rose-600 border border-rose-100':'bg-slate-50 text-slate-400'} rounded font-bold text-[9px]">${item.qtyNG||'0'}</span></td>
+                <td class="${tdc} text-slate-500">${item.startTime||'—'}</td>
+                <td class="${tdc} text-slate-500">${item.finishedAt||'—'}</td>
+                <td class="${tdc}">${parseFloat(item.kendalaWaktu)>0?`<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`:'<span class="text-slate-300 text-[9px]">0</span>'}</td>
+                <td class="${td} max-w-[120px] truncate text-slate-500">${item.remark||'—'}</td>
+                <td class="${tdc}">${item.speed||'—'}</td>
+                <td class="${tdc}"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
+            </tr>`;
+        }).join('');
+    } else {
+        tbody.innerHTML = data.map(item => {
+            const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
+            return `<tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
+                <td class="px-4 py-4 text-center"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
+                <td class="px-4 py-4">
+                    <div class="font-bold text-slate-800 leading-tight">${item.orderNo||'—'}</div>
+                    ${item.customer?`<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[140px]">${item.customer}</div>`:''}
+                </td>
+                <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo||'—'}</td>
+                <td class="px-4 py-4"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec||'—'}</span></td>
+                <td class="px-4 py-4">${item.place?`<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`:'<span class="text-slate-300 text-[9px]">—</span>'}</td>
+                <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size||'—'}</td>
+                <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight?item.weight.toLocaleString():'—'}</td>
+                <td class="px-4 py-4 text-center">
+                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${item.status==='ON PROCESS'?'bg-sky-100 text-sky-600 border border-sky-200':item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200':'bg-slate-100 text-slate-400'}">${item.status}</span>
+                    ${item.kendala?`<div class="text-[7px] text-rose-500 font-black mt-1 uppercase">⚠️ ${item.kendala}</div>`:''}
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex gap-1 justify-center">
+                        <button onclick="processScan('${item.ccNo}')" class="p-2 ${item.status==='ON PROCESS'?'bg-emerald-500':'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
+                            <i data-lucide="${item.status==='ON PROCESS'?'check-square':'play'}" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="openKendalaModal('${item.id}')" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        </button>
                     </div>
-                    <div>
-                        <label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty Finish Good (KG)</label>
-                        <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0"
-                            class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty Not Good (KG)</label>
-                        <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0"
-                            class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm">
-                    </div>
-                </div>`;
-            container.appendChild(div);
-            safeCreateIcons();
-        }
+                </td>
+            </tr>`;
+        }).join('');
+    }
+    safeCreateIcons();
+}
 
-        function removeProductRow(rowId) {
-            const el = document.getElementById(`product-row-${rowId}`);
-            if (el) el.remove();
-        }
+function processScan(val) {
+    if (!val) return;
+    const item = appData.find(i => i.ccNo === val || i.orderNo === val);
+    if (!item) { showToast("Item tidak terdaftar di antrean!", "error"); return; }
+    if (item.status === "WAITING") {
+        item.status = "ON PROCESS";
+        item.startTime = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        showToast(`START: ${item.ccNo}`, "success");
+    } else if (item.status === "ON PROCESS") {
+        openFinishModal(item.id);
+    }
+    const mi = document.getElementById('manualInput');
+    if (mi) mi.value = '';
+    renderTable(); updateStats();
+}
 
-        function openFinishModal(id) {
-            finishingItemId = id;
-            const item = appData.find(i => i.id === id);
-            if (!item) return;
+let productRowCounter = 0;
 
-            document.getElementById('finish-order-info').innerText = `${item.orderNo || item.ccNo} | ${item.ccNo}`;
-            document.getElementById('finish-speed').value = "";
-            document.getElementById('finish-remark').value = "";
+function addProductRow(qtyFG='', qtyNG='0', width='') {
+    productRowCounter++;
+    const rowId = productRowCounter;
+    const container = document.getElementById('product-rows-container');
+    const isFirst = container.children.length === 0;
+    const div = document.createElement('div');
+    div.id = `product-row-${rowId}`;
+    div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
+    div.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>
+            ${!isFirst?`<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:''}
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar Produk (MM)</label>
+                <input type="text" id="width-${rowId}" value="${width}" placeholder="0" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty Finish Good (KG)</label>
+                <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0" class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty Not Good (KG)</label>
+                <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0" class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm">
+            </div>
+        </div>`;
+    container.appendChild(div);
+    safeCreateIcons();
+}
 
-            // Reset baris produk
-            productRowCounter = 0;
-            document.getElementById('product-rows-container').innerHTML = '';
-            addProductRow(); // tambah 1 baris default
+function removeProductRow(rowId) {
+    const el = document.getElementById(`product-row-${rowId}`);
+    if (el) el.remove();
+}
 
-            document.getElementById('modal-finish').classList.replace('hidden', 'flex');
-            safeCreateIcons();
-        }
+function openFinishModal(id) {
+    finishingItemId = id;
+    const item = appData.find(i => i.id === id);
+    if (!item) return;
 
-        function closeFinishModal() {
-            document.getElementById('modal-finish').classList.replace('flex', 'hidden');
-            finishingItemId = null;
-        }
+    console.group('[HSSI] openFinishModal');
+    console.log('orderNo :', `"${item.orderNo}"`);
+    console.log('ccNo    :', `"${item.ccNo}"`);
+    console.log('customer:', `"${item.customer}"`);
+    console.log('line    :', item.line);
+    console.groupEnd();
 
-        function submitFinish() {
-            if (!finishingItemId) return;
-            const idx = appData.findIndex(item => item.id === finishingItemId);
-            if (idx === -1) return;
+    document.getElementById('finish-order-info').innerText =
+        `${item.orderNo || '(orderNo kosong!)'} | ${item.ccNo}`;
+    document.getElementById('finish-speed').value = "";
+    document.getElementById('finish-remark').value = "";
+    productRowCounter = 0;
+    document.getElementById('product-rows-container').innerHTML = '';
+    addProductRow();
+    document.getElementById('modal-finish').classList.replace('hidden', 'flex');
+    safeCreateIcons();
+}
 
-            const item = appData[idx];
+function closeFinishModal() {
+    document.getElementById('modal-finish').classList.replace('flex', 'hidden');
+    finishingItemId = null;
+}
 
-            // Kumpulkan semua baris produk
-            const container = document.getElementById('product-rows-container');
-            const rows = container.querySelectorAll('[id^="product-row-"]');
-            const products = [];
+function submitFinish() {
+    if (!finishingItemId) return;
+    const item = appData.find(i => i.id === finishingItemId);
+    if (!item) return;
 
-            for (const row of rows) {
-                const rowId = row.id.replace('product-row-', '');
-                const widthEl = document.getElementById(`width-${rowId}`);
-                const fgEl    = document.getElementById(`fg-${rowId}`);
-                const ngEl    = document.getElementById(`ng-${rowId}`);
-                const w  = widthEl ? widthEl.value.trim() : '';
-                const fg = fgEl    ? fgEl.value.trim()    : '';
-                const ng = ngEl    ? ngEl.value.trim()    : '0';
-                if (!fg || parseFloat(fg) <= 0) {
-                    showToast(`Qty FG produk #${rowId} wajib diisi!`, "error");
-                    return;
-                }
-                products.push({ width: w, fg: parseFloat(fg), ng: parseFloat(ng) || 0 });
-            }
+    const container = document.getElementById('product-rows-container');
+    const products = [];
+    for (const row of container.querySelectorAll('[id^="product-row-"]')) {
+        const rowId = row.id.replace('product-row-', '');
+        const fg = (document.getElementById(`fg-${rowId}`)?.value || '').trim();
+        const ng = (document.getElementById(`ng-${rowId}`)?.value || '0').trim();
+        const w  = (document.getElementById(`width-${rowId}`)?.value || '').trim();
+        if (!fg || parseFloat(fg) <= 0) { showToast(`Qty FG produk #${rowId} wajib diisi!`, "error"); return; }
+        products.push({ width: w, fg: parseFloat(fg), ng: parseFloat(ng) || 0 });
+    }
+    if (products.length === 0) { showToast("Minimal 1 produk wajib diisi!", "error"); return; }
 
-            if (products.length === 0) {
-                showToast("Minimal 1 produk wajib diisi!", "error");
-                return;
-            }
+    const speed = document.getElementById('finish-speed').value;
+    const remark = document.getElementById('finish-remark').value;
+    const now = new Date();
+    const finishTime = now.toTimeString().slice(0,8);
+    const dateStr = now.toLocaleDateString('id-ID');
 
-            const speed  = document.getElementById('finish-speed').value;
-            const remark = document.getElementById('finish-remark').value;
+    // ── ORDER NO: gunakan nilai asli dari parsing ─────────────────────────
+    // Jika kosong, tetap kirim string kosong — jangan di-replace dengan ccNo
+    // supaya di spreadsheet terlihat jelas mana yang berhasil/gagal parse
+    const orderNoFinal = (item.orderNo || '').trim();
 
-            // Buat timestamp FINISH yang akurat
-            const sekarang  = new Date();
-            const finishTime = sekarang.getHours().toString().padStart(2,'0') + ":" +
-                               sekarang.getMinutes().toString().padStart(2,'0') + ":" +
-                               sekarang.getSeconds().toString().padStart(2,'0');
-            const dateStr = sekarang.toLocaleDateString('id-ID');
+    console.group('[HSSI] submitFinish — Payload');
+    console.log('ORDER NO :', `"${orderNoFinal}"`);
+    console.log('CC NO    :', `"${item.ccNo}"`);
+    console.log('LINE     :', item.line);
+    console.groupEnd();
 
-            // Kirim setiap produk sebagai baris terpisah ke spreadsheet
-            products.forEach((prod) => {
-                const payload = {
-                    action:         "FINISH",
-                    "DATE":         dateStr,
-                    "ORDER NO":     item.orderNo      || "-",
-                    "CC NO":        item.ccNo         || "-",
-                    "CUSTOMER":     item.customer     || "-",
-                    "SPEC":         item.spec         || "-",
-                    "SIZE":         item.size         || "-",
-                    "WEIGHT":       item.weight       || 0,
-                    "PRODUCT SIZE": prod.width        || "-",
-                    "QTY FG":       prod.fg,
-                    "QTY NG":       prod.ng,
-                    "START":        item.startTime    || "-",
-                    "FINISH":       finishTime,
-                    "DOWN TIME":    item.kendalaWaktu || "0",
-                    "REMARK":       remark            || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
-                    "LINE SPEED":   speed             || "0",
-                    "LINE":         item.line         || "-"
-                };
-
-                // Debug: cek nilai yang dikirim
-                console.log('[HSSI] Payload FINISH:', {
-                    'ORDER NO': payload["ORDER NO"],
-                    'CC NO':    payload["CC NO"],
-                    'item.orderNo (raw)': item.orderNo,
-                    'item.ccNo (raw)':    item.ccNo,
-                });
-
-                fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode:   'no-cors',
-                    body:   JSON.stringify(payload)
-                });
-            });
-
-            // Update state lokal
-            const totalFG = products.reduce((s, p) => s + p.fg, 0);
-            item.status       = "COMPLETED";
-            item.finishedAt   = finishTime;
-            item.productWidth = products.map(p => p.width).filter(Boolean).join(', ');
-            item.qtyFG        = totalFG;
-            item.qtyNG        = products.reduce((s, p) => s + p.ng, 0);
-            item.speed        = speed;
-            item.remark       = remark;
-            item.weight       = totalFG;
-
-            completedItems.unshift(item);
-            appData = appData.filter(i => i.id !== finishingItemId);
-            finishData.unshift(item);
-            localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
-
-            const prodLabel = products.length > 1 ? ` (${products.length} produk)` : '';
-            showToast(`${item.ccNo} SELESAI${prodLabel}`, "success");
-
-            closeFinishModal();
-            renderTable();
-            updateStats();
-        }
-
-        function openKendalaModal(id) {
-            selectedItemId = id;
-            const item = appData.find(i => i.id === id);
-            if (!item) return;
-
-            document.getElementById('modal-cc-info').innerText = `${item.orderNo || item.ccNo} | ${item.ccNo}`;
-            document.getElementById('kendala-select').value = "";
-            document.getElementById('kendala-other-input').value = "";
-            document.getElementById('kendala-waktu-input').value = "";
-            document.getElementById('kendala-other-container').classList.add('hidden');
-
-            document.getElementById('modal-kendala').classList.replace('hidden', 'flex');
-            safeCreateIcons();
-        }
-
-        function closeKendalaModal() {
-            document.getElementById('modal-kendala').classList.replace('flex', 'hidden');
-            selectedItemId = null;
-        }
-
-        function toggleOtherKendala() {
-            const select = document.getElementById('kendala-select');
-            const otherContainer = document.getElementById('kendala-other-container');
-            otherContainer.classList.toggle('hidden', select.value !== 'OTHER');
-        }
-
-        function saveKendala() {
-            const select = document.getElementById('kendala-select');
-            let jenis = select.value;
-            const waktu = document.getElementById('kendala-waktu-input').value;
-
-            if (!jenis) return showToast("Pilih jenis kendala!", "error");
-            if (jenis === 'OTHER') {
-                jenis = document.getElementById('kendala-other-input').value || "OTHER";
-            }
-
-            const item = appData.find(i => i.id === selectedItemId);
-            if (item) {
-                item.kendala = jenis;
-                item.kendalaWaktu = waktu;
-                showToast("Kendala dilaporkan!");
-                sendToReportSheet(item, "KENDALA");
-                renderTable();
-                closeKendalaModal();
-            }
-        }
-
-        function initCharts() {
-            const lines = [{ id: 'DS1', color: '#00843d' }, { id: 'DS2', color: '#0284c7' }, { id: 'DS3', color: '#d97706' }];
-            lines.forEach(line => {
-                const canvas = document.getElementById(`chart-${line.id.toLowerCase()}`);
-                if (!canvas) return;
-                charts[line.id] = new Chart(canvas.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Antri', 'Selesai'],
-                        datasets: [{ data: [1, 0], backgroundColor: ['#f1f5f9', line.color], borderWidth: 0 }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, cutout: '75%',
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            });
-        }
-
-        function updateStats() {
-            ['DS1', 'DS2', 'DS3'].forEach(line => {
-                const lineCompleted = completedItems.filter(i => i.line === line);
-                const lineWaiting   = appData.filter(i => i.line === line);
-                const lineTon       = lineCompleted.reduce((acc, curr) => acc + parseFloat(curr.weight || 0), 0) / 1000;
-
-                const tonEl   = document.getElementById(`ton-${line.toLowerCase()}`);
-                const countEl = document.getElementById(`count-${line.toLowerCase()}`);
-
-                if (tonEl)   tonEl.innerText   = lineTon.toFixed(2);
-                if (countEl) countEl.innerText = `${lineCompleted.length} Coil Selesai`;
-
-                if (charts[line]) {
-                    charts[line].data.datasets[0].data = [lineWaiting.length || 1, lineCompleted.length];
-                    charts[line].update();
-                }
-            });
-        }
-
-        // ─── FUNGSI KIRIM DATA KE SPREADSHEET ─────────────────────────────────────
-        // Urutan kolom disesuaikan dengan format spreadsheet:
+    products.forEach((prod, idx) => {
+        // ── Payload dikirim ke Apps Script ────────────────────────────────
+        // Urutan key mencerminkan urutan kolom di Production Report:
         // DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE | WEIGHT |
         // PRODUCT SIZE | QTY FG | QTY NG | START | FINISH | DOWN TIME |
         // REMARK | LINE SPEED | LINE
-        // Catatan: action FINISH dikirim langsung di submitFinish() per baris produk
-        function sendToReportSheet(item, action) {
-            if (action === "FINISH") return; // ditangani di submitFinish()
+        const payload = {
+            action:           "FINISH",
+            "DATE":           dateStr,
+            "ORDER NO":       orderNoFinal,           // ← kolom B (kiri CC NO)
+            "CC NO":          item.ccNo         || "-",
+            "CUSTOMER":       item.customer     || "-",
+            "SPEC":           item.spec         || "-",
+            "SIZE":           item.size         || "-",
+            "WEIGHT":         item.weight       || 0,
+            "PRODUCT SIZE":   prod.width        || "-",
+            "QTY FG":         prod.fg,
+            "QTY NG":         prod.ng,
+            "START":          item.startTime    || "-",
+            "FINISH":         finishTime,
+            "DOWN TIME":      item.kendalaWaktu || "0",
+            "REMARK":         remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
+            "LINE SPEED":     speed  || "0",
+            "LINE":           item.line || "-"
+        };
+        console.log(`[HSSI] Kirim produk #${idx+1}:`, payload);
+        fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
+    });
 
-            const today = new Date();
-            const dateStr = today.toLocaleDateString('id-ID');
+    const totalFG = products.reduce((s,p) => s+p.fg, 0);
+    item.status       = "COMPLETED";
+    item.finishedAt   = finishTime;
+    item.productWidth = products.map(p=>p.width).filter(Boolean).join(', ');
+    item.qtyFG        = totalFG;
+    item.qtyNG        = products.reduce((s,p)=>s+p.ng,0);
+    item.speed        = speed;
+    item.remark       = remark;
 
-            const payload = {
-                action,
-                "DATE":         dateStr,
-                "ORDER NO":     item.orderNo      || "-",
-                "CC NO":        item.ccNo         || "-",
-                "CUSTOMER":     item.customer     || "-",
-                "SPEC":         item.spec         || "-",
-                "SIZE":         item.size         || "-",
-                "WEIGHT":       item.weight       || 0,
-                "PRODUCT SIZE": item.productWidth || "-",
-                "QTY FG":       item.qtyFG        || "0",
-                "QTY NG":       item.qtyNG        || "0",
-                "START":        item.startTime    || "-",
-                "FINISH":       item.finishedAt   || "-",
-                "DOWN TIME":    item.kendalaWaktu || "0",
-                "REMARK":       item.remark       || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
-                "LINE SPEED":   item.speed        || "0",
-                "LINE":         item.line         || "-"
-            };
+    completedItems.unshift(item);
+    appData = appData.filter(i => i.id !== finishingItemId);
+    finishData.unshift(item);
+    localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
 
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-        }
+    showToast(`${item.ccNo} SELESAI${products.length>1?' ('+products.length+' produk)':''}`, "success");
+    closeFinishModal();
+    renderTable(); updateStats();
+}
 
-        function handleSearch() {
-            searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            renderTable();
-        }
+function openKendalaModal(id) {
+    selectedItemId = id;
+    const item = appData.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('modal-cc-info').innerText = `${item.orderNo||item.ccNo} | ${item.ccNo}`;
+    document.getElementById('kendala-select').value = "";
+    document.getElementById('kendala-other-input').value = "";
+    document.getElementById('kendala-waktu-input').value = "";
+    document.getElementById('kendala-other-container').classList.add('hidden');
+    document.getElementById('modal-kendala').classList.replace('hidden', 'flex');
+    safeCreateIcons();
+}
 
-        function setMainMenu(menu) {
-            activeMenu = menu;
-            const btnWait   = document.getElementById('btn-menu-WAITING');
-            const btnFinish = document.getElementById('btn-menu-FINISH');
-            const activeClass   = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
-            const inactiveClass = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+function closeKendalaModal() {
+    document.getElementById('modal-kendala').classList.replace('flex', 'hidden');
+    selectedItemId = null;
+}
 
-            btnWait.className   = menu === 'WAITING' ? activeClass : inactiveClass;
-            btnFinish.className = menu === 'FINISH'  ? activeClass : inactiveClass;
-            renderTable();
-        }
+function toggleOtherKendala() {
+    const v = document.getElementById('kendala-select').value;
+    document.getElementById('kendala-other-container').classList.toggle('hidden', v !== 'OTHER');
+}
 
-        function setLine(line) {
-            activeLine = line;
-            document.querySelectorAll('.line-nav').forEach(b => {
-                b.classList.remove('line-active', 'text-white');
-                b.classList.add('text-slate-400');
-            });
-            const activeBtn = document.getElementById(`btn-${line}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-400');
-                activeBtn.classList.add('line-active');
-            }
-            renderTable();
-        }
+function saveKendala() {
+    let jenis = document.getElementById('kendala-select').value;
+    const waktu = document.getElementById('kendala-waktu-input').value;
+    if (!jenis) return showToast("Pilih jenis kendala!", "error");
+    if (jenis === 'OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
+    const item = appData.find(i => i.id === selectedItemId);
+    if (item) {
+        item.kendala = jenis; item.kendalaWaktu = waktu;
+        showToast("Kendala dilaporkan!");
+        renderTable(); closeKendalaModal();
+    }
+}
 
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
-            document.getElementById('toast-message').innerText = msg;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-            safeCreateIcons();
-        }
+function initCharts() {
+    [{ id:'DS1', color:'#00843d' }, { id:'DS2', color:'#0284c7' }, { id:'DS3', color:'#d97706' }].forEach(l => {
+        const canvas = document.getElementById(`chart-${l.id.toLowerCase()}`);
+        if (!canvas) return;
+        charts[l.id] = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: { labels:['Antri','Selesai'], datasets:[{ data:[1,0], backgroundColor:['#f1f5f9', l.color], borderWidth:0 }] },
+            options: { responsive:true, maintainAspectRatio:false, cutout:'75%', plugins:{ legend:{ display:false } } }
+        });
+    });
+}
 
-        async function toggleScanner() {
-            const container = document.getElementById('scanner-container');
-            if (!container.classList.contains('hidden')) {
-                container.classList.add('hidden');
-                if (html5QrCode) { await html5QrCode.stop(); html5QrCode = null; }
-                return;
-            }
-            container.classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
-                toggleScanner();
-                processScan(text);
-            });
-        }
-    </script>
+function updateStats() {
+    ['DS1','DS2','DS3'].forEach(line => {
+        const done = completedItems.filter(i => i.line === line);
+        const wait = appData.filter(i => i.line === line);
+        const ton = done.reduce((a,c) => a + parseFloat(c.originalWeight || c.weight || 0), 0) / 1000;
+        const tEl = document.getElementById(`ton-${line.toLowerCase()}`);
+        const cEl = document.getElementById(`count-${line.toLowerCase()}`);
+        if (tEl) tEl.innerText = ton.toFixed(2);
+        if (cEl) cEl.innerText = `${done.length} Coil Selesai`;
+        if (charts[line]) { charts[line].data.datasets[0].data = [wait.length||1, done.length]; charts[line].update(); }
+    });
+}
+
+function handleSearch() {
+    searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    renderTable();
+}
+
+function setMainMenu(menu) {
+    activeMenu = menu;
+    const ac = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
+    const ic = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+    document.getElementById('btn-menu-WAITING').className = menu==='WAITING' ? ac : ic;
+    document.getElementById('btn-menu-FINISH').className  = menu==='FINISH'  ? ac : ic;
+    renderTable();
+}
+
+function setLine(line) {
+    activeLine = line;
+    document.querySelectorAll('.line-nav').forEach(b => { b.classList.remove('line-active','text-white'); b.classList.add('text-slate-400'); });
+    const btn = document.getElementById(`btn-${line}`);
+    if (btn) { btn.classList.remove('text-slate-400'); btn.classList.add('line-active'); }
+    renderTable();
+}
+
+function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
+    document.getElementById('toast-message').innerText = msg;
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 3000);
+    safeCreateIcons();
+}
+
+async function toggleScanner() {
+    const container = document.getElementById('scanner-container');
+    if (!container.classList.contains('hidden')) {
+        container.classList.add('hidden');
+        if (html5QrCode) { await html5QrCode.stop(); html5QrCode = null; }
+        return;
+    }
+    container.classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode:"environment" }, { fps:15, qrbox:250 }, text => { toggleScanner(); processScan(text); });
+}
+</script>
 </body>
 </html>
