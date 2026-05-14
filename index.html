@@ -273,37 +273,30 @@ function parseCSVLine(row) {
 }
 
 // ── Parser WAITING ────────────────────────────────────────────────────────
-// Menggunakan PLANING_COL hardcode PLUS auto-detect fallback untuk ORDER NO
 function parseWaitingCSV(line, text) {
     const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
     if (rows.length < 2) return [];
 
-    // Cari baris header
     let headerRowIdx = 0;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
         const t = rows[i].join(' ').toUpperCase();
         if (t.includes('PACKING') || t.includes('ORDER NO') || t.includes('PROCESS ORDER') || t.includes('CC NO')) {
-            headerRowIdx = i;
-            break;
+            headerRowIdx = i; break;
         }
     }
 
     const headers = rows[headerRowIdx].map(h => (h || '').toUpperCase().replace(/\s+/g, ' ').trim());
 
-    // ── Auto-detect ORDER NO dari header sebagai fallback ──────────────────
     const autoOrderIdx = headers.findIndex(h =>
         h === 'ORDER NO' || h === 'ORDER' || h === 'NO ORDER' || h === 'PROCESS ORDER'
     );
-
-    // ── Auto-detect CC NO dari header sebagai fallback ────────────────────
     const autoCCIdx = headers.findIndex(h =>
         h.includes('CC NO') || h.includes('CCNO') || h.includes('PACKING NO') || h.includes('PACK NO')
     );
 
-    // Gunakan auto-detect jika valid, otherwise fallback ke hardcode
     const C = {
-        order:  autoOrderIdx  !== -1 ? autoOrderIdx  : PLANING_COL.order,
-        cc:     autoCCIdx     !== -1 ? autoCCIdx     : PLANING_COL.cc,
+        order:  autoOrderIdx !== -1 ? autoOrderIdx : PLANING_COL.order,
+        cc:     autoCCIdx    !== -1 ? autoCCIdx    : PLANING_COL.cc,
         spec:   PLANING_COL.spec,
         size:   PLANING_COL.size,
         weight: PLANING_COL.weight,
@@ -311,13 +304,11 @@ function parseWaitingCSV(line, text) {
         cust:   PLANING_COL.cust,
     };
 
-    // Log untuk verifikasi
     console.group(`[HSSI] parseWaitingCSV ${line}`);
     console.log('Header row index:', headerRowIdx);
-    console.log('Kolom yang digunakan (auto-detect + hardcode):');
     console.table({
-        'ORDER NO': { index: C.order,  header: headers[C.order]  || '???', source: autoOrderIdx !== -1 ? 'AUTO-DETECT' : 'HARDCODE' },
-        'CC NO':    { index: C.cc,     header: headers[C.cc]     || '???', source: autoCCIdx    !== -1 ? 'AUTO-DETECT' : 'HARDCODE' },
+        'ORDER NO': { index: C.order,  header: headers[C.order]  || '???', source: autoOrderIdx !== -1 ? 'AUTO' : 'HARDCODE' },
+        'CC NO':    { index: C.cc,     header: headers[C.cc]     || '???', source: autoCCIdx    !== -1 ? 'AUTO' : 'HARDCODE' },
         'SPEC':     { index: C.spec,   header: headers[C.spec]   || '???' },
         'SIZE':     { index: C.size,   header: headers[C.size]   || '???' },
         'WEIGHT':   { index: C.weight, header: headers[C.weight] || '???' },
@@ -326,14 +317,13 @@ function parseWaitingCSV(line, text) {
     });
     console.groupEnd();
 
-    // Filter baris valid: CC No (kolom G=6 atau auto-detect) harus ada isinya
     const anchorIdx = C.cc;
     const filtered = rows.slice(headerRowIdx + 1)
         .filter(r => r[anchorIdx] && r[anchorIdx].trim().length > 3);
 
     if (filtered.length > 0) {
         const s = filtered[0];
-        console.log(`[HSSI] ${line} — Sample data baris pertama:`, {
+        console.log(`[HSSI] ${line} — Sample baris pertama:`, {
             orderNo:  (s[C.order]  || '').trim(),
             ccNo:     (s[C.cc]     || '').trim(),
             spec:     (s[C.spec]   || '').trim(),
@@ -345,15 +335,12 @@ function parseWaitingCSV(line, text) {
 
     return filtered.map((r, i) => {
         const w = parseFloat((r[C.weight] || '0').replace(/[^\d.]/g, '')) || 0;
-        const rawOrder = (r[C.order] || '').trim();
-        const rawCC    = (r[C.cc]    || '').trim();
-
         return {
-            id:             `${line}-W-${i}-${rawCC}`,
+            id:             `${line}-W-${i}-${(r[C.cc]||'').trim()}`,
             line,
-            orderNo:        rawOrder,
+            orderNo:        (r[C.order]  || '').trim(),
             customer:       (r[C.cust]   || '').trim(),
-            ccNo:           rawCC,
+            ccNo:           (r[C.cc]     || '').trim(),
             spec:           (r[C.spec]   || '').trim(),
             place:          (r[C.place]  || '').trim(),
             size:           (r[C.size]   || '').trim(),
@@ -368,6 +355,10 @@ function parseWaitingCSV(line, text) {
 }
 
 // ── Parser FINISH ──────────────────────────────────────────────────────────
+// CATATAN: item.place digunakan untuk menyimpan DATE dari spreadsheet,
+// karena kolom DATE di tabel FINISH ditampilkan lewat item.place.
+// Untuk item yang baru di-finish dari sesi ini, item.place di-set ke
+// dateStr di dalam submitFinish() — inilah FIX utama bug DATE vs PLACE.
 function parseFinishCSV(line, text) {
     const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
     if (rows.length < 2) return [];
@@ -420,23 +411,26 @@ function parseFinishCSV(line, text) {
                 if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv;
             }
             return {
-                id: `${line}-F-${i}-${ccVal}`,
-                line: lineVal,
+                id:           `${line}-F-${i}-${ccVal}`,
+                line:         lineVal,
                 orderNo:      g(col.order),
                 customer:     g(col.cust),
                 ccNo:         ccVal,
                 spec:         g(col.spec),
+                // ── item.place menyimpan DATE (bukan PLACE planning) ──────────
+                // Ini konsisten dengan renderTable yang menampilkan item.place
+                // di kolom DATE pada menu FINISH PROCESS.
                 place:        g(col.date),
                 size:         g(col.size),
                 weight:       parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0,
                 productWidth: g(col.prodSize),
-                qtyFG:        g(col.qtyFG) || '0',
-                qtyNG:        g(col.qtyNG) || '0',
+                qtyFG:        g(col.qtyFG)    || '0',
+                qtyNG:        g(col.qtyNG)    || '0',
                 startTime:    g(col.start),
                 finishedAt:   g(col.finish),
                 kendalaWaktu: g(col.downTime) || '0',
                 remark:       g(col.remark),
-                speed:        g(col.speed) || '0',
+                speed:        g(col.speed)    || '0',
                 status:       'COMPLETED'
             };
         });
@@ -681,57 +675,57 @@ function submitFinish() {
     const speed = document.getElementById('finish-speed').value;
     const remark = document.getElementById('finish-remark').value;
     const now = new Date();
-    const finishTime = now.toTimeString().slice(0,8);
+    const finishTime = now.toTimeString().slice(0, 8);
     const dateStr = now.toLocaleDateString('id-ID');
 
-    // ── ORDER NO: gunakan nilai asli dari parsing ─────────────────────────
-    // Jika kosong, tetap kirim string kosong — jangan di-replace dengan ccNo
-    // supaya di spreadsheet terlihat jelas mana yang berhasil/gagal parse
     const orderNoFinal = (item.orderNo || '').trim();
 
     console.group('[HSSI] submitFinish — Payload');
     console.log('ORDER NO :', `"${orderNoFinal}"`);
     console.log('CC NO    :', `"${item.ccNo}"`);
+    console.log('DATE     :', dateStr);
     console.log('LINE     :', item.line);
     console.groupEnd();
 
     products.forEach((prod, idx) => {
-        // ── Payload dikirim ke Apps Script ────────────────────────────────
-        // Urutan key mencerminkan urutan kolom di Production Report:
-        // DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE | WEIGHT |
-        // PRODUCT SIZE | QTY FG | QTY NG | START | FINISH | DOWN TIME |
-        // REMARK | LINE SPEED | LINE
         const payload = {
-            action:           "FINISH",
-            "DATE":           dateStr,
-            "ORDER NO":       orderNoFinal,           // ← kolom B (kiri CC NO)
-            "CC NO":          item.ccNo         || "-",
-            "CUSTOMER":       item.customer     || "-",
-            "SPEC":           item.spec         || "-",
-            "SIZE":           item.size         || "-",
-            "WEIGHT":         item.weight       || 0,
-            "PRODUCT SIZE":   prod.width        || "-",
-            "QTY FG":         prod.fg,
-            "QTY NG":         prod.ng,
-            "START":          item.startTime    || "-",
-            "FINISH":         finishTime,
-            "DOWN TIME":      item.kendalaWaktu || "0",
-            "REMARK":         remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
-            "LINE SPEED":     speed  || "0",
-            "LINE":           item.line || "-"
+            action:         "FINISH",
+            "DATE":         dateStr,
+            "ORDER NO":     orderNoFinal,
+            "CC NO":        item.ccNo         || "-",
+            "CUSTOMER":     item.customer     || "-",
+            "SPEC":         item.spec         || "-",
+            "SIZE":         item.size         || "-",
+            "WEIGHT":       item.weight       || 0,
+            "PRODUCT SIZE": prod.width        || "-",
+            "QTY FG":       prod.fg,
+            "QTY NG":       prod.ng,
+            "START":        item.startTime    || "-",
+            "FINISH":       finishTime,
+            "DOWN TIME":    item.kendalaWaktu || "0",
+            "REMARK":       remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
+            "LINE SPEED":   speed  || "0",
+            "LINE":         item.line || "-"
         };
         console.log(`[HSSI] Kirim produk #${idx+1}:`, payload);
         fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
     });
 
-    const totalFG = products.reduce((s,p) => s+p.fg, 0);
+    const totalFG = products.reduce((s, p) => s + p.fg, 0);
     item.status       = "COMPLETED";
     item.finishedAt   = finishTime;
-    item.productWidth = products.map(p=>p.width).filter(Boolean).join(', ');
+    item.productWidth = products.map(p => p.width).filter(Boolean).join(', ');
     item.qtyFG        = totalFG;
-    item.qtyNG        = products.reduce((s,p)=>s+p.ng,0);
+    item.qtyNG        = products.reduce((s, p) => s + p.ng, 0);
     item.speed        = speed;
     item.remark       = remark;
+
+    // ── FIX: Timpa item.place dengan tanggal hari ini ─────────────────────
+    // Sebelumnya item.place berisi nilai PLACE dari planning sheet (mis. "MCA50"),
+    // sehingga kolom DATE di FINISH PROCESS menampilkan PLACE bukan tanggal.
+    // Setelah di-finish, item.place harus berisi dateStr agar konsisten
+    // dengan data yang dibaca dari spreadsheet via parseFinishCSV.
+    item.place = dateStr;
 
     completedItems.unshift(item);
     appData = appData.filter(i => i.id !== finishingItemId);
@@ -795,7 +789,7 @@ function updateStats() {
     ['DS1','DS2','DS3'].forEach(line => {
         const done = completedItems.filter(i => i.line === line);
         const wait = appData.filter(i => i.line === line);
-        const ton = done.reduce((a,c) => a + parseFloat(c.originalWeight || c.weight || 0), 0) / 1000;
+        const ton = done.reduce((a, c) => a + parseFloat(c.originalWeight || c.weight || 0), 0) / 1000;
         const tEl = document.getElementById(`ton-${line.toLowerCase()}`);
         const cEl = document.getElementById(`count-${line.toLowerCase()}`);
         if (tEl) tEl.innerText = ton.toFixed(2);
