@@ -275,8 +275,6 @@
         window.onload = () => {
             safeCreateIcons();
             initCharts();
-            // Bersihkan localStorage lama agar tidak ada sisa data cache
-            localStorage.removeItem('hssi_finish_data');
             fetchAllData();
         };
 
@@ -297,61 +295,64 @@
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
 
-            const HEADER_KEYWORDS = ['ORDER','CC NO','CCNO','PACKING','CUSTOMER','SPEC','SIZE','WEIGHT','QTY','PLACE'];
+            // Auto-detect baris header
+            const HEADER_KEYWORDS = ['PACKING','ORDER','PROCESS','CUSTOMER','SPEC','SIZE','WEIGHT','PLACE','COMMODITY','SEQ'];
             let headerRowIdx = 0;
             for (let i = 0; i < Math.min(rows.length, 10); i++) {
                 const rowText = rows[i].join(' ').toUpperCase();
                 const matchCount = HEADER_KEYWORDS.filter(k => rowText.includes(k)).length;
-                if (matchCount >= 2) { headerRowIdx = i; break; }
+                if (matchCount >= 3) { headerRowIdx = i; break; }
             }
 
-            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
+            // Bersihkan header: hapus titik, kutip, spasi lebih
+            const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/[."]/g, '').replace(/\s+/g, ' ').trim());
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
-            console.log(`[HSSI] WAITING ${line} - Kolom terdeteksi:`, {
-                'ORDER NO': col.order  === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
-                'CC/PACKING': col.cc   === -1 ? '❌' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
-                'CUSTOMER':  col.cust  === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
-                'SPEC':      col.spec  === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
-                'SIZE':      col.size  === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
-                'WEIGHT/QTY':col.kg    === -1 ? '❌' : `✅ Kolom ${col.kg} = "${headers[col.kg]}"`,
-            });
 
             const col = {
-                // Diperluas: tangkap "PROCESS ORDER NO", "ORDER NO", "ORDER", dll
-                order: (() => {
-                    // Coba cari yang paling spesifik dulu
-                    const specific = headers.findIndex(h => h.includes('PROCESS ORDER') || h === 'ORDER NO' || h === 'ORDER NO.');
-                    if (specific !== -1) return specific;
-                    // Fallback: cari yang mengandung ORDER tapi bukan kolom lain
-                    return headers.findIndex(h => h.includes('ORDER') && !h.includes('PACKING') && !h.includes('CC'));
-                })(),
+                order: findIdx(['PROCESS ORDER', 'ORDER NO', 'ORDER']),
                 cust:  findIdx(['CUSTOMER', 'PEMBELI']),
-                cc:    findIdx(['PACKING NO', 'CC NO', 'CC.', 'IDENTITY', 'PACKING']),
-                spec:  findIdx(['SPEC', 'MUTU', 'GRADE', 'COMMODITY']),
+                cc:    findIdx(['PACKING NO', 'PACKING', 'CC NO', 'CC', 'IDENTITY']),
+                spec:  findIdx(['COMMODITY CODE', 'COMMODITY', 'SPEC', 'MUTU', 'GRADE']),
                 place: findIdx(['PLACE', 'LOKASI', 'POS']),
                 size:  findIdx(['SIZE', 'DIMENSI']),
-                kg:    findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
+                kg:    findIdx(['WEIGHT', 'BERAT', 'QTY FG', 'KG'])
             };
 
-            const anchorCol = col.cc !== -1 ? col.cc : (col.order !== -1 ? col.order : 0);
+            // Log SETELAH col dideklarasikan
+            console.log(`[HSSI] WAITING ${line} - Header baris ${headerRowIdx+1}:`, headers.join(' | '));
+            console.log(`[HSSI] WAITING ${line} - Col index:`, col);
 
-            return rows.slice(headerRowIdx + 1)
-                .filter(r => r[anchorCol] && r[anchorCol].trim() !== '')
-                .map((r, i) => ({
-                    id: `${line}-W-${i}-${col.cc !== -1 ? r[col.cc] : i}`,
-                    line,
-                    orderNo:  col.order !== -1 ? (r[col.order] || "") : "",
-                    customer: col.cust  !== -1 ? (r[col.cust]  || "") : "",
-                    ccNo:     col.cc    !== -1 ? (r[col.cc]    || "") : "",
-                    spec:     col.spec  !== -1 ? (r[col.spec]  || "") : "",
-                    place:    col.place !== -1 ? (r[col.place] || "") : "",
-                    size:     col.size  !== -1 ? (r[col.size]  || "") : "",
-                    weight:   parseFloat((col.kg !== -1 ? r[col.kg] : '0')?.replace(/[^\d.]/g, '')) || 0,
-                    status: "WAITING",
-                    kendala: "",
-                    kendalaWaktu: ""
-                }));
+            // Fallback berdasarkan posisi kolom spreadsheet DS1 PLANING:
+            // A=SEQ | B=PROCESS | C=ORDER | D=DATE | E=NEXT | F=PLACE | G=COMMODITY | H=PACKING | I=OIL | J=SIZE | K=PW | L=WEIGHT | ... | T=CUSTOMER
+            if (col.cc    === -1) { col.cc    = 7;  console.warn(`[HSSI] WAITING ${line} - CC fallback kolom 7`); }
+            if (col.order === -1) { col.order = 2;  console.warn(`[HSSI] WAITING ${line} - ORDER fallback kolom 2`); }
+            if (col.spec  === -1) { col.spec  = 6;  console.warn(`[HSSI] WAITING ${line} - SPEC fallback kolom 6`); }
+            if (col.size  === -1) { col.size  = 9;  console.warn(`[HSSI] WAITING ${line} - SIZE fallback kolom 9`); }
+            if (col.kg    === -1) { col.kg    = 11; console.warn(`[HSSI] WAITING ${line} - WEIGHT fallback kolom 11`); }
+            if (col.cust  === -1) { col.cust  = 19; console.warn(`[HSSI] WAITING ${line} - CUSTOMER fallback kolom 19`); }
+            if (col.place === -1) { col.place = 5;  }
+
+            const anchorCol = col.cc;
+
+            const filtered = rows.slice(headerRowIdx + 1)
+                .filter(r => r[anchorCol] && r[anchorCol].trim().length > 5);
+
+            console.log(`[HSSI] WAITING ${line} - Baris valid: ${filtered.length}`);
+
+            return filtered.map((r, i) => ({
+                id:       `${line}-W-${i}-${r[col.cc]}`,
+                line,
+                orderNo:  (r[col.order] || "").trim(),
+                customer: (r[col.cust]  || "").trim(),
+                ccNo:     (r[col.cc]    || "").trim(),
+                spec:     (r[col.spec]  || "").trim(),
+                place:    (r[col.place] || "").trim(),
+                size:     (r[col.size]  || "").trim(),
+                weight:   parseFloat((r[col.kg] || '0').replace(/[^\d.]/g, '')) || 0,
+                status:   "WAITING",
+                kendala:  "",
+                kendalaWaktu: ""
+            }));
         }
 
         // ─── Parser khusus sheet FINISH/REPORT ────────────────────────────────────
@@ -499,9 +500,20 @@
                 );
 
                 const newWaitingData = resultsWaiting.flat();
+                const fetchedFinishData = resultsFinish.flat();
 
-                // Hanya gunakan data langsung dari spreadsheet, tanpa localStorage
-                finishData = resultsFinish.flat();
+                // Merge dengan localStorage agar data finish yang baru saja disubmit
+                // tetap tampil sebelum Google Sheets CSV ter-update (butuh ~1 menit)
+                const isValidCC = (cc) => cc && cc.trim() !== '' && cc.trim() !== '-' && cc.trim().length >= 3;
+                const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]').filter(lf => isValidCC(lf.ccNo));
+                const mergedFinish = [...fetchedFinishData];
+                localFinish.forEach(lf => {
+                    if (!mergedFinish.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) {
+                        mergedFinish.unshift(lf);
+                    }
+                });
+
+                finishData = mergedFinish;
                 completedItems = [...finishData];
 
                 // Pertahankan state ON PROCESS yang sedang berjalan di sesi ini
