@@ -112,10 +112,14 @@
         <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
-                    <thead id="table-head"></thead>
-                    <tbody id="table-body" class="divide-y divide-slate-50"></tbody>
+                    <thead id="table-head">
+                        <!-- Header di-render dinamis oleh renderTableHeader() -->
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-50">
+                    </tbody>
                 </table>
             </div>
+
             <div id="loading" class="hidden p-32 flex flex-col items-center justify-center">
                 <div class="w-12 h-12 border-[5px] border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sinkronisasi Database...</p>
@@ -156,24 +160,35 @@
                 </button>
             </div>
             <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                <!-- Info umum: Speed saja, Lebar sudah per baris produk -->
                 <div class="grid grid-cols-1 gap-6 mb-6">
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
                         <input type="number" id="finish-speed" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
                     </div>
                 </div>
+
+                <!-- Label header produk -->
                 <div class="flex items-center justify-between mb-3">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
                     <button onclick="addProductRow()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Produk
                     </button>
                 </div>
-                <div id="product-rows-container" class="flex flex-col gap-4 mb-6"></div>
+
+                <!-- Container baris produk -->
+                <div id="product-rows-container" class="flex flex-col gap-4 mb-6">
+                    <!-- Baris produk dirender oleh JS -->
+                </div>
+
+                <!-- Remark -->
                 <div class="mb-2">
                     <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Remark / Catatan</label>
                     <textarea id="finish-remark" rows="2" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Input keterangan jika ada..."></textarea>
                 </div>
             </div>
+
+            <!-- Tombol submit -->
             <div class="px-8 pb-8 flex-shrink-0">
                 <button onclick="submitFinish()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
@@ -239,6 +254,7 @@
             }
         };
 
+        // ── GANTI URL INI DENGAN APPS SCRIPT URL KAMU ──────────────────────────────
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0plVycmt0-wxrqE3Ztc8RY2VAGgUQiULqtRpnfSBkk-MwhuIsi9Lh4LMFHOCvaf0/exec";
 
         let appData = [];
@@ -259,11 +275,12 @@
         window.onload = () => {
             safeCreateIcons();
             initCharts();
+            // Bersihkan localStorage lama agar tidak ada sisa data cache
             localStorage.removeItem('hssi_finish_data');
             fetchAllData();
         };
 
-        // ─── CSV Parser ────────────────────────────────────────────────────────────
+        // ─── CSV Parser yang robust ────────────────────────────────────────────────
         function parseCSVLine(row) {
             let arr = []; let cur = ""; let q = false;
             for (let c of row) {
@@ -275,7 +292,7 @@
             return arr;
         }
 
-        // ─── Parser WAITING — BUG FIXED: console.log dipindah setelah const col ──
+        // Parser untuk sheet WAITING
         function parseWaitingCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
@@ -290,12 +307,23 @@
 
             const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
+            console.log(`[HSSI] WAITING ${line} - Kolom terdeteksi:`, {
+                'ORDER NO': col.order  === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
+                'CC/PACKING': col.cc   === -1 ? '❌' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
+                'CUSTOMER':  col.cust  === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
+                'SPEC':      col.spec  === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
+                'SIZE':      col.size  === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
+                'WEIGHT/QTY':col.kg    === -1 ? '❌' : `✅ Kolom ${col.kg} = "${headers[col.kg]}"`,
+            });
 
-            // ✅ FIX: const col dideklarasikan SEBELUM digunakan di console.log
             const col = {
+                // Diperluas: tangkap "PROCESS ORDER NO", "ORDER NO", "ORDER", dll
                 order: (() => {
+                    // Coba cari yang paling spesifik dulu
                     const specific = headers.findIndex(h => h.includes('PROCESS ORDER') || h === 'ORDER NO' || h === 'ORDER NO.');
                     if (specific !== -1) return specific;
+                    // Fallback: cari yang mengandung ORDER tapi bukan kolom lain
                     return headers.findIndex(h => h.includes('ORDER') && !h.includes('PACKING') && !h.includes('CC'));
                 })(),
                 cust:  findIdx(['CUSTOMER', 'PEMBELI']),
@@ -305,17 +333,6 @@
                 size:  findIdx(['SIZE', 'DIMENSI']),
                 kg:    findIdx(['QTY FG', 'KG', 'BERAT', 'WEIGHT', 'QTY'])
             };
-
-            // ✅ FIX: console.log sekarang ada di bawah const col
-            console.log(`[HSSI] Sheet WAITING ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
-            console.log(`[HSSI] WAITING ${line} - Kolom terdeteksi:`, {
-                'ORDER NO':   col.order === -1 ? '❌ TIDAK DITEMUKAN' : `✅ Kolom ${col.order} = "${headers[col.order]}"`,
-                'CC/PACKING': col.cc    === -1 ? '❌' : `✅ Kolom ${col.cc} = "${headers[col.cc]}"`,
-                'CUSTOMER':   col.cust  === -1 ? '❌' : `✅ Kolom ${col.cust} = "${headers[col.cust]}"`,
-                'SPEC':       col.spec  === -1 ? '❌' : `✅ Kolom ${col.spec} = "${headers[col.spec]}"`,
-                'SIZE':       col.size  === -1 ? '❌' : `✅ Kolom ${col.size} = "${headers[col.size]}"`,
-                'WEIGHT/QTY': col.kg    === -1 ? '❌' : `✅ Kolom ${col.kg} = "${headers[col.kg]}"`,
-            });
 
             const anchorCol = col.cc !== -1 ? col.cc : (col.order !== -1 ? col.order : 0);
 
@@ -337,7 +354,10 @@
                 }));
         }
 
-        // ─── Parser FINISH ─────────────────────────────────────────────────────────
+        // ─── Parser khusus sheet FINISH/REPORT ────────────────────────────────────
+        // Kolom spreadsheet: DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE |
+        //                    WEIGHT | PRODUCT SIZE | QTY FG | QTY NG | START |
+        //                    FINISH | DOWN TIME | REMARK | LINE SPEED | LINE
         function parseFinishCSV(line, text) {
             const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
             if (rows.length < 2) return [];
@@ -352,6 +372,7 @@
 
             const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g, ' ').replace(/"/g, ''));
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+            console.log(`[HSSI] Sheet FINISH ${line} - header ditemukan di baris ${headerRowIdx + 1}:`, headers.filter(h=>h).join(' | '));
 
             console.group(`[HSSI] Header Sheet FINISH - ${line}`);
             console.log('Header asli:', rows[headerRowIdx]);
@@ -462,7 +483,7 @@
                             const res = await fetch(SHEET_CONFIG.WAITING[line]);
                             const text = await res.text();
                             return parseWaitingCSV(line, text);
-                        } catch(e) { console.error(`Error fetch WAITING ${line}:`, e); return []; }
+                        } catch(e) { return []; }
                     })
                 );
 
@@ -473,15 +494,17 @@
                             if (!res.ok) return [];
                             const text = await res.text();
                             return parseFinishCSV(line, text);
-                        } catch(e) { console.error(`Error fetch FINISH ${line}:`, e); return []; }
+                        } catch(e) { return []; }
                     })
                 );
 
                 const newWaitingData = resultsWaiting.flat();
 
+                // Hanya gunakan data langsung dari spreadsheet, tanpa localStorage
                 finishData = resultsFinish.flat();
                 completedItems = [...finishData];
 
+                // Pertahankan state ON PROCESS yang sedang berjalan di sesi ini
                 appData = newWaitingData.map(item => {
                     const existing = appData.find(ex => ex.ccNo === item.ccNo && ex.line === item.line);
                     return existing
@@ -513,6 +536,7 @@
             const thCenter = `${thBase} text-center`;
 
             if (activeMenu === 'FINISH') {
+                // Header sesuai kolom Production Report spreadsheet
                 thead.innerHTML = `
                 <tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
                     <th class="${thCenter}">Date</th>
@@ -533,6 +557,7 @@
                     <th class="${thCenter}">Line</th>
                 </tr>`;
             } else {
+                // Header untuk WAITING LIST
                 thead.innerHTML = `
                 <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
                     <th class="${thCenter}">Line</th>
@@ -568,6 +593,7 @@
             }
 
             if (isFinishMenu) {
+                // ── Render baris untuk FINISH PROCESS ──────────────────────────────
                 tbody.innerHTML = data.map(item => {
                     const lineColor = item.line === 'DS1' ? 'bg-[#00843d]' : item.line === 'DS2' ? 'bg-sky-600' : 'bg-amber-600';
                     const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
@@ -609,6 +635,7 @@
                 }).join('');
 
             } else {
+                // ── Render baris untuk WAITING LIST ────────────────────────────────
                 tbody.innerHTML = data.map(item => {
                     const orderDisplay = item.orderNo && item.orderNo.trim() !== ''
                         ? `<div class="font-bold text-slate-800 leading-tight">${item.orderNo}</div>`
@@ -668,6 +695,7 @@
                 item.status = "ON PROCESS";
                 item.startTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 showToast(`START: ${item.ccNo}`, "success");
+                // Data hanya dikirim ke spreadsheet saat FINISH, bukan saat START
             } else if (item.status === "ON PROCESS") {
                 openFinishModal(item.id);
             }
@@ -679,6 +707,7 @@
             updateStats();
         }
 
+        // ── Counter untuk ID baris produk ─────────────────────────────────────────
         let productRowCounter = 0;
 
         function addProductRow(qtyFG = '', qtyNG = '0', width = '') {
@@ -730,9 +759,10 @@
             document.getElementById('finish-speed').value = "";
             document.getElementById('finish-remark').value = "";
 
+            // Reset baris produk
             productRowCounter = 0;
             document.getElementById('product-rows-container').innerHTML = '';
-            addProductRow();
+            addProductRow(); // tambah 1 baris default
 
             document.getElementById('modal-finish').classList.replace('hidden', 'flex');
             safeCreateIcons();
@@ -750,6 +780,7 @@
 
             const item = appData[idx];
 
+            // Kumpulkan semua baris produk
             const container = document.getElementById('product-rows-container');
             const rows = container.querySelectorAll('[id^="product-row-"]');
             const products = [];
@@ -777,12 +808,14 @@
             const speed  = document.getElementById('finish-speed').value;
             const remark = document.getElementById('finish-remark').value;
 
+            // Buat timestamp FINISH yang akurat
             const sekarang  = new Date();
             const finishTime = sekarang.getHours().toString().padStart(2,'0') + ":" +
                                sekarang.getMinutes().toString().padStart(2,'0') + ":" +
                                sekarang.getSeconds().toString().padStart(2,'0');
             const dateStr = sekarang.toLocaleDateString('id-ID');
 
+            // Kirim setiap produk sebagai baris terpisah ke spreadsheet
             products.forEach((prod) => {
                 const payload = {
                     action:         "FINISH",
@@ -803,6 +836,15 @@
                     "LINE SPEED":   speed             || "0",
                     "LINE":         item.line         || "-"
                 };
+
+                // Debug: cek nilai yang dikirim
+                console.log('[HSSI] Payload FINISH:', {
+                    'ORDER NO': payload["ORDER NO"],
+                    'CC NO':    payload["CC NO"],
+                    'item.orderNo (raw)': item.orderNo,
+                    'item.ccNo (raw)':    item.ccNo,
+                });
+
                 fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode:   'no-cors',
@@ -810,6 +852,7 @@
                 });
             });
 
+            // Update state lokal
             const totalFG = products.reduce((s, p) => s + p.fg, 0);
             item.status       = "COMPLETED";
             item.finishedAt   = finishTime;
@@ -823,6 +866,7 @@
             completedItems.unshift(item);
             appData = appData.filter(i => i.id !== finishingItemId);
             finishData.unshift(item);
+            localStorage.setItem('hssi_finish_data', JSON.stringify(finishData));
 
             const prodLabel = products.length > 1 ? ` (${products.length} produk)` : '';
             showToast(`${item.ccNo} SELESAI${prodLabel}`, "success");
@@ -917,8 +961,14 @@
             });
         }
 
+        // ─── FUNGSI KIRIM DATA KE SPREADSHEET ─────────────────────────────────────
+        // Urutan kolom disesuaikan dengan format spreadsheet:
+        // DATE | ORDER NO | CC NO | CUSTOMER | SPEC | SIZE | WEIGHT |
+        // PRODUCT SIZE | QTY FG | QTY NG | START | FINISH | DOWN TIME |
+        // REMARK | LINE SPEED | LINE
+        // Catatan: action FINISH dikirim langsung di submitFinish() per baris produk
         function sendToReportSheet(item, action) {
-            if (action === "FINISH") return;
+            if (action === "FINISH") return; // ditangani di submitFinish()
 
             const today = new Date();
             const dateStr = today.toLocaleDateString('id-ID');
