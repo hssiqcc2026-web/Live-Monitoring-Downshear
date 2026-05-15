@@ -638,8 +638,12 @@ async function toggleScanner() {
 function submitManualMobile() {
     const val = (document.getElementById('manualInputMobile').value || '').trim();
     if (!val) return;
-    // Try to parse as QR first, then fallback to raw value
     const ccNo = parseQRCodeToCC(val) || val;
+    // Tambahan: validasi panjang minimal
+    if (ccNo.length < 10) {
+        showToast("Format CC No. tidak valid!", "error");
+        return;
+    }
     document.getElementById('manualInputMobile').value = '';
     toggleScanner().then(() => processScan(ccNo));
 }
