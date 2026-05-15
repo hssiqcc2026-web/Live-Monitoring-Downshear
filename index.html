@@ -1191,8 +1191,8 @@ function showToast(msg, type='success') {
     toastTimer=setTimeout(()=>t.classList.add('hidden'),3000);
     safeCreateIcons();
 }
-</script>
-    if ('serviceWorker' in navigator) {
+<script>
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js');
   }
 </script>
