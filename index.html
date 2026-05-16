@@ -11,8 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
         body {
@@ -405,32 +403,6 @@
 </footer>
 
 <script>
-    
-function lockLandscape() {
-    // Method 1: Screen Orientation API (Android Chrome, modern browsers)
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(err => {
-            console.warn('Screen Orientation lock gagal (normal di browser biasa):', err.message);
-        });
-    }
-    // Method 2: Deprecated tapi masih jalan di beberapa browser
-    else if (screen.lockOrientation) {
-        screen.lockOrientation('landscape');
-    } else if (screen.mozLockOrientation) {
-        screen.mozLockOrientation('landscape');
-    } else if (screen.msLockOrientation) {
-        screen.msLockOrientation('landscape');
-    }
-}
- 
-// Jalankan lock saat halaman pertama kali dibuka
-document.addEventListener('DOMContentLoaded', lockLandscape);
- 
-// Jalankan ulang jika user kembali ke tab ini (misal dari background)
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) lockLandscape();
-});
-    
 // ══════════════════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════════════════
@@ -453,7 +425,7 @@ const PLANING_EDIT_URLS = {
     DS3: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=2002711566#gid=2002711566"
 };
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUksT3iGOaHFOyXbY0v25uO3Asvc39YEWJxvj5NynD4iYQL5MCtZqdH37JJZV53Fj1/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv-6W63GHbDa1dVuNhV5DVBW8dupxBCSIFshtSLZUmXRnTz6ccQKMIcGHhkhB18C7J/exec";
 
 // ── Kolom index untuk parsing CSV WAITING ──
 const PLANING_COL = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
@@ -586,11 +558,14 @@ async function fetchRemoteStatus() {
                 if (!row.ccNo || !row.line) return;
                 const key = row.ccNo.trim() + "|" + row.line.trim().toUpperCase();
                 remoteStatusMap[key] = {
-                    status:    row.status    || "ON PROCESS",
-                    startTime: row.startTime || ""
+                    status:       row.status       || "ON PROCESS",
+                    startTime:    row.startTime    || "",
+                    // ★ BARU: baca kendala & waktu dari server
+                    kendala:      row.kendala      || "",
+                    kendalaWaktu: row.kendalaWaktu || ""
                 };
             });
-            console.log("✔ Remote status:", Object.keys(remoteStatusMap).length, "item ON PROCESS");
+            console.log("✔ Remote status:", Object.keys(remoteStatusMap).length, "item(s) ON PROCESS");
         }
     } catch(e) {
         console.warn("GET_STATUS error (normal jika Apps Script belum diupdate):", e.message);
@@ -687,12 +662,13 @@ function applyRemoteStatus() {
         if (remote && remote.status === "ON PROCESS") {
             return {
                 ...item,
-                status:    "ON PROCESS",
-                startTime: remote.startTime || item.startTime || ""
+                status:       "ON PROCESS",
+                startTime:    remote.startTime    || item.startTime    || "",
+                // ★ BARU: terapkan kendala dari server (prioritas remote > lokal)
+                kendala:      remote.kendala      || item.kendala      || "",
+                kendalaWaktu: remote.kendalaWaktu || item.kendalaWaktu || ""
             };
         }
-        // Kalau di remote tidak ada tapi lokal ON PROCESS → tetap ON PROCESS
-        // (mungkin belum tersync atau lagi offline)
         return item;
     });
 }
@@ -887,8 +863,14 @@ function renderTable() {
                         isOnProcess  ?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse'
                        :item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200'
                        :'bg-slate-100 text-slate-400'}">${item.status}</span>
-                    ${item.startTime&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">Start: ${item.startTime}</div>`:''}
-                    ${item.kendala?`<div class="text-[7px] text-rose-500 font-black mt-1 uppercase">⚠️ ${item.kendala}</div>`:''}
+                    ${item.startTime&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">▶ Start: ${item.startTime}</div>`:''}
+                    ${item.kendala
+                        ? `<div class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-rose-100 border border-rose-200 rounded-full">
+                             <span class="text-[7px] text-rose-600 font-black uppercase">⚠ ${item.kendala}</span>
+                             ${item.kendalaWaktu ? `<span class="text-[7px] text-rose-400 font-bold">${item.kendalaWaktu}mnt</span>` : ''}
+                           </div>`
+                        : ''
+                    }
                 </td>
                 <td class="px-4 py-4 text-center">
                     <div class="flex gap-1 justify-center">
@@ -1080,9 +1062,10 @@ function openKendalaModal(id) {
     const item = appData.find(i => i.id === id);
     if (!item) return;
     document.getElementById('modal-cc-info').innerText = `${item.orderNo||item.ccNo} | ${item.ccNo}`;
+    // Isi nilai yang sudah ada (jika sebelumnya sudah lapor)
     document.getElementById('kendala-select').value = "";
     document.getElementById('kendala-other-input').value = "";
-    document.getElementById('kendala-waktu-input').value = "";
+    document.getElementById('kendala-waktu-input').value = item.kendalaWaktu || "";
     document.getElementById('kendala-other-container').classList.add('hidden');
     showModal('modal-kendala');
 }
@@ -1091,6 +1074,27 @@ function toggleOtherKendala() {
     const v = document.getElementById('kendala-select').value;
     document.getElementById('kendala-other-container').classList.toggle('hidden', v !== 'OTHER');
 }
+
+/**
+ * ★ BARU: Kirim laporan kendala ke Apps Script
+ * Apps Script akan update kolom KENDALA & KENDALA_WAKTU di sheet STATUS
+ */
+function sendKendalaToServer(item) {
+    const payload = {
+        action:            "KENDALA",
+        "CC NO":           item.ccNo,
+        "LINE":            item.line,
+        "ORDER NO":        item.orderNo      || "-",
+        "KENDALA":         item.kendala      || "-",
+        "KENDALA WAKTU":   item.kendalaWaktu || "0"
+    };
+    fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode:   'no-cors',
+        body:   JSON.stringify(payload)
+    }).catch(err => console.warn("Gagal kirim KENDALA ke server:", err));
+}
+
 function saveKendala() {
     let jenis = document.getElementById('kendala-select').value;
     const waktu = document.getElementById('kendala-waktu-input').value;
@@ -1098,9 +1102,21 @@ function saveKendala() {
     if (jenis === 'OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
     const item = appData.find(i => i.id === selectedItemId);
     if (item) {
-        item.kendala = jenis;
+        item.kendala      = jenis;
         item.kendalaWaktu = waktu;
-        showToast("Kendala dilaporkan!");
+
+        // ★ BARU: kirim kendala ke server (realtime antar device)
+        sendKendalaToServer(item);
+
+        // ★ BARU: update remoteStatusMap lokal secara optimistic
+        const key = item.ccNo + "|" + item.line;
+        if (!remoteStatusMap[key]) {
+            remoteStatusMap[key] = { status: item.status, startTime: item.startTime || "" };
+        }
+        remoteStatusMap[key].kendala      = jenis;
+        remoteStatusMap[key].kendalaWaktu = waktu;
+
+        showToast(`⚠️ Kendala "${jenis}" dilaporkan!`);
         renderTable();
         closeKendalaModal();
     }
