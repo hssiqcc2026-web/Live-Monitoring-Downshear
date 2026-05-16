@@ -474,7 +474,27 @@ window.onload = () => {
     initCharts();
     setupDesktopInput();
     fetchAllData();
-    autoRefreshInterval = setInterval(fetchAllData, 120000);
+    autoRefreshInterval = setInterval(fetchAllData, 30000); // Refresh tiap 30 detik
+
+    // ── BroadcastChannel: dengarkan perubahan dari tab lain ──
+    try {
+        const bc = new BroadcastChannel('hssi_sync');
+        bc.onmessage = (e) => {
+            if (e.data && e.data.type === 'STATUS_CHANGE') {
+                const { ccNo, line, status, startTime } = e.data;
+                const item = appData.find(i => i.ccNo === ccNo && i.line === line);
+                if (item) {
+                    item.status = status;
+                    if (startTime) item.startTime = startTime;
+                    renderTable();
+                    updateStats();
+                } else if (status === 'COMPLETED') {
+                    // Refresh penuh jika item tidak ada di memory (beda origin)
+                    fetchAllData();
+                }
+            }
+        };
+    } catch(e) {}
 };
 
 function setupDesktopInput() {
@@ -697,7 +717,23 @@ async function fetchAllData() {
         try { localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]').filter(lf => isValidCC(lf.ccNo)); } catch(e) {}
         finishData = [...fetchedFinish];
         localFinish.forEach(lf => { if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) finishData.unshift(lf); });
-        appData = newWaiting.map(item => { const ex = appData.find(e => e.ccNo === item.ccNo && e.line === item.line); return ex ? { ...item, status: ex.status, startTime: ex.startTime, kendala: ex.kendala, kendalaWaktu: ex.kendalaWaktu } : item; });
+
+        // Baca status ON PROCESS dari localStorage agar sinkron antar tab/refresh
+        let localProcess = {};
+        try { localProcess = JSON.parse(localStorage.getItem('hssi_process_data') || '{}'); } catch(e) {}
+
+        // Bersihkan localProcess: hapus entry yg sudah COMPLETED di finishData
+        const finishedCCs = new Set(finishData.map(f => f.ccNo + '|' + f.line));
+        Object.keys(localProcess).forEach(k => { if (finishedCCs.has(k)) delete localProcess[k]; });
+        try { localStorage.setItem('hssi_process_data', JSON.stringify(localProcess)); } catch(e) {}
+
+        appData = newWaiting.map(item => {
+            const key = item.ccNo + '|' + item.line;
+            const proc = localProcess[key];
+            if (proc) return { ...item, status: proc.status, startTime: proc.startTime, kendala: proc.kendala||'', kendalaWaktu: proc.kendalaWaktu||'' };
+            const ex = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
+            return ex ? { ...item, status: ex.status, startTime: ex.startTime, kendala: ex.kendala, kendalaWaktu: ex.kendalaWaktu } : item;
+        });
         if (statusEl) { statusEl.innerText = "TERHUBUNG KE SERVER"; statusEl.className = "text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]"; }
         renderTable();
         updateStats();
@@ -756,6 +792,26 @@ function processScan(val) {
     if (item.status === "WAITING") {
         item.status = "ON PROCESS";
         item.startTime = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+        // ── SIMPAN ke localStorage agar tab lain / refresh bisa baca ──
+        try {
+            const proc = JSON.parse(localStorage.getItem('hssi_process_data') || '{}');
+            proc[item.ccNo + '|' + item.line] = { status: 'ON PROCESS', startTime: item.startTime, ccNo: item.ccNo, line: item.line, kendala: '', kendalaWaktu: '' };
+            localStorage.setItem('hssi_process_data', JSON.stringify(proc));
+        } catch(e) {}
+
+        // ── BroadcastChannel: beritahu tab lain di browser yang sama ──
+        try {
+            const bc = new BroadcastChannel('hssi_sync');
+            bc.postMessage({ type: 'STATUS_CHANGE', ccNo: item.ccNo, line: item.line, status: 'ON PROCESS', startTime: item.startTime });
+            bc.close();
+        } catch(e) {}
+
+        // ── Kirim ke Apps Script agar device lain tahu lewat refresh ──
+        try {
+            fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ action: 'START', 'CC NO': item.ccNo, 'ORDER NO': item.orderNo||'-', 'LINE': item.line, 'START': item.startTime }) });
+        } catch(e) {}
+
         showToast(`▶ START: ${item.ccNo}`, "success");
         renderTable(); updateStats();
     } else if (item.status === "ON PROCESS") {
@@ -829,6 +885,20 @@ function submitFinish() {
     appData = appData.filter(i => i.id !== finishingItemId);
     finishData = [item, ...finishData];
     try { const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]'); localFinish.unshift(item); localStorage.setItem('hssi_finish_data', JSON.stringify(localFinish.slice(0, 500))); } catch(e) {}
+
+    // ── Hapus dari hssi_process_data ──
+    try {
+        const proc = JSON.parse(localStorage.getItem('hssi_process_data') || '{}');
+        delete proc[item.ccNo + '|' + item.line];
+        localStorage.setItem('hssi_process_data', JSON.stringify(proc));
+    } catch(e) {}
+
+    // ── BroadcastChannel: beritahu tab lain bahwa item ini COMPLETED ──
+    try {
+        const bc = new BroadcastChannel('hssi_sync');
+        bc.postMessage({ type: 'STATUS_CHANGE', ccNo: item.ccNo, line: item.line, status: 'COMPLETED' });
+        bc.close();
+    } catch(e) {}
     showToast(`✓ ${item.ccNo} SELESAI${products.length > 1 ? ' (' + products.length + ' produk)' : ''}`, "success");
     closeFinishModal(); renderTable(); updateStats();
 }
@@ -852,7 +922,18 @@ function saveKendala() {
     if (!jenis) return showToast("Pilih jenis kendala!", "error");
     if (jenis === 'OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
     const item = appData.find(i => i.id === selectedItemId);
-    if (item) { item.kendala = jenis; item.kendalaWaktu = waktu; showToast("Kendala dilaporkan!"); renderTable(); closeKendalaModal(); }
+    if (item) {
+        item.kendala = jenis; item.kendalaWaktu = waktu;
+        // Update hssi_process_data juga
+        try {
+            const proc = JSON.parse(localStorage.getItem('hssi_process_data') || '{}');
+            const key = item.ccNo + '|' + item.line;
+            if (proc[key]) { proc[key].kendala = jenis; proc[key].kendalaWaktu = waktu; }
+            else proc[key] = { status: item.status, startTime: item.startTime||'', ccNo: item.ccNo, line: item.line, kendala: jenis, kendalaWaktu: waktu };
+            localStorage.setItem('hssi_process_data', JSON.stringify(proc));
+        } catch(e) {}
+        showToast("Kendala dilaporkan!"); renderTable(); closeKendalaModal();
+    }
 }
 
 function initCharts() {
