@@ -2,7 +2,15 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ✅ FIX 1: viewport dengan minimal-ui agar PWA mode lebih luas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- ✅ FIX 2: Meta tag khusus iOS untuk PWA fullscreen landscape -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DS Monitor">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <title>HSSI - Downshear Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
@@ -11,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
+
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
         body {
@@ -69,9 +78,56 @@
         /* Sync spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .syncing { animation: spin 1s linear infinite; }
+
+        /* ✅ FIX 3: CSS fallback paksa landscape untuk browser yang tidak support API */
+        @media screen and (orientation: portrait) {
+            #rotate-overlay {
+                display: flex !important;
+            }
+        }
+        @media screen and (orientation: landscape) {
+            #rotate-overlay {
+                display: none !important;
+            }
+        }
+
+        /* Overlay peringatan putar layar (fallback visual) */
+        #rotate-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #0f172a;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            color: white;
+        }
+        #rotate-overlay svg {
+            animation: rotateHint 2s ease-in-out infinite;
+        }
+        @keyframes rotateHint {
+            0%   { transform: rotate(0deg); }
+            40%  { transform: rotate(-90deg); }
+            60%  { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
     </style>
 </head>
 <body class="text-slate-900">
+
+<!-- ✅ FIX 4: Overlay visual jika user masih portrait (fallback untuk iOS yang tidak support lock API) -->
+<div id="rotate-overlay">
+    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none"
+         stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+        <line x1="12" y1="18" x2="12.01" y2="18"/>
+        <polyline points="8 6 12 2 16 6"/>
+    </svg>
+    <p style="font-family:sans-serif;font-size:18px;font-weight:900;letter-spacing:0.05em;">PUTAR LAYAR KE LANDSCAPE</p>
+    <p style="font-family:sans-serif;font-size:12px;color:#94a3b8;">Aplikasi ini dirancang untuk tampilan horizontal</p>
+</div>
 
 <!-- HEADER -->
 <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
@@ -85,7 +141,6 @@
             </div>
             <div>
                 <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
-                <!-- ══ REALTIME STATUS INDICATOR ══ -->
                 <div class="flex items-center gap-2 mt-0.5">
                     <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block"></span>
                     <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">MENGHUBUNGKAN...</p>
@@ -404,6 +459,35 @@
 
 <script>
 // ══════════════════════════════════════════════════════════════
+//  ✅ FIX 5: LOCK ORIENTASI KE LANDSCAPE via Screen Orientation API
+//  Dipanggil saat halaman load — bekerja di Android Chrome PWA
+// ══════════════════════════════════════════════════════════════
+function lockLandscape() {
+    // Method 1: Screen Orientation API (Android Chrome, modern browsers)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+            console.warn('Screen Orientation lock gagal (normal di browser biasa):', err.message);
+        });
+    }
+    // Method 2: Deprecated tapi masih jalan di beberapa browser
+    else if (screen.lockOrientation) {
+        screen.lockOrientation('landscape');
+    } else if (screen.mozLockOrientation) {
+        screen.mozLockOrientation('landscape');
+    } else if (screen.msLockOrientation) {
+        screen.msLockOrientation('landscape');
+    }
+}
+
+// Jalankan lock saat halaman pertama kali dibuka
+document.addEventListener('DOMContentLoaded', lockLandscape);
+
+// Jalankan ulang jika user kembali ke tab ini (misal dari background)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) lockLandscape();
+});
+
+// ══════════════════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════════════════
 const SHEET_CONFIG = {
@@ -427,18 +511,11 @@ const PLANING_EDIT_URLS = {
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUksT3iGOaHFOyXbY0v25uO3Asvc39YEWJxvj5NynD4iYQL5MCtZqdH37JJZV53Fj1/exec";
 
-// ── Kolom index untuk parsing CSV WAITING ──
 const PLANING_COL = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
 
-// ══════════════════════════════════════════════════════════════
-//  STATE  (semua variabel dideklarsikan di sini — FIX UTAMA)
-// ══════════════════════════════════════════════════════════════
-let appData        = [];   // data WAITING
-let finishData     = [];   // data FINISH
-
-// ★ FIX: remoteStatusMap harus dideklarasikan sebelum dipakai
-let remoteStatusMap = {};  // { "CC NO|LINE": { status, startTime } }
-
+let appData        = [];
+let finishData     = [];
+let remoteStatusMap = {};
 let activeMenu     = 'WAITING';
 let activeLine     = 'ALL';
 let searchQuery    = '';
@@ -449,15 +526,11 @@ let charts         = {};
 let scannerOpen    = false;
 let lastScanLock   = false;
 
-// ── Auto-refresh setiap 15 detik (bukan 2 menit) ──
 const REFRESH_INTERVAL = 15000;
 let autoRefreshTimer   = null;
 let countdownTimer     = null;
 let countdownValue     = REFRESH_INTERVAL / 1000;
 
-// ══════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════
 window.onload = () => {
     safeCreateIcons();
     initCharts();
@@ -470,19 +543,14 @@ function safeCreateIcons() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  AUTO REFRESH + COUNTDOWN UI
-// ══════════════════════════════════════════════════════════════
 function startAutoRefresh() {
     clearAutoRefresh();
     countdownValue = REFRESH_INTERVAL / 1000;
     updateCountdownUI();
-
     autoRefreshTimer = setInterval(() => {
         fetchAllData();
         countdownValue = REFRESH_INTERVAL / 1000;
     }, REFRESH_INTERVAL);
-
     countdownTimer = setInterval(() => {
         countdownValue = Math.max(0, countdownValue - 1);
         updateCountdownUI();
@@ -499,53 +567,43 @@ function updateCountdownUI() {
     if (el) el.textContent = `(refresh ${countdownValue}s)`;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  REALTIME STATUS — kirim START ke Apps Script
-// ══════════════════════════════════════════════════════════════
-
-/**
- * ★ FUNGSI BARU: Kirim status ON PROCESS ke Apps Script
- * Dipanggil setiap kali user menekan tombol START.
- * Apps Script akan menyimpan ke sheet "STATUS" sehingga
- * device lain bisa membacanya saat refresh.
- */
 function sendStartToServer(item) {
     const payload = {
-        action:       "START",
-        "CC NO":      item.ccNo,
-        "LINE":       item.line,
-        "ORDER NO":   item.orderNo || "-",
-        "START TIME": item.startTime
+        action: "START", "CC NO": item.ccNo, "LINE": item.line,
+        "ORDER NO": item.orderNo || "-", "START TIME": item.startTime
     };
-    fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        body:   JSON.stringify(payload)
-    }).catch(err => console.warn("Gagal kirim START ke server:", err));
+    fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .catch(err => console.warn("Gagal kirim START ke server:", err));
 }
 
-/**
- * ★ FUNGSI BARU: Kirim CLEAR_STATUS ke Apps Script
- * Dipanggil saat FINISH sehingga status ON PROCESS dihapus dari sheet STATUS.
- */
 function sendClearStatusToServer(item) {
+    const payload = { action: "CLEAR_STATUS", "CC NO": item.ccNo, "LINE": item.line };
+    fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .catch(err => console.warn("Gagal kirim CLEAR_STATUS ke server:", err));
+}
+
+/**
+ * ★ FUNGSI BARU: Kirim data KENDALA ke Apps Script → sheet "Status"
+ * Apps Script akan meng-UPDATE kolom kendala & kendalaWaktu pada baris
+ * yang sudah ada (match by ccNo + line), bukan membuat baris baru.
+ */
+function sendKendalaToServer(item) {
     const payload = {
-        action:  "CLEAR_STATUS",
-        "CC NO": item.ccNo,
-        "LINE":  item.line
+        action:         "KENDALA",
+        "CC NO":        item.ccNo,
+        "LINE":         item.line,
+        "ORDER NO":     item.orderNo  || "-",
+        "KENDALA":      item.kendala  || "-",
+        "DOWN TIME":    item.kendalaWaktu || "0",
+        "REPORT TIME":  new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
     };
     fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         mode:   'no-cors',
         body:   JSON.stringify(payload)
-    }).catch(err => console.warn("Gagal kirim CLEAR_STATUS ke server:", err));
+    }).catch(err => console.warn("Gagal kirim KENDALA ke server:", err));
 }
 
-/**
- * ★ FUNGSI BARU: Baca status realtime dari Apps Script (GET endpoint)
- * Apps Script harus menangani: ?action=GET_STATUS
- * dan mengembalikan JSON: { status:"ok", data:[{ccNo,line,status,startTime},...] }
- */
 async function fetchRemoteStatus() {
     try {
         const url = APPS_SCRIPT_URL + "?action=GET_STATUS&t=" + Date.now();
@@ -557,140 +615,108 @@ async function fetchRemoteStatus() {
             json.data.forEach(row => {
                 if (!row.ccNo || !row.line) return;
                 const key = row.ccNo.trim() + "|" + row.line.trim().toUpperCase();
+                // ★ Baca semua field termasuk kendala & kendalaWaktu dari sheet Status
                 remoteStatusMap[key] = {
-                    status:    row.status    || "ON PROCESS",
-                    startTime: row.startTime || ""
+                    status:       row.status       || "ON PROCESS",
+                    startTime:    row.startTime    || "",
+                    kendala:      row.kendala      || "",
+                    kendalaWaktu: row.kendalaWaktu || ""
                 };
             });
-            console.log("✔ Remote status:", Object.keys(remoteStatusMap).length, "item ON PROCESS");
         }
     } catch(e) {
-        console.warn("GET_STATUS error (normal jika Apps Script belum diupdate):", e.message);
+        console.warn("GET_STATUS error:", e.message);
     }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  FETCH ALL DATA
-// ══════════════════════════════════════════════════════════════
 async function fetchAllData() {
     setSyncStatus('syncing');
     const icon = document.getElementById('refresh-icon');
     if (icon) icon.classList.add('syncing');
-
     try {
-        // ★ Fetch WAITING + FINISH + STATUS secara paralel
         const [rW, rF] = await Promise.all([
             Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.WAITING[ln] + "&t=" + Date.now());
-                    return parseWaitingCSV(ln, await res.text());
-                } catch { return []; }
+                try { const res = await fetch(SHEET_CONFIG.WAITING[ln] + "&t=" + Date.now()); return parseWaitingCSV(ln, await res.text()); } catch { return []; }
             })),
             Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.FINISH[ln] + "&t=" + Date.now());
-                    if (!res.ok) return [];
-                    return parseFinishCSV(ln, await res.text());
-                } catch { return []; }
+                try { const res = await fetch(SHEET_CONFIG.FINISH[ln] + "&t=" + Date.now()); if (!res.ok) return []; return parseFinishCSV(ln, await res.text()); } catch { return []; }
             }))
         ]);
 
-        // ★ Fetch remote STATUS (bisa berjalan lambat → tidak block render)
-        // Jalankan secara paralel dengan parsing
-        fetchRemoteStatus().then(() => {
-            applyRemoteStatus();
-            renderTable();
-            updateStats();
-        });
+        fetchRemoteStatus().then(() => { applyRemoteStatus(); renderTable(); updateStats(); });
 
         const newWaiting = rW.flat();
         const fetchedFinish = rF.flat();
         const isValidCC = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
 
-        // Gabungkan finishData dari server + localStorage
         let localFinish = [];
-        try {
-            localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]')
-                           .filter(lf => isValidCC(lf.ccNo));
-        } catch {}
+        try { localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]').filter(lf => isValidCC(lf.ccNo)); } catch {}
 
         finishData = [...fetchedFinish];
         localFinish.forEach(lf => {
-            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line))
-                finishData.unshift(lf);
+            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line)) finishData.unshift(lf);
         });
 
-        // ★ Simpan waiting baru, preserve status ON PROCESS dari memori lokal
         appData = newWaiting.map(item => {
             const localItem = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
             if (localItem && localItem.status === "ON PROCESS") {
-                // Preserve status lokal sambil menunggu remote sync
-                return { ...item, status: "ON PROCESS", startTime: localItem.startTime,
-                         kendala: localItem.kendala || "", kendalaWaktu: localItem.kendalaWaktu || "" };
+                return { ...item, status: "ON PROCESS", startTime: localItem.startTime, kendala: localItem.kendala || "", kendalaWaktu: localItem.kendalaWaktu || "" };
             }
             return item;
         });
 
-        // Apply remote status yang sudah kita punya dari sebelumnya
         applyRemoteStatus();
-
         setSyncStatus('connected');
         renderTable();
         updateStats();
-
     } catch(err) {
         console.error("fetchAllData error:", err);
         setSyncStatus('error');
     } finally {
         if (icon) icon.classList.remove('syncing');
-        // Reset countdown
         countdownValue = REFRESH_INTERVAL / 1000;
     }
 }
 
-/**
- * ★ Apply status dari remoteStatusMap ke appData
- * Priority: remote server > lokal (kalau remote ada)
- */
 function applyRemoteStatus() {
     appData = appData.map(item => {
         const key    = item.ccNo + "|" + item.line;
         const remote = remoteStatusMap[key];
-        if (remote && remote.status === "ON PROCESS") {
-            return {
-                ...item,
-                status:    "ON PROCESS",
-                startTime: remote.startTime || item.startTime || ""
-            };
+        if (!remote) return item;
+
+        // Apply status ON PROCESS dari remote
+        let updated = { ...item };
+        if (remote.status === "ON PROCESS") {
+            updated.status    = "ON PROCESS";
+            updated.startTime = remote.startTime || item.startTime || "";
         }
-        // Kalau di remote tidak ada tapi lokal ON PROCESS → tetap ON PROCESS
-        // (mungkin belum tersync atau lagi offline)
-        return item;
+        // Apply kendala dari remote (device lain bisa lihat kendala yang dilaporkan)
+        if (remote.kendala)      updated.kendala      = remote.kendala;
+        if (remote.kendalaWaktu) updated.kendalaWaktu = remote.kendalaWaktu;
+
+        return updated;
     });
 }
 
 function setSyncStatus(state) {
-    const dot  = document.getElementById('sync-dot');
+    const dot = document.getElementById('sync-dot');
     const text = document.getElementById('sync-status');
     if (!dot || !text) return;
     if (state === 'syncing') {
-        dot.className  = 'w-2 h-2 rounded-full bg-amber-400 pulse-dot inline-block';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 pulse-dot inline-block';
         text.className = 'text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]';
         text.textContent = 'SINKRONISASI...';
     } else if (state === 'connected') {
-        dot.className  = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block';
         text.className = 'text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]';
         text.textContent = 'TERHUBUNG KE SERVER';
     } else {
-        dot.className  = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
         text.className = 'text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]';
         text.textContent = 'GAGAL TERHUBUNG';
     }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  CSV PARSERS  (tidak diubah dari versi asli)
-// ══════════════════════════════════════════════════════════════
 function parseCSVLine(row) {
     let arr = [], cur = "", q = false;
     for (let c of row) {
@@ -708,31 +734,18 @@ function parseWaitingCSV(line, text) {
     let headerRowIdx = 0;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
         const t = rows[i].join(' ').toUpperCase();
-        if (t.includes('PACKING') || t.includes('ORDER NO') || t.includes('PROCESS ORDER') || t.includes('CC NO')) {
-            headerRowIdx = i; break;
-        }
+        if (t.includes('PACKING') || t.includes('ORDER NO') || t.includes('PROCESS ORDER') || t.includes('CC NO')) { headerRowIdx = i; break; }
     }
     const headers = rows[headerRowIdx].map(h => (h||'').toUpperCase().replace(/\s+/g,' ').trim());
     const autoOrderIdx = headers.findIndex(h => h==='ORDER NO'||h==='ORDER'||h==='NO ORDER'||h==='PROCESS ORDER');
-    const autoCCIdx    = headers.findIndex(h => h.includes('CC NO')||h.includes('CCNO')||h.includes('PACKING NO')||h.includes('PACK NO'));
-    const C = {
-        order: autoOrderIdx !== -1 ? autoOrderIdx : PLANING_COL.order,
-        cc:    autoCCIdx    !== -1 ? autoCCIdx    : PLANING_COL.cc,
-        spec:  PLANING_COL.spec, size: PLANING_COL.size, weight: PLANING_COL.weight,
-        place: PLANING_COL.place, cust: PLANING_COL.cust
-    };
+    const autoCCIdx = headers.findIndex(h => h.includes('CC NO')||h.includes('CCNO')||h.includes('PACKING NO')||h.includes('PACK NO'));
+    const C = { order: autoOrderIdx !== -1 ? autoOrderIdx : PLANING_COL.order, cc: autoCCIdx !== -1 ? autoCCIdx : PLANING_COL.cc, spec: PLANING_COL.spec, size: PLANING_COL.size, weight: PLANING_COL.weight, place: PLANING_COL.place, cust: PLANING_COL.cust };
     const anchorIdx = C.cc;
     return rows.slice(headerRowIdx + 1)
         .filter(r => r[anchorIdx] && r[anchorIdx].trim().length > 3)
         .map((r, i) => {
             const w = parseFloat((r[C.weight]||'0').replace(/[^\d.]/g,'')) || 0;
-            return {
-                id: `${line}-W-${i}-${(r[C.cc]||'').trim()}`,
-                line, orderNo: (r[C.order]||'').trim(), customer: (r[C.cust]||'').trim(),
-                ccNo: (r[C.cc]||'').trim(), spec: (r[C.spec]||'').trim(),
-                place: (r[C.place]||'').trim(), size: (r[C.size]||'').trim(),
-                weight: w, originalWeight: w, status: 'WAITING', kendala: '', kendalaWaktu: '', startTime: ''
-            };
+            return { id: `${line}-W-${i}-${(r[C.cc]||'').trim()}`, line, orderNo: (r[C.order]||'').trim(), customer: (r[C.cust]||'').trim(), ccNo: (r[C.cc]||'').trim(), spec: (r[C.spec]||'').trim(), place: (r[C.place]||'').trim(), size: (r[C.size]||'').trim(), weight: w, originalWeight: w, status: 'WAITING', kendala: '', kendalaWaktu: '', startTime: '' };
         });
 }
 
@@ -747,14 +760,7 @@ function parseFinishCSV(line, text) {
     }
     const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g,' ').replace(/"/g,'').trim());
     const fi = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
-    const col = {
-        date:fi(['DATE','TGL']), order:fi(['ORDER NO','ORDER','NO ORDER']), cc:fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),
-        cust:fi(['CUSTOMER','PEMBELI']), spec:fi(['SPEC','MUTU','GRADE']), size:fi(['SIZE']),
-        weight:fi(['WEIGHT','BERAT']), prodSize:fi(['PRODUCT SIZE','PROD SIZE']), qtyFG:fi(['QTY FG','QTYFG']),
-        qtyNG:fi(['QTY NG','QTYNG']), start:fi(['START','MULAI']), finish:fi(['FINISH','SELESAI']),
-        downTime:fi(['DOWN TIME','DOWNTIME']), remark:fi(['REMARK','CATATAN']), speed:fi(['LINE SPEED','SPEED']),
-        lineCol:fi(['LINE'])
-    };
+    const col = { date:fi(['DATE','TGL']), order:fi(['ORDER NO','ORDER','NO ORDER']), cc:fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']), cust:fi(['CUSTOMER','PEMBELI']), spec:fi(['SPEC','MUTU','GRADE']), size:fi(['SIZE']), weight:fi(['WEIGHT','BERAT']), prodSize:fi(['PRODUCT SIZE','PROD SIZE']), qtyFG:fi(['QTY FG','QTYFG']), qtyNG:fi(['QTY NG','QTYNG']), start:fi(['START','MULAI']), finish:fi(['FINISH','SELESAI']), downTime:fi(['DOWN TIME','DOWNTIME']), remark:fi(['REMARK','CATATAN']), speed:fi(['LINE SPEED','SPEED']), lineCol:fi(['LINE']) };
     const anchorCol = col.cc !== -1 ? col.cc : 2;
     return rows.slice(headerRowIdx + 1)
         .filter(r => { if (!r||r.length<=1) return false; const val=(r[anchorCol]||'').trim(); return val.length>=3&&val!=='-'&&val!=='--'; })
@@ -762,28 +768,15 @@ function parseFinishCSV(line, text) {
             const g = (c) => c !== -1 ? (r[c]||'').trim() : '';
             const ccVal = g(col.cc);
             let lineVal = line;
-            if (col.lineCol !== -1 && r[col.lineCol]) {
-                const lv = r[col.lineCol].trim().toUpperCase().replace(/\s+/g,'');
-                if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv;
-            }
-            return {
-                id: `${line}-F-${i}-${ccVal}`, line: lineVal, orderNo: g(col.order), customer: g(col.cust),
-                ccNo: ccVal, spec: g(col.spec), place: g(col.date), size: g(col.size),
-                weight: parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0, productWidth: g(col.prodSize),
-                qtyFG: g(col.qtyFG)||'0', qtyNG: g(col.qtyNG)||'0', startTime: g(col.start),
-                finishedAt: g(col.finish), kendalaWaktu: g(col.downTime)||'0', remark: g(col.remark),
-                speed: g(col.speed)||'0', status: 'COMPLETED'
-            };
+            if (col.lineCol !== -1 && r[col.lineCol]) { const lv = r[col.lineCol].trim().toUpperCase().replace(/\s+/g,''); if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv; }
+            return { id: `${line}-F-${i}-${ccVal}`, line: lineVal, orderNo: g(col.order), customer: g(col.cust), ccNo: ccVal, spec: g(col.spec), place: g(col.date), size: g(col.size), weight: parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0, productWidth: g(col.prodSize), qtyFG: g(col.qtyFG)||'0', qtyNG: g(col.qtyNG)||'0', startTime: g(col.start), finishedAt: g(col.finish), kendalaWaktu: g(col.downTime)||'0', remark: g(col.remark), speed: g(col.speed)||'0', status: 'COMPLETED' };
         });
 }
 
-// ══════════════════════════════════════════════════════════════
-//  RENDER TABLE
-// ══════════════════════════════════════════════════════════════
 function renderTableHeader() {
     const thead = document.getElementById('table-head');
     if (!thead) return;
-    const th  = 'px-4 py-5 whitespace-nowrap';
+    const th = 'px-4 py-5 whitespace-nowrap';
     const thC = th + ' text-center';
     if (activeMenu === 'FINISH') {
         thead.innerHTML = `<tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
@@ -816,7 +809,7 @@ function renderTable() {
     if (isFinish) {
         tbody.innerHTML = data.map(item => {
             const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
-            const td  = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
+            const td = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
             const tdc = td + ' text-center';
             return `<tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
                 <td class="${tdc}"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">${item.place||'—'}</span></td>
@@ -841,7 +834,7 @@ function renderTable() {
         tbody.innerHTML = data.map(item => {
             const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
             const safeCcNo = (item.ccNo||'').replace(/'/g,"\\'");
-            const safeId   = (item.id||'').replace(/'/g,"\\'");
+            const safeId = (item.id||'').replace(/'/g,"\\'");
             const isOnProcess = item.status === 'ON PROCESS';
             return `<tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
                 <td class="px-4 py-4 text-center"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
@@ -855,10 +848,7 @@ function renderTable() {
                 <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size||'—'}</td>
                 <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight?item.weight.toLocaleString():'—'}</td>
                 <td class="px-4 py-4 text-center">
-                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${
-                        isOnProcess  ?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse'
-                       :item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200'
-                       :'bg-slate-100 text-slate-400'}">${item.status}</span>
+                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${isOnProcess?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse':item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200':'bg-slate-100 text-slate-400'}">${item.status}</span>
                     ${item.startTime&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">Start: ${item.startTime}</div>`:''}
                     ${item.kendala?`<div class="text-[7px] text-rose-500 font-black mt-1 uppercase">⚠️ ${item.kendala}</div>`:''}
                 </td>
@@ -881,38 +871,24 @@ function renderTable() {
     safeCreateIcons();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  SCAN / PROCESS  (★ FIX: kirim START ke server)
-// ══════════════════════════════════════════════════════════════
 function processScan(val) {
     if (!val) return;
-    const raw  = val.trim();
-    let ccNo   = parseQRCodeToCC(raw) || raw;
-
+    const raw = val.trim();
+    let ccNo = parseQRCodeToCC(raw) || raw;
     let item = appData.find(i => i.ccNo === ccNo);
     if (!item) item = appData.find(i => i.ccNo.toUpperCase() === ccNo.toUpperCase());
-    if (!item) {
-        const noP = ccNo.replace(/^[Pp]/,'');
-        item = appData.find(i => i.ccNo === noP || i.ccNo === 'P'+noP);
-    }
+    if (!item) { const noP = ccNo.replace(/^[Pp]/,''); item = appData.find(i => i.ccNo === noP || i.ccNo === 'P'+noP); }
     if (!item) { showToast(`CC No. "${ccNo}" tidak ada di antrean!`, "error"); return; }
 
     if (item.status === "WAITING") {
-        // ★ SET STATUS LOKAL dulu (langsung terlihat di device ini)
-        item.status    = "ON PROCESS";
+        item.status = "ON PROCESS";
         item.startTime = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-
-        // ★ KIRIM KE SERVER (supaya device lain bisa baca)
         sendStartToServer(item);
-
-        // ★ Update remoteStatusMap lokal juga (optimistic update)
         const key = item.ccNo + "|" + item.line;
         remoteStatusMap[key] = { status: "ON PROCESS", startTime: item.startTime };
-
         showToast(`▶ START: ${item.ccNo}`, "success");
         renderTable();
         updateStats();
-
     } else if (item.status === "ON PROCESS") {
         openFinishModal(item.id);
     } else {
@@ -920,16 +896,13 @@ function processScan(val) {
     }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  FINISH MODAL
-// ══════════════════════════════════════════════════════════════
 let productRowCounter = 0;
 
 function addProductRow(qtyFG='', qtyNG='0', width='') {
     productRowCounter++;
     const rowId = productRowCounter;
     const container = document.getElementById('product-rows-container');
-    const isFirst   = container.children.length === 0;
+    const isFirst = container.children.length === 0;
     const div = document.createElement('div');
     div.id = `product-row-${rowId}`;
     div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
@@ -970,66 +943,48 @@ function openFinishModal(id) {
 
 function closeFinishModal() { hideModal('modal-finish'); finishingItemId = null; }
 
-// ══════════════════════════════════════════════════════════════
-//  SUBMIT FINISH  (★ FIX: kirim CLEAR_STATUS ke server)
-// ══════════════════════════════════════════════════════════════
 function submitFinish() {
     if (!finishingItemId) return;
     const item = appData.find(i => i.id === finishingItemId);
     if (!item) return;
-
     const container = document.getElementById('product-rows-container');
     const products = [];
     for (const row of container.querySelectorAll('[id^="product-row-"]')) {
         const rowId = row.id.replace('product-row-', '');
         const fg = (document.getElementById(`fg-${rowId}`)?.value||'').trim();
         const ng = (document.getElementById(`ng-${rowId}`)?.value||'0').trim();
-        const w  = (document.getElementById(`width-${rowId}`)?.value||'').trim();
+        const w = (document.getElementById(`width-${rowId}`)?.value||'').trim();
         if (!fg || parseFloat(fg) <= 0) { showToast(`Qty FG produk #${rowId} wajib diisi!`, "error"); return; }
         products.push({ width:w, fg:parseFloat(fg), ng:parseFloat(ng)||0 });
     }
     if (products.length === 0) { showToast("Minimal 1 produk wajib diisi!", "error"); return; }
 
-    const speed  = document.getElementById('finish-speed').value;
+    const speed = document.getElementById('finish-speed').value;
     const remark = document.getElementById('finish-remark').value;
-    const now     = new Date();
+    const now = new Date();
     const finishTime = now.toTimeString().slice(0, 8);
-    const dateStr    = now.toLocaleDateString('id-ID');
+    const dateStr = now.toLocaleDateString('id-ID');
 
-    // Kirim FINISH ke Apps Script
     products.forEach(prod => {
-        const payload = {
-            action: "FINISH",
-            "DATE": dateStr, "ORDER NO": item.orderNo||"-", "CC NO": item.ccNo||"-",
-            "CUSTOMER": item.customer||"-", "SPEC": item.spec||"-", "SIZE": item.size||"-",
-            "WEIGHT": item.weight||0, "PRODUCT SIZE": prod.width||"-",
-            "QTY FG": prod.fg, "QTY NG": prod.ng,
-            "START": item.startTime||"-", "FINISH": finishTime,
-            "DOWN TIME": item.kendalaWaktu||"0",
-            "REMARK": remark||(item.kendala?`Kendala: ${item.kendala}`:"-"),
-            "LINE SPEED": speed||"0", "LINE": item.line||"-"
-        };
+        const payload = { action: "FINISH", "DATE": dateStr, "ORDER NO": item.orderNo||"-", "CC NO": item.ccNo||"-", "CUSTOMER": item.customer||"-", "SPEC": item.spec||"-", "SIZE": item.size||"-", "WEIGHT": item.weight||0, "PRODUCT SIZE": prod.width||"-", "QTY FG": prod.fg, "QTY NG": prod.ng, "START": item.startTime||"-", "FINISH": finishTime, "DOWN TIME": item.kendalaWaktu||"0", "REMARK": remark||(item.kendala?`Kendala: ${item.kendala}`:"-"), "LINE SPEED": speed||"0", "LINE": item.line||"-" };
         fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
     });
 
-    // ★ Hapus status ON PROCESS dari server (supaya device lain tahu sudah selesai)
     sendClearStatusToServer(item);
-
-    // ★ Hapus dari remoteStatusMap lokal juga (optimistic)
     const key = item.ccNo + "|" + item.line;
     delete remoteStatusMap[key];
 
     const totalFG = products.reduce((s,p) => s+p.fg, 0);
-    item.status       = "COMPLETED";
-    item.finishedAt   = finishTime;
+    item.status = "COMPLETED";
+    item.finishedAt = finishTime;
     item.productWidth = products.map(p=>p.width).filter(Boolean).join(', ');
-    item.qtyFG        = totalFG;
-    item.qtyNG        = products.reduce((s,p)=>s+p.ng, 0);
-    item.speed        = speed;
-    item.remark       = remark;
-    item.place        = dateStr;
+    item.qtyFG = totalFG;
+    item.qtyNG = products.reduce((s,p)=>s+p.ng, 0);
+    item.speed = speed;
+    item.remark = remark;
+    item.place = dateStr;
 
-    appData    = appData.filter(i => i.id !== finishingItemId);
+    appData = appData.filter(i => i.id !== finishingItemId);
     finishData = [item, ...finishData];
 
     try {
@@ -1044,9 +999,6 @@ function submitFinish() {
     updateStats();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  KENDALA MODAL
-// ══════════════════════════════════════════════════════════════
 function openKendalaModal(id) {
     selectedItemId = id;
     const item = appData.find(i => i.id === id);
@@ -1069,18 +1021,34 @@ function saveKendala() {
     if (!jenis) return showToast("Pilih jenis kendala!", "error");
     if (jenis === 'OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
     const item = appData.find(i => i.id === selectedItemId);
-    if (item) {
-        item.kendala = jenis;
-        item.kendalaWaktu = waktu;
-        showToast("Kendala dilaporkan!");
-        renderTable();
-        closeKendalaModal();
+    if (!item) return;
+
+    // Update data lokal
+    item.kendala      = jenis;
+    item.kendalaWaktu = waktu;
+
+    // Kirim ke server (Apps Script → sheet Status) secara realtime
+    sendKendalaToServer(item);
+
+    // Update remoteStatusMap lokal agar device ini langsung tampilkan tanpa tunggu refresh
+    const key = item.ccNo + "|" + item.line;
+    if (remoteStatusMap[key]) {
+        remoteStatusMap[key].kendala      = jenis;
+        remoteStatusMap[key].kendalaWaktu = waktu;
+    } else {
+        remoteStatusMap[key] = {
+            status:       item.status || "WAITING",
+            startTime:    item.startTime || "",
+            kendala:      jenis,
+            kendalaWaktu: waktu
+        };
     }
+
+    showToast(\`⚠️ Kendala "\${jenis}" dilaporkan ke server!\`, "success");
+    renderTable();
+    closeKendalaModal();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  CHART & STATS
-// ══════════════════════════════════════════════════════════════
 function initCharts() {
     [{ id:'DS1', color:'#00843d' },{ id:'DS2', color:'#0284c7' },{ id:'DS3', color:'#d97706' }].forEach(l => {
         const canvas = document.getElementById(`chart-${l.id.toLowerCase()}`);
@@ -1097,21 +1065,15 @@ function updateStats() {
     ['DS1','DS2','DS3'].forEach(line => {
         const done = finishData.filter(i => i.line === line);
         const wait = appData.filter(i => i.line === line);
-        const ton  = done.reduce((a,c) => a + parseFloat(c.originalWeight||c.weight||0), 0) / 1000;
-        const tEl  = document.getElementById(`ton-${line.toLowerCase()}`);
-        const cEl  = document.getElementById(`count-${line.toLowerCase()}`);
+        const ton = done.reduce((a,c) => a + parseFloat(c.originalWeight||c.weight||0), 0) / 1000;
+        const tEl = document.getElementById(`ton-${line.toLowerCase()}`);
+        const cEl = document.getElementById(`count-${line.toLowerCase()}`);
         if (tEl) tEl.innerText = ton.toFixed(2);
         if (cEl) cEl.innerText = `${done.length} Coil Selesai`;
-        if (charts[line]) {
-            charts[line].data.datasets[0].data = [wait.length||1, done.length];
-            charts[line].update();
-        }
+        if (charts[line]) { charts[line].data.datasets[0].data = [wait.length||1, done.length]; charts[line].update(); }
     });
 }
 
-// ══════════════════════════════════════════════════════════════
-//  QR SCANNER
-// ══════════════════════════════════════════════════════════════
 function parseQRCodeToCC(raw) {
     if (!raw || !raw.trim()) return null;
     let str = raw.trim();
@@ -1129,10 +1091,7 @@ async function toggleScanner() {
     if (scannerOpen) {
         scannerOpen = false;
         container.classList.remove('open');
-        if (html5QrCode) {
-            try { await html5QrCode.stop(); html5QrCode.clear(); } catch {}
-            html5QrCode = null;
-        }
+        if (html5QrCode) { try { await html5QrCode.stop(); html5QrCode.clear(); } catch {} html5QrCode = null; }
         document.getElementById('last-scan-badge').classList.add('hidden');
         return;
     }
@@ -1181,20 +1140,11 @@ function setupDesktopInput() {
     const input = document.getElementById('manualInput');
     if (!input) return;
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const raw = input.value.trim();
-            if (!raw) return;
-            const ccNo = parseQRCodeToCC(raw) || raw;
-            input.value = '';
-            processScan(ccNo);
-        }
+        if (e.key === 'Enter') { const raw = input.value.trim(); if (!raw) return; const ccNo = parseQRCodeToCC(raw) || raw; input.value = ''; processScan(ccNo); }
     });
 }
 
-// ══════════════════════════════════════════════════════════════
-//  PLANING & EXPORT PDF
-// ══════════════════════════════════════════════════════════════
-function openPlaningModal()  { showModal('modal-planing'); }
+function openPlaningModal() { showModal('modal-planing'); }
 function closePlaningModal() { hideModal('modal-planing'); }
 function openPlaningSheet(line) {
     const url = PLANING_EDIT_URLS[line];
@@ -1212,14 +1162,14 @@ function closeExportModal() { hideModal('modal-export'); }
 
 function exportPDF(line) {
     closeExportModal();
-    const isFinish   = activeMenu === 'FINISH';
+    const isFinish = activeMenu === 'FINISH';
     const sourceData = isFinish ? finishData : appData;
-    const filtered   = sourceData.filter(i => line==='ALL' || i.line===line);
+    const filtered = sourceData.filter(i => line==='ALL' || i.line===line);
     if (filtered.length === 0) { showToast(`Tidak ada data ${line} untuk di-export!`, 'error'); return; }
-    const now     = new Date();
+    const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
     const timeStr = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
-    const lines   = line==='ALL'?['DS1','DS2','DS3']:[line];
+    const lines = line==='ALL'?['DS1','DS2','DS3']:[line];
     const lineColors = { DS1:'#00843d', DS2:'#0284c7', DS3:'#d97706' };
 
     const buildRows = (items) => {
@@ -1244,10 +1194,10 @@ function exportPDF(line) {
     };
 
     const buildSection = (ln) => {
-        const items      = filtered.filter(i => i.line===ln);
+        const items = filtered.filter(i => i.line===ln);
         const totalWeight = items.reduce((s,i)=>s+parseFloat(i.weight||0),0);
-        const color      = lineColors[ln]||'#334155';
-        const thead      = isFinish ? `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Qty FG</th><th>Qty NG</th><th>Start</th><th>Finish</th><th>Down Time</th><th>Remark</th><th>Speed</th></tr>`
+        const color = lineColors[ln]||'#334155';
+        const thead = isFinish ? `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Qty FG</th><th>Qty NG</th><th>Start</th><th>Finish</th><th>Down Time</th><th>Remark</th><th>Speed</th></tr>`
             : `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Status</th></tr>`;
         return `<div style="margin-bottom:40px">
             <div style="background:${color};color:white;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center">
@@ -1289,42 +1239,17 @@ function exportPDF(line) {
     showToast(`Export PDF ${line} berhasil!`, 'success');
 }
 
-// ══════════════════════════════════════════════════════════════
-//  MODAL HELPERS
-// ══════════════════════════════════════════════════════════════
-function showModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-    safeCreateIcons();
-}
-function hideModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('flex');
-    el.classList.add('hidden');
-}
-function handleModalOverlayClick(event, modalId) {
-    if (event.target.id === modalId) {
-        hideModal(modalId);
-        if (modalId === 'modal-kendala') selectedItemId = null;
-    }
-}
+function showModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.remove('hidden'); el.classList.add('flex'); safeCreateIcons(); }
+function hideModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.remove('flex'); el.classList.add('hidden'); }
+function handleModalOverlayClick(event, modalId) { if (event.target.id === modalId) { hideModal(modalId); if (modalId === 'modal-kendala') selectedItemId = null; } }
 
-// ══════════════════════════════════════════════════════════════
-//  MISC HELPERS
-// ══════════════════════════════════════════════════════════════
-function handleSearch() {
-    searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    renderTable();
-}
+function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
 function setMainMenu(menu) {
     activeMenu = menu;
     const ac = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
     const ic = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
     document.getElementById('btn-menu-WAITING').className = menu==='WAITING'?ac:ic;
-    document.getElementById('btn-menu-FINISH').className  = menu==='FINISH' ?ac:ic;
+    document.getElementById('btn-menu-FINISH').className = menu==='FINISH'?ac:ic;
     renderTable();
 }
 function setLine(line) {
