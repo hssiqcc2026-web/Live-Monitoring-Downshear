@@ -12,26 +12,14 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <style>
-        /* ── FIX #2: Hapus area kosong di bawah footer ── */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
+        html, body { height: 100%; margin: 0; padding: 0; }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #f8fafc;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            display: flex; flex-direction: column; min-height: 100vh;
         }
-        main {
-            flex: 1 0 auto;
-        }
-        footer {
-            flex-shrink: 0;
-        }
-
+        main { flex: 1 0 auto; }
+        footer { flex-shrink: 0; }
         .card-stat { border-radius: 2.5rem; transition: all 0.3s ease; border: 1px solid #eef2f6; }
         .line-active { background-color: #059669 !important; color: white !important; }
         .table-container { border-radius: 1.5rem; background: white; border: 1px solid #eef2f6; }
@@ -41,7 +29,10 @@
         @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* FAB Scan Button (Mobile) */
+        /* ── REALTIME INDICATOR ── */
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+        .pulse-dot { animation: pulse 1.5s ease-in-out infinite; }
+
         #fab-scan {
             position: fixed; bottom: 24px; right: 24px; z-index: 45;
             width: 64px; height: 64px; border-radius: 50%;
@@ -51,69 +42,58 @@
             box-shadow: 0 8px 32px rgba(5,150,105,0.45), 0 2px 8px rgba(0,0,0,0.2);
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        #fab-scan:active { transform: scale(0.93); box-shadow: 0 4px 16px rgba(5,150,105,0.3); }
+        #fab-scan:active { transform: scale(0.93); }
         #fab-scan .fab-ring {
             position: absolute; inset: -4px; border-radius: 50%;
             border: 2px solid rgba(5,150,105,0.35);
             animation: fabPulse 2s ease-in-out infinite;
         }
-        @keyframes fabPulse {
-            0%,100% { transform: scale(1); opacity: 1; }
-            50%      { transform: scale(1.15); opacity: 0; }
-        }
+        @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0} }
         @media (min-width: 1024px) { #fab-scan { display: none; } }
 
-        /* Scanner Modal */
         #scanner-container { display: none; }
         #scanner-container.open { display: flex; }
 
-        .corner-tl { position:absolute; top:12px; left:12px; width:36px; height:36px; border-top:3px solid #10b981; border-left:3px solid #10b981; border-radius:4px 0 0 0; z-index:10; }
-        .corner-tr { position:absolute; top:12px; right:12px; width:36px; height:36px; border-top:3px solid #10b981; border-right:3px solid #10b981; border-radius:0 4px 0 0; z-index:10; }
-        .corner-bl { position:absolute; bottom:12px; left:12px; width:36px; height:36px; border-bottom:3px solid #10b981; border-left:3px solid #10b981; border-radius:0 0 0 4px; z-index:10; }
-        .corner-br { position:absolute; bottom:12px; right:12px; width:36px; height:36px; border-bottom:3px solid #10b981; border-right:3px solid #10b981; border-radius:0 0 4px 0; z-index:10; }
+        .corner-tl { position:absolute;top:12px;left:12px;width:36px;height:36px;border-top:3px solid #10b981;border-left:3px solid #10b981;border-radius:4px 0 0 0;z-index:10; }
+        .corner-tr { position:absolute;top:12px;right:12px;width:36px;height:36px;border-top:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 4px 0 0;z-index:10; }
+        .corner-bl { position:absolute;bottom:12px;left:12px;width:36px;height:36px;border-bottom:3px solid #10b981;border-left:3px solid #10b981;border-radius:0 0 0 4px;z-index:10; }
+        .corner-br { position:absolute;bottom:12px;right:12px;width:36px;height:36px;border-bottom:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 0 4px 0;z-index:10; }
         .scan-line {
             position: absolute; left: 12px; right: 12px; height: 2px;
             background: linear-gradient(90deg, transparent, #10b981, transparent);
             z-index: 10; animation: scanLine 2s ease-in-out infinite;
         }
-        @keyframes scanLine {
-            0%   { top: 12px; opacity: 0; }
-            10%  { opacity: 1; }
-            90%  { opacity: 1; }
-            100% { top: calc(100% - 14px); opacity: 0; }
-        }
+        @keyframes scanLine { 0%{top:12px;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:calc(100% - 14px);opacity:0} }
         #last-scan-badge { transition: all 0.3s; }
 
-        @media print {
-            body * { visibility: hidden !important; }
-            #pdf-preview-area, #pdf-preview-area * { visibility: visible !important; }
-            #pdf-preview-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
-        }
+        /* Sync spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .syncing { animation: spin 1s linear infinite; }
     </style>
 </head>
-<!-- ── FIX #2: body tidak perlu pb-24 lagi (sudah pakai flex layout) ── -->
 <body class="text-slate-900">
 
 <!-- HEADER -->
 <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
     <div class="max-w-[1600px] mx-auto flex justify-between items-center">
         <div class="flex items-center space-x-4">
-            <!-- ── FIX #1: Logo diganti SVG HSSI diamond hijau ── -->
             <div class="flex items-center justify-center" style="min-width:52px;min-height:52px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 74" style="height:48px;width:auto;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.5));">
-                    <!-- Diamond / Rhombus shape -->
                     <polygon points="55,3 107,37 55,71 3,37" fill="white" stroke="#1a7d1a" stroke-width="5.5"/>
-                    <!-- HSSI bold text -->
                     <text x="55" y="45" font-family="Arial Black,Arial,sans-serif" font-size="20" font-weight="900" fill="#1a7d1a" text-anchor="middle" letter-spacing="0.5">HSSI</text>
                 </svg>
             </div>
             <div>
                 <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
-                <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">CONNECTED TO SERVER</p>
+                <!-- ══ REALTIME STATUS INDICATOR ══ -->
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block"></span>
+                    <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">MENGHUBUNGKAN...</p>
+                    <span id="sync-countdown" class="text-[9px] text-slate-500 font-bold"></span>
+                </div>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <!-- Search / Scan — Desktop only -->
             <div class="relative hidden lg:block">
                 <input type="text" id="manualInput"
                     placeholder="Cari / Scan CC No..."
@@ -122,23 +102,18 @@
                     <i data-lucide="camera" class="w-4 h-4"></i>
                 </button>
             </div>
-            <!-- Update Planing -->
             <button onclick="openPlaningModal()"
-                title="Update Planing Spreadsheet"
                 class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-indigo-500 shadow-md">
                 <i data-lucide="table-2" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Update Planing</span>
             </button>
-            <!-- Export PDF -->
             <button onclick="openExportModal()"
-                title="Export Production Report PDF"
                 class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-rose-500 shadow-md">
                 <i data-lucide="file-down" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Export PDF</span>
             </button>
-            <!-- Refresh -->
             <button onclick="fetchAllData()" id="btn-refresh" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
-                <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400 group-active:rotate-180 transition-transform"></i>
+                <i data-lucide="refresh-cw" id="refresh-icon" class="w-5 h-5 text-emerald-400 transition-transform"></i>
             </button>
         </div>
     </div>
@@ -220,7 +195,7 @@
     </div>
 </main>
 
-<!-- FAB SCAN BUTTON (Mobile) -->
+<!-- FAB SCAN -->
 <button id="fab-scan" onclick="toggleScanner()" title="Scan QR Code">
     <span class="fab-ring"></span>
     <i data-lucide="scan-line" class="w-7 h-7 relative z-10"></i>
@@ -240,10 +215,8 @@
         </div>
         <div class="p-4 bg-slate-950">
             <div id="scan-viewfinder" class="relative w-full rounded-xl overflow-hidden bg-black" style="aspect-ratio:1">
-                <div class="corner-tl"></div>
-                <div class="corner-tr"></div>
-                <div class="corner-bl"></div>
-                <div class="corner-br"></div>
+                <div class="corner-tl"></div><div class="corner-tr"></div>
+                <div class="corner-bl"></div><div class="corner-br"></div>
                 <div class="scan-line"></div>
                 <div id="reader" class="w-full h-full"></div>
             </div>
@@ -268,7 +241,7 @@
                 </button>
             </div>
             <p class="text-[9px] text-slate-400 text-center mt-2 font-bold uppercase tracking-wider">
-                Format: <span class="text-slate-600 font-mono">260123039-100000</span> atau dengan awalan P
+                Format: <span class="text-slate-600 font-mono">260123039-100000</span>
             </p>
         </div>
     </div>
@@ -279,31 +252,27 @@
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-indigo-700 p-8 text-white">
             <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-2xl font-black italic tracking-tighter">UPDATE PLANING</h3>
-                    <p class="text-indigo-200 text-xs font-bold uppercase mt-1 tracking-widest">Pilih Line Downshear</p>
-                </div>
-                <button onclick="closePlaningModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div><h3 class="text-2xl font-black italic tracking-tighter">UPDATE PLANING</h3>
+                <p class="text-indigo-200 text-xs font-bold uppercase mt-1 tracking-widest">Pilih Line Downshear</p></div>
+                <button onclick="closePlaningModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
         <div class="p-8 flex flex-col gap-4">
-            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">Klik tombol di bawah untuk membuka spreadsheet planing</p>
+            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">Klik tombol untuk membuka spreadsheet planing</p>
             <button onclick="openPlaningSheet('DS1')" class="flex items-center gap-5 w-full bg-[#00843d]/10 hover:bg-[#00843d]/20 border border-[#00843d]/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-[#00843d] text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">1</span>
                 <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 1 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 1</div></div>
-                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-[#00843d] transition-colors"></i>
+                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="openPlaningSheet('DS2')" class="flex items-center gap-5 w-full bg-sky-600/10 hover:bg-sky-600/20 border border-sky-600/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">2</span>
                 <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 2 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 2</div></div>
-                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-sky-600 transition-colors"></i>
+                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="openPlaningSheet('DS3')" class="flex items-center gap-5 w-full bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">3</span>
                 <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 3 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 3</div></div>
-                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-amber-600 transition-colors"></i>
+                <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
         </div>
     </div>
@@ -314,40 +283,36 @@
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-rose-700 p-8 text-white">
             <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-2xl font-black italic tracking-tighter">EXPORT PDF</h3>
-                    <p class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">Production Report</p>
-                </div>
-                <button onclick="closeExportModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div><h3 class="text-2xl font-black italic tracking-tighter">EXPORT PDF</h3>
+                <p class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">Production Report</p></div>
+                <button onclick="closeExportModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
         <div class="p-8 flex flex-col gap-4">
             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">Pilih laporan yang ingin di-export</p>
             <button onclick="exportPDF('ALL')" class="flex items-center gap-5 w-full bg-slate-800/5 hover:bg-slate-800/10 border border-slate-200 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform"><i data-lucide="layers" class="w-5 h-5"></i></span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Semua Line (DS1+2+3)</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Export seluruh data sekaligus</div></div>
-                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-slate-800 transition-colors"></i>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Semua Line (DS1+2+3)</div></div>
+                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="exportPDF('DS1')" class="flex items-center gap-5 w-full bg-[#00843d]/10 hover:bg-[#00843d]/20 border border-[#00843d]/30 rounded-2xl px-6 py-5 transition-all group">
-                <span class="w-10 h-10 rounded-xl bg-[#00843d] text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">1</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 1</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 1</div></div>
-                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-[#00843d] transition-colors"></i>
+                <span class="w-10 h-10 rounded-xl bg-[#00843d] text-white flex items-center justify-center font-black text-sm flex-shrink-0">1</span>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 1</div></div>
+                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="exportPDF('DS2')" class="flex items-center gap-5 w-full bg-sky-600/10 hover:bg-sky-600/20 border border-sky-600/30 rounded-2xl px-6 py-5 transition-all group">
-                <span class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">2</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 2</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 2</div></div>
-                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-sky-600 transition-colors"></i>
+                <span class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0">2</span>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 2</div></div>
+                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="exportPDF('DS3')" class="flex items-center gap-5 w-full bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 rounded-2xl px-6 py-5 transition-all group">
-                <span class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">3</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 3</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 3</div></div>
-                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto group-hover:text-amber-600 transition-colors"></i>
+                <span class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0">3</span>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">Report DS 3</div></div>
+                <i data-lucide="file-down" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <div class="flex items-start gap-3 bg-slate-50 rounded-2xl p-4 mt-2 border border-slate-100">
                 <i data-lucide="info" class="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0"></i>
-                <p class="text-[10px] text-slate-400 font-bold leading-relaxed">PDF akan menampilkan data dari tab yang aktif saat ini (<span id="export-menu-label" class="text-slate-600">FINISH PROCESS</span>).</p>
+                <p class="text-[10px] text-slate-400 font-bold leading-relaxed">PDF menampilkan data tab aktif: <span id="export-menu-label" class="text-slate-600">FINISH PROCESS</span>.</p>
             </div>
         </div>
     </div>
@@ -361,9 +326,7 @@
                 <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
                 <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
             </div>
-            <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+            <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
         <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
             <div class="grid grid-cols-1 gap-6 mb-6">
@@ -404,15 +367,9 @@
                 <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Jenis Kendala</label>
                 <select id="kendala-select" onchange="toggleOtherKendala()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500">
                     <option value="">-- Pilih Kendala --</option>
-                    <option value="TBM">TBM</option>
-                    <option value="PACKING COILBACK">PACKING COILBACK</option>
-                    <option value="WAITING M/C">WAITING M/C</option>
-                    <option value="WAITING CRANE">WAITING CRANE</option>
-                    <option value="WINDER TOP/END">WINDER TOP/END</option>
-                    <option value="CLEANING MACHINE">CLEANING MACHINE</option>
-                    <option value="PROBLEM MACHINE">PROBLEM MACHINE</option>
-                    <option value="PENDING PROCESS">PENDING PROCESS</option>
-                    <option value="OTHER">OTHER (LAINNYA)</option>
+                    <option>TBM</option><option>PACKING COILBACK</option><option>WAITING M/C</option>
+                    <option>WAITING CRANE</option><option>WINDER TOP/END</option><option>CLEANING MACHINE</option>
+                    <option>PROBLEM MACHINE</option><option>PENDING PROCESS</option><option value="OTHER">OTHER (LAINNYA)</option>
                 </select>
             </div>
             <div id="kendala-other-container" class="mb-6 hidden">
@@ -439,14 +396,16 @@
 
 <!-- FOOTER -->
 <footer class="bg-[#0f172a] border-t-2 border-emerald-500/30">
-    <div class="max-w-[1600px] mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-1 md:gap-2">
+    <div class="max-w-[1600px] mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-1">
         <p class="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">© QCC 2026 - PT Hanwa Steel Service Indonesia</p>
-        <p class="text-[9px] text-slate-500 font-medium italic text-right">Created By: <span class="text-emerald-400 font-black not-italic">EGA ABDILAH RAHMAN</span></p>
+        <p class="text-[9px] text-slate-500 font-medium italic">Created By: <span class="text-emerald-400 font-black not-italic">EGA ABDILAH RAHMAN</span></p>
     </div>
 </footer>
 
 <script>
-// ─── CONFIG ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════════
 const SHEET_CONFIG = {
     WAITING: {
         DS1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=0&single=true&output=csv",
@@ -468,306 +427,270 @@ const PLANING_EDIT_URLS = {
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv-6W63GHbDa1dVuNhV5DVBW8dupxBCSIFshtSLZUmXRnTz6ccQKMIcGHhkhB18C7J/exec";
 
+// ── Kolom index untuk parsing CSV WAITING ──
 const PLANING_COL = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-let appData = [], finishData = [];
-let activeMenu = 'WAITING', activeLine = 'ALL', searchQuery = '';
-let selectedItemId = null, finishingItemId = null;
-let html5QrCode = null, charts = {};
-let scannerOpen = false;
-let lastScanLock = false;
-let autoRefreshInterval = null;
+// ══════════════════════════════════════════════════════════════
+//  STATE  (semua variabel dideklarsikan di sini — FIX UTAMA)
+// ══════════════════════════════════════════════════════════════
+let appData        = [];   // data WAITING
+let finishData     = [];   // data FINISH
 
-// ─── SAFE ICON INIT ────────────────────────────────────────────────────────
-function safeCreateIcons() {
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
+// ★ FIX: remoteStatusMap harus dideklarasikan sebelum dipakai
+let remoteStatusMap = {};  // { "CC NO|LINE": { status, startTime } }
 
-// ─── MODAL HELPERS ──────────────────────────────────────────────────────────
-function showModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-    safeCreateIcons();
-}
-function hideModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('flex');
-    el.classList.add('hidden');
-}
+let activeMenu     = 'WAITING';
+let activeLine     = 'ALL';
+let searchQuery    = '';
+let selectedItemId = null;
+let finishingItemId = null;
+let html5QrCode    = null;
+let charts         = {};
+let scannerOpen    = false;
+let lastScanLock   = false;
 
-// ─── INIT ──────────────────────────────────────────────────────────────────
+// ── Auto-refresh setiap 15 detik (bukan 2 menit) ──
+const REFRESH_INTERVAL = 15000;
+let autoRefreshTimer   = null;
+let countdownTimer     = null;
+let countdownValue     = REFRESH_INTERVAL / 1000;
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
 window.onload = () => {
     safeCreateIcons();
     initCharts();
     setupDesktopInput();
     fetchAllData();
-    autoRefreshInterval = setInterval(fetchAllData, 120000);
+    startAutoRefresh();
 };
 
-// ─── DESKTOP INPUT ─────────────────────────────────────────────────────────
-function setupDesktopInput() {
-    const input = document.getElementById('manualInput');
-    if (!input) return;
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const raw = input.value.trim();
-            if (!raw) return;
-            const ccNo = parseQRCodeToCC(raw) || raw;
-            input.value = '';
-            processScan(ccNo);
+function safeCreateIcons() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  AUTO REFRESH + COUNTDOWN UI
+// ══════════════════════════════════════════════════════════════
+function startAutoRefresh() {
+    clearAutoRefresh();
+    countdownValue = REFRESH_INTERVAL / 1000;
+    updateCountdownUI();
+
+    autoRefreshTimer = setInterval(() => {
+        fetchAllData();
+        countdownValue = REFRESH_INTERVAL / 1000;
+    }, REFRESH_INTERVAL);
+
+    countdownTimer = setInterval(() => {
+        countdownValue = Math.max(0, countdownValue - 1);
+        updateCountdownUI();
+    }, 1000);
+}
+
+function clearAutoRefresh() {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    if (countdownTimer)   clearInterval(countdownTimer);
+}
+
+function updateCountdownUI() {
+    const el = document.getElementById('sync-countdown');
+    if (el) el.textContent = `(refresh ${countdownValue}s)`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REALTIME STATUS — kirim START ke Apps Script
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * ★ FUNGSI BARU: Kirim status ON PROCESS ke Apps Script
+ * Dipanggil setiap kali user menekan tombol START.
+ * Apps Script akan menyimpan ke sheet "STATUS" sehingga
+ * device lain bisa membacanya saat refresh.
+ */
+function sendStartToServer(item) {
+    const payload = {
+        action:       "START",
+        "CC NO":      item.ccNo,
+        "LINE":       item.line,
+        "ORDER NO":   item.orderNo || "-",
+        "START TIME": item.startTime
+    };
+    fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode:   'no-cors',
+        body:   JSON.stringify(payload)
+    }).catch(err => console.warn("Gagal kirim START ke server:", err));
+}
+
+/**
+ * ★ FUNGSI BARU: Kirim CLEAR_STATUS ke Apps Script
+ * Dipanggil saat FINISH sehingga status ON PROCESS dihapus dari sheet STATUS.
+ */
+function sendClearStatusToServer(item) {
+    const payload = {
+        action:  "CLEAR_STATUS",
+        "CC NO": item.ccNo,
+        "LINE":  item.line
+    };
+    fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode:   'no-cors',
+        body:   JSON.stringify(payload)
+    }).catch(err => console.warn("Gagal kirim CLEAR_STATUS ke server:", err));
+}
+
+/**
+ * ★ FUNGSI BARU: Baca status realtime dari Apps Script (GET endpoint)
+ * Apps Script harus menangani: ?action=GET_STATUS
+ * dan mengembalikan JSON: { status:"ok", data:[{ccNo,line,status,startTime},...] }
+ */
+async function fetchRemoteStatus() {
+    try {
+        const url = APPS_SCRIPT_URL + "?action=GET_STATUS&t=" + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json && json.status === "ok" && Array.isArray(json.data)) {
+            remoteStatusMap = {};
+            json.data.forEach(row => {
+                if (!row.ccNo || !row.line) return;
+                const key = row.ccNo.trim() + "|" + row.line.trim().toUpperCase();
+                remoteStatusMap[key] = {
+                    status:    row.status    || "ON PROCESS",
+                    startTime: row.startTime || ""
+                };
+            });
+            console.log("✔ Remote status:", Object.keys(remoteStatusMap).length, "item ON PROCESS");
         }
+    } catch(e) {
+        console.warn("GET_STATUS error (normal jika Apps Script belum diupdate):", e.message);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH ALL DATA
+// ══════════════════════════════════════════════════════════════
+async function fetchAllData() {
+    setSyncStatus('syncing');
+    const icon = document.getElementById('refresh-icon');
+    if (icon) icon.classList.add('syncing');
+
+    try {
+        // ★ Fetch WAITING + FINISH + STATUS secara paralel
+        const [rW, rF] = await Promise.all([
+            Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async ln => {
+                try {
+                    const res = await fetch(SHEET_CONFIG.WAITING[ln] + "&t=" + Date.now());
+                    return parseWaitingCSV(ln, await res.text());
+                } catch { return []; }
+            })),
+            Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async ln => {
+                try {
+                    const res = await fetch(SHEET_CONFIG.FINISH[ln] + "&t=" + Date.now());
+                    if (!res.ok) return [];
+                    return parseFinishCSV(ln, await res.text());
+                } catch { return []; }
+            }))
+        ]);
+
+        // ★ Fetch remote STATUS (bisa berjalan lambat → tidak block render)
+        // Jalankan secara paralel dengan parsing
+        fetchRemoteStatus().then(() => {
+            applyRemoteStatus();
+            renderTable();
+            updateStats();
+        });
+
+        const newWaiting = rW.flat();
+        const fetchedFinish = rF.flat();
+        const isValidCC = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
+
+        // Gabungkan finishData dari server + localStorage
+        let localFinish = [];
+        try {
+            localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]')
+                           .filter(lf => isValidCC(lf.ccNo));
+        } catch {}
+
+        finishData = [...fetchedFinish];
+        localFinish.forEach(lf => {
+            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line))
+                finishData.unshift(lf);
+        });
+
+        // ★ Simpan waiting baru, preserve status ON PROCESS dari memori lokal
+        appData = newWaiting.map(item => {
+            const localItem = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
+            if (localItem && localItem.status === "ON PROCESS") {
+                // Preserve status lokal sambil menunggu remote sync
+                return { ...item, status: "ON PROCESS", startTime: localItem.startTime,
+                         kendala: localItem.kendala || "", kendalaWaktu: localItem.kendalaWaktu || "" };
+            }
+            return item;
+        });
+
+        // Apply remote status yang sudah kita punya dari sebelumnya
+        applyRemoteStatus();
+
+        setSyncStatus('connected');
+        renderTable();
+        updateStats();
+
+    } catch(err) {
+        console.error("fetchAllData error:", err);
+        setSyncStatus('error');
+    } finally {
+        if (icon) icon.classList.remove('syncing');
+        // Reset countdown
+        countdownValue = REFRESH_INTERVAL / 1000;
+    }
+}
+
+/**
+ * ★ Apply status dari remoteStatusMap ke appData
+ * Priority: remote server > lokal (kalau remote ada)
+ */
+function applyRemoteStatus() {
+    appData = appData.map(item => {
+        const key    = item.ccNo + "|" + item.line;
+        const remote = remoteStatusMap[key];
+        if (remote && remote.status === "ON PROCESS") {
+            return {
+                ...item,
+                status:    "ON PROCESS",
+                startTime: remote.startTime || item.startTime || ""
+            };
+        }
+        // Kalau di remote tidak ada tapi lokal ON PROCESS → tetap ON PROCESS
+        // (mungkin belum tersync atau lagi offline)
+        return item;
     });
 }
 
-function triggerDesktopScan() {
-    toggleScanner();
-}
-
-// ─── MODAL OVERLAY CLICK TO CLOSE ─────────────────────────────────────────
-function handleModalOverlayClick(event, modalId) {
-    if (event.target.id === modalId) {
-        hideModal(modalId);
-        if (modalId === 'modal-kendala') selectedItemId = null;
+function setSyncStatus(state) {
+    const dot  = document.getElementById('sync-dot');
+    const text = document.getElementById('sync-status');
+    if (!dot || !text) return;
+    if (state === 'syncing') {
+        dot.className  = 'w-2 h-2 rounded-full bg-amber-400 pulse-dot inline-block';
+        text.className = 'text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent = 'SINKRONISASI...';
+    } else if (state === 'connected') {
+        dot.className  = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block';
+        text.className = 'text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent = 'TERHUBUNG KE SERVER';
+    } else {
+        dot.className  = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
+        text.className = 'text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent = 'GAGAL TERHUBUNG';
     }
 }
 
-// ─── QR CODE PARSER ────────────────────────────────────────────────────────
-function parseQRCodeToCC(raw) {
-    if (!raw || !raw.trim()) return null;
-    let str = raw.trim();
-    let hasP = false;
-    if (/^[Pp]/.test(str)) {
-        hasP = true;
-        str = str.slice(1);
-    }
-    const match = str.match(/^([A-Za-z0-9\-]+)/);
-    if (!match) return null;
-    const segment = match[1];
-    const CC_LENGTH = 16;
-    let ccNo = segment.slice(0, CC_LENGTH);
-    if (hasP) ccNo = 'P' + ccNo;
-    return ccNo;
-}
-
-// ─── SCANNER ────────────────────────────────────────────────────────────────
-async function toggleScanner() {
-    const container = document.getElementById('scanner-container');
-    if (scannerOpen) {
-        scannerOpen = false;
-        container.classList.remove('open');
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                html5QrCode.clear();
-            } catch(e) { console.warn("Scanner stop error:", e); }
-            html5QrCode = null;
-        }
-        document.getElementById('last-scan-badge').classList.add('hidden');
-        return;
-    }
-
-    scannerOpen = true;
-    container.classList.add('open');
-    safeCreateIcons();
-
-    await new Promise(r => setTimeout(r, 200));
-
-    html5QrCode = new Html5Qrcode("reader");
-    try {
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 240, height: 240 } },
-            (decodedText) => {
-                if (lastScanLock) return;
-                lastScanLock = true;
-                setTimeout(() => { lastScanLock = false; }, 1500);
-
-                const ccNo = parseQRCodeToCC(decodedText);
-                if (!ccNo) {
-                    showToast("Format QR tidak dikenali!", "error");
-                    return;
-                }
-
-                document.getElementById('last-scan-value').textContent = ccNo;
-                document.getElementById('last-scan-badge').classList.remove('hidden');
-                safeCreateIcons();
-
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
-                setTimeout(async () => {
-                    await toggleScanner();
-                    processScan(ccNo);
-                }, 800);
-            },
-            () => {}
-        );
-    } catch (err) {
-        console.error("Camera error:", err);
-        showToast("Gagal akses kamera. Cek izin browser!", "error");
-        scannerOpen = false;
-        container.classList.remove('open');
-    }
-}
-
-function submitManualMobile() {
-    const val = (document.getElementById('manualInputMobile').value || '').trim();
-    if (!val) return;
-    const ccNo = parseQRCodeToCC(val) || val;
-    if (ccNo.length < 10) {
-        showToast("Format CC No. tidak valid!", "error");
-        return;
-    }
-    document.getElementById('manualInputMobile').value = '';
-    toggleScanner().then(() => processScan(ccNo));
-}
-
-// ─── UPDATE PLANING ────────────────────────────────────────────────────────
-function openPlaningModal()  { showModal('modal-planing'); }
-function closePlaningModal() { hideModal('modal-planing'); }
-function openPlaningSheet(line) {
-    const url = PLANING_EDIT_URLS[line];
-    if (!url) { showToast(`URL Planing ${line} belum dikonfigurasi!`, 'error'); return; }
-    window.open(url, '_blank');
-    closePlaningModal();
-}
-
-// ─── EXPORT PDF ─────────────────────────────────────────────────────────────
-function openExportModal() {
-    const label = document.getElementById('export-menu-label');
-    if (label) label.textContent = activeMenu === 'FINISH' ? 'FINISH PROCESS' : 'WAITING LIST';
-    showModal('modal-export');
-}
-function closeExportModal() { hideModal('modal-export'); }
-
-function exportPDF(line) {
-    closeExportModal();
-    const isFinish = activeMenu === 'FINISH';
-    const sourceData = isFinish ? finishData : appData;
-    const filtered = sourceData.filter(i => line === 'ALL' || i.line === line);
-    if (filtered.length === 0) { showToast(`Tidak ada data ${line} untuk di-export!`, 'error'); return; }
-
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-    const timeStr = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
-    const menuLabel = isFinish ? 'FINISH PROCESS' : 'WAITING LIST';
-    const lineLabel = line === 'ALL' ? 'ALL LINE (DS1 + DS2 + DS3)' : `LINE ${line}`;
-    const lines = line === 'ALL' ? ['DS1','DS2','DS3'] : [line];
-    const lineColors = { DS1: '#00843d', DS2: '#0284c7', DS3: '#d97706' };
-
-    const buildLineStat = (ln) => {
-        const items = filtered.filter(i => i.line === ln);
-        return {
-            items,
-            totalWeight: items.reduce((s,i) => s + parseFloat(i.weight||0), 0),
-            totalFG: items.reduce((s,i) => s + parseFloat(i.qtyFG||0), 0),
-            totalNG: items.reduce((s,i) => s + parseFloat(i.qtyNG||0), 0)
-        };
-    };
-
-    const theadFinish = `<tr style="background:#0f172a;color:white;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;">
-        <th style="width:30px;text-align:center">#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th>
-        <th>Spec</th><th>Size</th><th style="text-align:right">Weight</th><th style="text-align:center">Qty FG</th>
-        <th style="text-align:center">Qty NG</th><th style="text-align:center">Start</th><th style="text-align:center">Finish</th>
-        <th style="text-align:center">Down Time</th><th>Remark</th><th style="text-align:center">Speed</th></tr>`;
-    const theadWaiting = `<tr style="background:#0f172a;color:white;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;">
-        <th style="width:30px;text-align:center">#</th><th>Order No</th><th>CC No</th><th>Customer</th>
-        <th>Spec</th><th>Size</th><th style="text-align:right">Weight (KG)</th><th style="text-align:center">Status</th></tr>`;
-
-    const buildRows = (items) => {
-        if (!items.length) return `<tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px;font-style:italic">Tidak ada data</td></tr>`;
-        if (isFinish) {
-            return items.map((item, idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'};">
-                <td style="text-align:center">${idx+1}</td>
-                <td style="text-align:center">${item.place||'—'}</td>
-                <td style="font-weight:700">${item.orderNo||'—'}</td>
-                <td style="font-family:monospace;font-weight:700">${item.ccNo||'—'}</td>
-                <td>${item.customer||'—'}</td>
-                <td><span style="background:#eef2ff;color:#3730a3;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:800">${item.spec||'—'}</span></td>
-                <td>${item.size||'—'}</td>
-                <td style="text-align:right;font-weight:700">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
-                <td style="text-align:center"><span style="background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:800">${item.qtyFG||'0'}</span></td>
-                <td style="text-align:center"><span style="background:${parseFloat(item.qtyNG)>0?'#fee2e2':'#f1f5f9'};color:${parseFloat(item.qtyNG)>0?'#991b1b':'#94a3b8'};padding:1px 6px;border-radius:4px;font-size:9px;font-weight:800">${item.qtyNG||'0'}</span></td>
-                <td style="text-align:center">${item.startTime||'—'}</td>
-                <td style="text-align:center">${item.finishedAt||'—'}</td>
-                <td style="text-align:center">${parseFloat(item.kendalaWaktu)>0?item.kendalaWaktu+' mnt':'0'}</td>
-                <td>${item.remark||'—'}</td>
-                <td style="text-align:center">${item.speed||'—'}</td>
-            </tr>`).join('');
-        } else {
-            return items.map((item, idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'};">
-                <td style="text-align:center">${idx+1}</td>
-                <td style="font-weight:700">${item.orderNo||'—'}</td>
-                <td style="font-family:monospace;font-weight:700">${item.ccNo||'—'}</td>
-                <td>${item.customer||'—'}</td>
-                <td>${item.spec||'—'}</td>
-                <td>${item.size||'—'}</td>
-                <td style="text-align:right;font-weight:700">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
-                <td style="text-align:center">${item.status}</td>
-            </tr>`).join('');
-        }
-    };
-
-    const buildSection = (ln) => {
-        const { items, totalWeight, totalFG } = buildLineStat(ln);
-        const color = lineColors[ln] || '#334155';
-        return `<div style="margin-bottom:40px;page-break-inside:avoid;">
-            <div style="background:${color};color:white;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;">
-                <div><div style="font-size:18px;font-weight:900;letter-spacing:-0.5px;font-style:italic">DOWNSHEAR ${ln}</div>
-                <div style="font-size:9px;font-weight:700;opacity:0.8;letter-spacing:0.15em;text-transform:uppercase">${items.length} coil</div></div>
-                <div style="display:flex;gap:20px;text-align:right;">
-                    <div><div style="font-size:20px;font-weight:900">${(totalWeight/1000).toFixed(3)}</div><div style="font-size:9px;opacity:0.7;font-weight:700;text-transform:uppercase">Total Ton</div></div>
-                    ${isFinish?`<div><div style="font-size:20px;font-weight:900">${Number(totalFG).toLocaleString('id-ID')}</div><div style="font-size:9px;opacity:0.7;font-weight:700;text-transform:uppercase">FG (KG)</div></div>`:''}
-                </div>
-            </div>
-            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
-                <table style="width:100%;border-collapse:collapse;font-size:10px;">
-                    <thead>${isFinish?theadFinish:theadWaiting}</thead>
-                    <tbody>${buildRows(items)}</tbody>
-                </table>
-            </div>
-        </div>`;
-    };
-
-    const grandWeight = filtered.reduce((s,i) => s + parseFloat(i.weight||0), 0);
-    const htmlContent = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Report ${lineLabel}</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;background:#f8fafc;color:#0f172a;font-size:11px;padding:24px}
-    table{width:100%;border-collapse:collapse}th,td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-    th{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;padding:10px}
-    @media print{body{background:white;padding:12px}@page{size:A4 landscape;margin:10mm}}</style></head><body>
-    <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:white;padding:28px 32px;border-radius:16px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;">
-        <div><div style="font-size:9px;font-weight:800;letter-spacing:0.3em;opacity:0.6;text-transform:uppercase;margin-bottom:4px">PT. HSSI — PRODUCTION REPORT</div>
-        <div style="font-size:28px;font-weight:900;font-style:italic;letter-spacing:-1px;line-height:1">DOWNSHEAR MONITORING</div>
-        <div style="font-size:11px;font-weight:700;color:#34d399;margin-top:6px;text-transform:uppercase;letter-spacing:0.15em">${lineLabel} · ${menuLabel}</div></div>
-        <div style="text-align:right;"><div style="font-size:24px;font-weight:900">${dateStr}</div>
-        <div style="font-size:11px;opacity:0.5;font-weight:600;margin-top:2px">Dicetak pukul ${timeStr} WIB</div>
-        <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;">
-            <div style="background:rgba(255,255,255,0.1);padding:8px 16px;border-radius:8px;text-align:center;">
-                <div style="font-size:20px;font-weight:900">${filtered.length}</div><div style="font-size:8px;opacity:0.7;text-transform:uppercase;font-weight:700">Total Coil</div></div>
-            <div style="background:rgba(52,211,153,0.2);padding:8px 16px;border-radius:8px;text-align:center;">
-                <div style="font-size:20px;font-weight:900">${(grandWeight/1000).toFixed(3)}</div><div style="font-size:8px;opacity:0.7;text-transform:uppercase;font-weight:700">Total Ton</div></div>
-        </div></div></div>
-    ${lines.map(ln => buildSection(ln)).join('')}
-    <div style="margin-top:32px;padding-top:16px;border-top:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;color:#94a3b8;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">
-        <span>HSSI Downshear Monitoring System</span><span>Dicetak: ${dateStr} ${timeStr} WIB</span></div>
-    <div id="pb" style="display:flex;justify-content:center;gap:12px;margin-top:28px;">
-        <button onclick="window.print()" style="background:#0f172a;color:white;border:none;padding:14px 40px;border-radius:12px;font-weight:900;font-size:12px;cursor:pointer;text-transform:uppercase;">🖨️ &nbsp;Print / Save PDF</button>
-        <button onclick="window.close()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:14px 24px;border-radius:12px;font-weight:700;font-size:12px;cursor:pointer;text-transform:uppercase;">Tutup</button>
-    </div>
-    <script>window.onbeforeprint=()=>{document.getElementById('pb').style.display='none'};window.onafterprint=()=>{document.getElementById('pb').style.display='flex'};window.addEventListener('load',()=>{setTimeout(()=>window.print(),600)});<\/script>
-    </body></html>`;
-
-    const win = window.open('', '_blank');
-    if (!win) { showToast('Popup diblokir! Izinkan popup browser.', 'error'); return; }
-    win.document.write(htmlContent);
-    win.document.close();
-    showToast(`Export PDF ${lineLabel} berhasil!`, 'success');
-}
-
-// ─── CSV PARSER ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  CSV PARSERS  (tidak diubah dari versi asli)
+// ══════════════════════════════════════════════════════════════
 function parseCSVLine(row) {
     let arr = [], cur = "", q = false;
     for (let c of row) {
@@ -782,7 +705,6 @@ function parseCSVLine(row) {
 function parseWaitingCSV(line, text) {
     const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
     if (rows.length < 2) return [];
-
     let headerRowIdx = 0;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
         const t = rows[i].join(' ').toUpperCase();
@@ -790,21 +712,15 @@ function parseWaitingCSV(line, text) {
             headerRowIdx = i; break;
         }
     }
-
     const headers = rows[headerRowIdx].map(h => (h||'').toUpperCase().replace(/\s+/g,' ').trim());
     const autoOrderIdx = headers.findIndex(h => h==='ORDER NO'||h==='ORDER'||h==='NO ORDER'||h==='PROCESS ORDER');
     const autoCCIdx    = headers.findIndex(h => h.includes('CC NO')||h.includes('CCNO')||h.includes('PACKING NO')||h.includes('PACK NO'));
-
     const C = {
         order: autoOrderIdx !== -1 ? autoOrderIdx : PLANING_COL.order,
         cc:    autoCCIdx    !== -1 ? autoCCIdx    : PLANING_COL.cc,
-        spec:  PLANING_COL.spec,
-        size:  PLANING_COL.size,
-        weight:PLANING_COL.weight,
-        place: PLANING_COL.place,
-        cust:  PLANING_COL.cust
+        spec:  PLANING_COL.spec, size: PLANING_COL.size, weight: PLANING_COL.weight,
+        place: PLANING_COL.place, cust: PLANING_COL.cust
     };
-
     const anchorIdx = C.cc;
     return rows.slice(headerRowIdx + 1)
         .filter(r => r[anchorIdx] && r[anchorIdx].trim().length > 3)
@@ -812,19 +728,10 @@ function parseWaitingCSV(line, text) {
             const w = parseFloat((r[C.weight]||'0').replace(/[^\d.]/g,'')) || 0;
             return {
                 id: `${line}-W-${i}-${(r[C.cc]||'').trim()}`,
-                line,
-                orderNo:  (r[C.order]||'').trim(),
-                customer: (r[C.cust]||'').trim(),
-                ccNo:     (r[C.cc]||'').trim(),
-                spec:     (r[C.spec]||'').trim(),
-                place:    (r[C.place]||'').trim(),
-                size:     (r[C.size]||'').trim(),
-                weight:   w,
-                originalWeight: w,
-                status:   'WAITING',
-                kendala:  '',
-                kendalaWaktu: '',
-                startTime: ''
+                line, orderNo: (r[C.order]||'').trim(), customer: (r[C.cust]||'').trim(),
+                ccNo: (r[C.cc]||'').trim(), spec: (r[C.spec]||'').trim(),
+                place: (r[C.place]||'').trim(), size: (r[C.size]||'').trim(),
+                weight: w, originalWeight: w, status: 'WAITING', kendala: '', kendalaWaktu: '', startTime: ''
             };
         });
 }
@@ -832,42 +739,25 @@ function parseWaitingCSV(line, text) {
 function parseFinishCSV(line, text) {
     const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
     if (rows.length < 2) return [];
-
     const HEADER_KEYWORDS = ['CC NO','DATE','QTY FG','CUSTOMER','SPEC','ORDER'];
     let headerRowIdx = 0;
     for (let i = 0; i < Math.min(rows.length, 10); i++) {
         const rt = rows[i].join(' ').toUpperCase();
         if (HEADER_KEYWORDS.filter(k => rt.includes(k)).length >= 3) { headerRowIdx = i; break; }
     }
-
     const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g,' ').replace(/"/g,'').trim());
     const fi = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
     const col = {
-        date:    fi(['DATE','TGL']),
-        order:   fi(['ORDER NO','ORDER','NO ORDER']),
-        cc:      fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),
-        cust:    fi(['CUSTOMER','PEMBELI']),
-        spec:    fi(['SPEC','MUTU','GRADE']),
-        size:    fi(['SIZE']),
-        weight:  fi(['WEIGHT','BERAT']),
-        prodSize:fi(['PRODUCT SIZE','PROD SIZE']),
-        qtyFG:   fi(['QTY FG','QTYFG']),
-        qtyNG:   fi(['QTY NG','QTYNG']),
-        start:   fi(['START','MULAI']),
-        finish:  fi(['FINISH','SELESAI']),
-        downTime:fi(['DOWN TIME','DOWNTIME']),
-        remark:  fi(['REMARK','CATATAN']),
-        speed:   fi(['LINE SPEED','SPEED']),
-        lineCol: fi(['LINE'])
+        date:fi(['DATE','TGL']), order:fi(['ORDER NO','ORDER','NO ORDER']), cc:fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),
+        cust:fi(['CUSTOMER','PEMBELI']), spec:fi(['SPEC','MUTU','GRADE']), size:fi(['SIZE']),
+        weight:fi(['WEIGHT','BERAT']), prodSize:fi(['PRODUCT SIZE','PROD SIZE']), qtyFG:fi(['QTY FG','QTYFG']),
+        qtyNG:fi(['QTY NG','QTYNG']), start:fi(['START','MULAI']), finish:fi(['FINISH','SELESAI']),
+        downTime:fi(['DOWN TIME','DOWNTIME']), remark:fi(['REMARK','CATATAN']), speed:fi(['LINE SPEED','SPEED']),
+        lineCol:fi(['LINE'])
     };
-
     const anchorCol = col.cc !== -1 ? col.cc : 2;
     return rows.slice(headerRowIdx + 1)
-        .filter(r => {
-            if (!r || r.length <= 1) return false;
-            const val = (r[anchorCol]||'').trim();
-            return val.length >= 3 && val !== '-' && val !== '--';
-        })
+        .filter(r => { if (!r||r.length<=1) return false; const val=(r[anchorCol]||'').trim(); return val.length>=3&&val!=='-'&&val!=='--'; })
         .map((r, i) => {
             const g = (c) => c !== -1 ? (r[c]||'').trim() : '';
             const ccVal = g(col.cc);
@@ -877,94 +767,19 @@ function parseFinishCSV(line, text) {
                 if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv;
             }
             return {
-                id: `${line}-F-${i}-${ccVal}`,
-                line: lineVal,
-                orderNo:      g(col.order),
-                customer:     g(col.cust),
-                ccNo:         ccVal,
-                spec:         g(col.spec),
-                place:        g(col.date),
-                size:         g(col.size),
-                weight:       parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0,
-                productWidth: g(col.prodSize),
-                qtyFG:        g(col.qtyFG)  || '0',
-                qtyNG:        g(col.qtyNG)  || '0',
-                startTime:    g(col.start),
-                finishedAt:   g(col.finish),
-                kendalaWaktu: g(col.downTime) || '0',
-                remark:       g(col.remark),
-                speed:        g(col.speed)   || '0',
-                status:       'COMPLETED'
+                id: `${line}-F-${i}-${ccVal}`, line: lineVal, orderNo: g(col.order), customer: g(col.cust),
+                ccNo: ccVal, spec: g(col.spec), place: g(col.date), size: g(col.size),
+                weight: parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0, productWidth: g(col.prodSize),
+                qtyFG: g(col.qtyFG)||'0', qtyNG: g(col.qtyNG)||'0', startTime: g(col.start),
+                finishedAt: g(col.finish), kendalaWaktu: g(col.downTime)||'0', remark: g(col.remark),
+                speed: g(col.speed)||'0', status: 'COMPLETED'
             };
         });
 }
 
-// ─── FETCH DATA ──────────────────────────────────────────────────────────────
-async function fetchAllData() {
-    const statusEl = document.getElementById('sync-status');
-    if (statusEl) {
-        statusEl.innerText = "SINKRONISASI...";
-        statusEl.className = "text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]";
-    }
-
-    try {
-        const [rW, rF] = await Promise.all([
-            Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.WAITING[ln]);
-                    return parseWaitingCSV(ln, await res.text());
-                } catch { return []; }
-            })),
-            Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.FINISH[ln]);
-                    if (!res.ok) return [];
-                    return parseFinishCSV(ln, await res.text());
-                } catch { return []; }
-            }))
-        ]);
-
-        const newWaiting = rW.flat();
-        const fetchedFinish = rF.flat();
-        const isValidCC = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
-
-        let localFinish = [];
-        try {
-            localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]')
-                .filter(lf => isValidCC(lf.ccNo));
-        } catch(e) {
-            console.warn("localStorage tidak tersedia:", e);
-        }
-
-        finishData = [...fetchedFinish];
-        localFinish.forEach(lf => {
-            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line))
-                finishData.unshift(lf);
-        });
-
-        appData = newWaiting.map(item => {
-            const ex = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
-            return ex
-                ? { ...item, status: ex.status, startTime: ex.startTime, kendala: ex.kendala, kendalaWaktu: ex.kendalaWaktu }
-                : item;
-        });
-
-        if (statusEl) {
-            statusEl.innerText = "TERHUBUNG KE SERVER";
-            statusEl.className = "text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]";
-        }
-        renderTable();
-        updateStats();
-    } catch(err) {
-        console.error(err);
-        if (statusEl) {
-            statusEl.innerText = "SERVER DOWN";
-            statusEl.className = "text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]";
-        }
-    }
-}
-
-// ─── RENDER TABLE ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  RENDER TABLE
+// ══════════════════════════════════════════════════════════════
 function renderTableHeader() {
     const thead = document.getElementById('table-head');
     if (!thead) return;
@@ -1000,7 +815,7 @@ function renderTable() {
 
     if (isFinish) {
         tbody.innerHTML = data.map(item => {
-            const lc = item.line==='DS1' ? 'bg-[#00843d]' : item.line==='DS2' ? 'bg-sky-600' : 'bg-amber-600';
+            const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
             const td  = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
             const tdc = td + ' text-center';
             return `<tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
@@ -1010,15 +825,13 @@ function renderTable() {
                 <td class="${td}">${item.customer||'—'}</td>
                 <td class="${td}"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec||'—'}</span></td>
                 <td class="${td}">${item.size||'—'}</td>
-                <td class="${tdc} font-bold">${item.weight ? item.weight.toLocaleString() : '—'}</td>
+                <td class="${tdc} font-bold">${item.weight?item.weight.toLocaleString():'—'}</td>
                 <td class="${tdc}">${item.productWidth||'—'}</td>
                 <td class="${tdc}"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-bold text-[9px]">${item.qtyFG||'—'}</span></td>
                 <td class="${tdc}"><span class="px-2 py-0.5 ${parseFloat(item.qtyNG)>0?'bg-rose-50 text-rose-600 border border-rose-100':'bg-slate-50 text-slate-400'} rounded font-bold text-[9px]">${item.qtyNG||'0'}</span></td>
                 <td class="${tdc} text-slate-500">${item.startTime||'—'}</td>
                 <td class="${tdc} text-slate-500">${item.finishedAt||'—'}</td>
-                <td class="${tdc}">${parseFloat(item.kendalaWaktu)>0
-                    ? `<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`
-                    : '<span class="text-slate-300 text-[9px]">0</span>'}</td>
+                <td class="${tdc}">${parseFloat(item.kendalaWaktu)>0?`<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`:'<span class="text-slate-300 text-[9px]">0</span>'}</td>
                 <td class="${td} max-w-[120px] truncate text-slate-500">${item.remark||'—'}</td>
                 <td class="${tdc}">${item.speed||'—'}</td>
                 <td class="${tdc}"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
@@ -1026,34 +839,35 @@ function renderTable() {
         }).join('');
     } else {
         tbody.innerHTML = data.map(item => {
-            const lc = item.line==='DS1' ? 'bg-[#00843d]' : item.line==='DS2' ? 'bg-sky-600' : 'bg-amber-600';
-            const safeCcNo = (item.ccNo||'').replace(/'/g, "\\'");
-            const safeId   = (item.id||'').replace(/'/g, "\\'");
+            const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
+            const safeCcNo = (item.ccNo||'').replace(/'/g,"\\'");
+            const safeId   = (item.id||'').replace(/'/g,"\\'");
+            const isOnProcess = item.status === 'ON PROCESS';
             return `<tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
                 <td class="px-4 py-4 text-center"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
                 <td class="px-4 py-4">
                     <div class="font-bold text-slate-800 leading-tight">${item.orderNo||'—'}</div>
-                    ${item.customer ? `<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[140px]">${item.customer}</div>` : ''}
+                    ${item.customer?`<div class="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[140px]">${item.customer}</div>`:''}
                 </td>
                 <td class="px-4 py-4 font-mono text-slate-600 font-bold">${item.ccNo||'—'}</td>
                 <td class="px-4 py-4"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded font-bold text-[9px] uppercase">${item.spec||'—'}</span></td>
-                <td class="px-4 py-4">${item.place
-                    ? `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`
-                    : '<span class="text-slate-300 text-[9px]">—</span>'}</td>
+                <td class="px-4 py-4">${item.place?`<span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded font-bold text-[9px] uppercase">${item.place}</span>`:'<span class="text-slate-300 text-[9px]">—</span>'}</td>
                 <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size||'—'}</td>
-                <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight ? item.weight.toLocaleString() : '—'}</td>
+                <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight?item.weight.toLocaleString():'—'}</td>
                 <td class="px-4 py-4 text-center">
                     <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${
-                        item.status==='ON PROCESS'  ? 'bg-sky-100 text-sky-600 border border-sky-200'
-                      : item.status==='COMPLETED'   ? 'bg-emerald-100 text-emerald-600 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-400'}">${item.status}</span>
-                    ${item.kendala ? `<div class="text-[7px] text-rose-500 font-black mt-1 uppercase">⚠️ ${item.kendala}</div>` : ''}
+                        isOnProcess  ?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse'
+                       :item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200'
+                       :'bg-slate-100 text-slate-400'}">${item.status}</span>
+                    ${item.startTime&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">Start: ${item.startTime}</div>`:''}
+                    ${item.kendala?`<div class="text-[7px] text-rose-500 font-black mt-1 uppercase">⚠️ ${item.kendala}</div>`:''}
                 </td>
                 <td class="px-4 py-4 text-center">
                     <div class="flex gap-1 justify-center">
                         <button onclick="processScan('${safeCcNo}')"
-                            class="p-2 ${item.status==='ON PROCESS'?'bg-emerald-500':'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
-                            <i data-lucide="${item.status==='ON PROCESS'?'check-square':'play'}" class="w-4 h-4"></i>
+                            title="${isOnProcess?'FINISH':'START'}"
+                            class="p-2 ${isOnProcess?'bg-emerald-500 ring-2 ring-emerald-300':'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
+                            <i data-lucide="${isOnProcess?'check-square':'play'}" class="w-4 h-4"></i>
                         </button>
                         <button onclick="openKendalaModal('${safeId}')"
                             class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
@@ -1067,11 +881,13 @@ function renderTable() {
     safeCreateIcons();
 }
 
-// ─── SCAN / PROCESS ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  SCAN / PROCESS  (★ FIX: kirim START ke server)
+// ══════════════════════════════════════════════════════════════
 function processScan(val) {
     if (!val) return;
-    const raw = val.trim();
-    let ccNo = parseQRCodeToCC(raw) || raw;
+    const raw  = val.trim();
+    let ccNo   = parseQRCodeToCC(raw) || raw;
 
     let item = appData.find(i => i.ccNo === ccNo);
     if (!item) item = appData.find(i => i.ccNo.toUpperCase() === ccNo.toUpperCase());
@@ -1079,18 +895,24 @@ function processScan(val) {
         const noP = ccNo.replace(/^[Pp]/,'');
         item = appData.find(i => i.ccNo === noP || i.ccNo === 'P'+noP);
     }
-
-    if (!item) {
-        showToast(`CC No. "${ccNo}" tidak ada di antrean!`, "error");
-        return;
-    }
+    if (!item) { showToast(`CC No. "${ccNo}" tidak ada di antrean!`, "error"); return; }
 
     if (item.status === "WAITING") {
-        item.status = "ON PROCESS";
+        // ★ SET STATUS LOKAL dulu (langsung terlihat di device ini)
+        item.status    = "ON PROCESS";
         item.startTime = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+        // ★ KIRIM KE SERVER (supaya device lain bisa baca)
+        sendStartToServer(item);
+
+        // ★ Update remoteStatusMap lokal juga (optimistic update)
+        const key = item.ccNo + "|" + item.line;
+        remoteStatusMap[key] = { status: "ON PROCESS", startTime: item.startTime };
+
         showToast(`▶ START: ${item.ccNo}`, "success");
         renderTable();
         updateStats();
+
     } else if (item.status === "ON PROCESS") {
         openFinishModal(item.id);
     } else {
@@ -1098,32 +920,31 @@ function processScan(val) {
     }
 }
 
-// ─── FINISH MODAL ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  FINISH MODAL
+// ══════════════════════════════════════════════════════════════
 let productRowCounter = 0;
 
 function addProductRow(qtyFG='', qtyNG='0', width='') {
     productRowCounter++;
     const rowId = productRowCounter;
     const container = document.getElementById('product-rows-container');
-    const isFirst = container.children.length === 0;
+    const isFirst   = container.children.length === 0;
     const div = document.createElement('div');
     div.id = `product-row-${rowId}`;
     div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
     div.innerHTML = `
         <div class="flex items-center justify-between mb-3">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>
-            ${!isFirst ? `<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+            ${!isFirst?`<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:''}
         </div>
         <div class="grid grid-cols-3 gap-4">
             <div><label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar (MM)</label>
-            <input type="text" id="width-${rowId}" value="${width}" placeholder="0"
-                class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
+            <input type="text" id="width-${rowId}" value="${width}" placeholder="0" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
             <div><label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty FG (KG)</label>
-            <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0"
-                class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
+            <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0" class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
             <div><label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty NG (KG)</label>
-            <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0"
-                class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm"></div>
+            <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0" class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm"></div>
         </div>`;
     container.appendChild(div);
     safeCreateIcons();
@@ -1147,12 +968,11 @@ function openFinishModal(id) {
     showModal('modal-finish');
 }
 
-function closeFinishModal() {
-    hideModal('modal-finish');
-    finishingItemId = null;
-}
+function closeFinishModal() { hideModal('modal-finish'); finishingItemId = null; }
 
-// ─── SUBMIT FINISH ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  SUBMIT FINISH  (★ FIX: kirim CLEAR_STATUS ke server)
+// ══════════════════════════════════════════════════════════════
 function submitFinish() {
     if (!finishingItemId) return;
     const item = appData.find(i => i.id === finishingItemId);
@@ -1162,51 +982,49 @@ function submitFinish() {
     const products = [];
     for (const row of container.querySelectorAll('[id^="product-row-"]')) {
         const rowId = row.id.replace('product-row-', '');
-        const fg = (document.getElementById(`fg-${rowId}`)?.value || '').trim();
-        const ng = (document.getElementById(`ng-${rowId}`)?.value || '0').trim();
-        const w  = (document.getElementById(`width-${rowId}`)?.value || '').trim();
+        const fg = (document.getElementById(`fg-${rowId}`)?.value||'').trim();
+        const ng = (document.getElementById(`ng-${rowId}`)?.value||'0').trim();
+        const w  = (document.getElementById(`width-${rowId}`)?.value||'').trim();
         if (!fg || parseFloat(fg) <= 0) { showToast(`Qty FG produk #${rowId} wajib diisi!`, "error"); return; }
-        products.push({ width: w, fg: parseFloat(fg), ng: parseFloat(ng) || 0 });
+        products.push({ width:w, fg:parseFloat(fg), ng:parseFloat(ng)||0 });
     }
     if (products.length === 0) { showToast("Minimal 1 produk wajib diisi!", "error"); return; }
 
     const speed  = document.getElementById('finish-speed').value;
     const remark = document.getElementById('finish-remark').value;
-    const now = new Date();
+    const now     = new Date();
     const finishTime = now.toTimeString().slice(0, 8);
     const dateStr    = now.toLocaleDateString('id-ID');
-    const orderNoFinal = (item.orderNo || '').trim();
 
+    // Kirim FINISH ke Apps Script
     products.forEach(prod => {
         const payload = {
             action: "FINISH",
-            "DATE":       dateStr,
-            "ORDER NO":   orderNoFinal,
-            "CC NO":      item.ccNo    || "-",
-            "CUSTOMER":   item.customer|| "-",
-            "SPEC":       item.spec    || "-",
-            "SIZE":       item.size    || "-",
-            "WEIGHT":     item.weight  || 0,
-            "PRODUCT SIZE":prod.width  || "-",
-            "QTY FG":     prod.fg,
-            "QTY NG":     prod.ng,
-            "START":      item.startTime || "-",
-            "FINISH":     finishTime,
-            "DOWN TIME":  item.kendalaWaktu || "0",
-            "REMARK":     remark || (item.kendala ? `Kendala: ${item.kendala}` : "-"),
-            "LINE SPEED": speed || "0",
-            "LINE":       item.line || "-"
+            "DATE": dateStr, "ORDER NO": item.orderNo||"-", "CC NO": item.ccNo||"-",
+            "CUSTOMER": item.customer||"-", "SPEC": item.spec||"-", "SIZE": item.size||"-",
+            "WEIGHT": item.weight||0, "PRODUCT SIZE": prod.width||"-",
+            "QTY FG": prod.fg, "QTY NG": prod.ng,
+            "START": item.startTime||"-", "FINISH": finishTime,
+            "DOWN TIME": item.kendalaWaktu||"0",
+            "REMARK": remark||(item.kendala?`Kendala: ${item.kendala}`:"-"),
+            "LINE SPEED": speed||"0", "LINE": item.line||"-"
         };
         fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
     });
 
-    const totalFG = products.reduce((s,p) => s + p.fg, 0);
+    // ★ Hapus status ON PROCESS dari server (supaya device lain tahu sudah selesai)
+    sendClearStatusToServer(item);
 
+    // ★ Hapus dari remoteStatusMap lokal juga (optimistic)
+    const key = item.ccNo + "|" + item.line;
+    delete remoteStatusMap[key];
+
+    const totalFG = products.reduce((s,p) => s+p.fg, 0);
     item.status       = "COMPLETED";
     item.finishedAt   = finishTime;
-    item.productWidth = products.map(p => p.width).filter(Boolean).join(', ');
+    item.productWidth = products.map(p=>p.width).filter(Boolean).join(', ');
     item.qtyFG        = totalFG;
-    item.qtyNG        = products.reduce((s,p) => s + p.ng, 0);
+    item.qtyNG        = products.reduce((s,p)=>s+p.ng, 0);
     item.speed        = speed;
     item.remark       = remark;
     item.place        = dateStr;
@@ -1215,20 +1033,20 @@ function submitFinish() {
     finishData = [item, ...finishData];
 
     try {
-        const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]');
+        const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data')||'[]');
         localFinish.unshift(item);
         localStorage.setItem('hssi_finish_data', JSON.stringify(localFinish.slice(0, 500)));
-    } catch(e) {
-        console.warn("localStorage tidak tersedia:", e);
-    }
+    } catch {}
 
-    showToast(`✓ ${item.ccNo} SELESAI${products.length > 1 ? ' (' + products.length + ' produk)' : ''}`, "success");
+    showToast(`✓ ${item.ccNo} SELESAI${products.length>1?' ('+products.length+' produk)':''}`, "success");
     closeFinishModal();
     renderTable();
     updateStats();
 }
 
-// ─── KENDALA MODAL ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  KENDALA MODAL
+// ══════════════════════════════════════════════════════════════
 function openKendalaModal(id) {
     selectedItemId = id;
     const item = appData.find(i => i.id === id);
@@ -1240,10 +1058,7 @@ function openKendalaModal(id) {
     document.getElementById('kendala-other-container').classList.add('hidden');
     showModal('modal-kendala');
 }
-function closeKendalaModal() {
-    hideModal('modal-kendala');
-    selectedItemId = null;
-}
+function closeKendalaModal() { hideModal('modal-kendala'); selectedItemId = null; }
 function toggleOtherKendala() {
     const v = document.getElementById('kendala-select').value;
     document.getElementById('kendala-other-container').classList.toggle('hidden', v !== 'OTHER');
@@ -1263,17 +1078,16 @@ function saveKendala() {
     }
 }
 
-// ─── CHART & STATS ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  CHART & STATS
+// ══════════════════════════════════════════════════════════════
 function initCharts() {
-    [{ id:'DS1', color:'#00843d' }, { id:'DS2', color:'#0284c7' }, { id:'DS3', color:'#d97706' }].forEach(l => {
+    [{ id:'DS1', color:'#00843d' },{ id:'DS2', color:'#0284c7' },{ id:'DS3', color:'#d97706' }].forEach(l => {
         const canvas = document.getElementById(`chart-${l.id.toLowerCase()}`);
         if (!canvas) return;
         charts[l.id] = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
-            data: {
-                labels: ['Antri', 'Selesai'],
-                datasets: [{ data: [1, 0], backgroundColor: ['#f1f5f9', l.color], borderWidth: 0 }]
-            },
+            data: { labels:['Antri','Selesai'], datasets:[{ data:[1,0], backgroundColor:['#f1f5f9',l.color], borderWidth:0 }] },
             options: { responsive:true, maintainAspectRatio:false, cutout:'75%', plugins:{ legend:{ display:false } } }
         });
     });
@@ -1283,61 +1097,255 @@ function updateStats() {
     ['DS1','DS2','DS3'].forEach(line => {
         const done = finishData.filter(i => i.line === line);
         const wait = appData.filter(i => i.line === line);
-        const ton  = done.reduce((a,c) => a + parseFloat(c.originalWeight || c.weight || 0), 0) / 1000;
-
-        const tEl = document.getElementById(`ton-${line.toLowerCase()}`);
-        const cEl = document.getElementById(`count-${line.toLowerCase()}`);
+        const ton  = done.reduce((a,c) => a + parseFloat(c.originalWeight||c.weight||0), 0) / 1000;
+        const tEl  = document.getElementById(`ton-${line.toLowerCase()}`);
+        const cEl  = document.getElementById(`count-${line.toLowerCase()}`);
         if (tEl) tEl.innerText = ton.toFixed(2);
         if (cEl) cEl.innerText = `${done.length} Coil Selesai`;
-
         if (charts[line]) {
-            charts[line].data.datasets[0].data = [wait.length || 1, done.length];
+            charts[line].data.datasets[0].data = [wait.length||1, done.length];
             charts[line].update();
         }
     });
 }
 
-// ─── HELPERS ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  QR SCANNER
+// ══════════════════════════════════════════════════════════════
+function parseQRCodeToCC(raw) {
+    if (!raw || !raw.trim()) return null;
+    let str = raw.trim();
+    let hasP = false;
+    if (/^[Pp]/.test(str)) { hasP = true; str = str.slice(1); }
+    const match = str.match(/^([A-Za-z0-9\-]+)/);
+    if (!match) return null;
+    let ccNo = match[1].slice(0, 16);
+    if (hasP) ccNo = 'P' + ccNo;
+    return ccNo;
+}
+
+async function toggleScanner() {
+    const container = document.getElementById('scanner-container');
+    if (scannerOpen) {
+        scannerOpen = false;
+        container.classList.remove('open');
+        if (html5QrCode) {
+            try { await html5QrCode.stop(); html5QrCode.clear(); } catch {}
+            html5QrCode = null;
+        }
+        document.getElementById('last-scan-badge').classList.add('hidden');
+        return;
+    }
+    scannerOpen = true;
+    container.classList.add('open');
+    safeCreateIcons();
+    await new Promise(r => setTimeout(r, 200));
+    html5QrCode = new Html5Qrcode("reader");
+    try {
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps:15, qrbox:{ width:240, height:240 } },
+            (decodedText) => {
+                if (lastScanLock) return;
+                lastScanLock = true;
+                setTimeout(() => { lastScanLock = false; }, 1500);
+                const ccNo = parseQRCodeToCC(decodedText);
+                if (!ccNo) { showToast("Format QR tidak dikenali!", "error"); return; }
+                document.getElementById('last-scan-value').textContent = ccNo;
+                document.getElementById('last-scan-badge').classList.remove('hidden');
+                safeCreateIcons();
+                if (navigator.vibrate) navigator.vibrate([100,50,100]);
+                setTimeout(async () => { await toggleScanner(); processScan(ccNo); }, 800);
+            }, () => {}
+        );
+    } catch(err) {
+        console.error("Camera error:", err);
+        showToast("Gagal akses kamera. Cek izin browser!", "error");
+        scannerOpen = false;
+        container.classList.remove('open');
+    }
+}
+
+function submitManualMobile() {
+    const val = (document.getElementById('manualInputMobile').value||'').trim();
+    if (!val) return;
+    const ccNo = parseQRCodeToCC(val) || val;
+    if (ccNo.length < 10) { showToast("Format CC No. tidak valid!", "error"); return; }
+    document.getElementById('manualInputMobile').value = '';
+    toggleScanner().then(() => processScan(ccNo));
+}
+
+function triggerDesktopScan() { toggleScanner(); }
+
+function setupDesktopInput() {
+    const input = document.getElementById('manualInput');
+    if (!input) return;
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const raw = input.value.trim();
+            if (!raw) return;
+            const ccNo = parseQRCodeToCC(raw) || raw;
+            input.value = '';
+            processScan(ccNo);
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PLANING & EXPORT PDF
+// ══════════════════════════════════════════════════════════════
+function openPlaningModal()  { showModal('modal-planing'); }
+function closePlaningModal() { hideModal('modal-planing'); }
+function openPlaningSheet(line) {
+    const url = PLANING_EDIT_URLS[line];
+    if (!url) { showToast(`URL Planing ${line} belum dikonfigurasi!`, 'error'); return; }
+    window.open(url, '_blank');
+    closePlaningModal();
+}
+
+function openExportModal() {
+    const label = document.getElementById('export-menu-label');
+    if (label) label.textContent = activeMenu==='FINISH'?'FINISH PROCESS':'WAITING LIST';
+    showModal('modal-export');
+}
+function closeExportModal() { hideModal('modal-export'); }
+
+function exportPDF(line) {
+    closeExportModal();
+    const isFinish   = activeMenu === 'FINISH';
+    const sourceData = isFinish ? finishData : appData;
+    const filtered   = sourceData.filter(i => line==='ALL' || i.line===line);
+    if (filtered.length === 0) { showToast(`Tidak ada data ${line} untuk di-export!`, 'error'); return; }
+    const now     = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+    const timeStr = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+    const lines   = line==='ALL'?['DS1','DS2','DS3']:[line];
+    const lineColors = { DS1:'#00843d', DS2:'#0284c7', DS3:'#d97706' };
+
+    const buildRows = (items) => {
+        if (!items.length) return `<tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px">Tidak ada data</td></tr>`;
+        if (isFinish) {
+            return items.map((item,idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
+                <td>${idx+1}</td><td>${item.place||'—'}</td><td>${item.orderNo||'—'}</td>
+                <td style="font-family:monospace">${item.ccNo||'—'}</td><td>${item.customer||'—'}</td>
+                <td>${item.spec||'—'}</td><td>${item.size||'—'}</td>
+                <td style="text-align:right">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
+                <td>${item.qtyFG||'0'}</td><td>${item.qtyNG||'0'}</td>
+                <td>${item.startTime||'—'}</td><td>${item.finishedAt||'—'}</td>
+                <td>${parseFloat(item.kendalaWaktu)>0?item.kendalaWaktu+' mnt':'0'}</td>
+                <td>${item.remark||'—'}</td><td>${item.speed||'—'}</td></tr>`).join('');
+        } else {
+            return items.map((item,idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
+                <td>${idx+1}</td><td>${item.orderNo||'—'}</td><td>${item.ccNo||'—'}</td>
+                <td>${item.customer||'—'}</td><td>${item.spec||'—'}</td><td>${item.size||'—'}</td>
+                <td style="text-align:right">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
+                <td>${item.status}</td></tr>`).join('');
+        }
+    };
+
+    const buildSection = (ln) => {
+        const items      = filtered.filter(i => i.line===ln);
+        const totalWeight = items.reduce((s,i)=>s+parseFloat(i.weight||0),0);
+        const color      = lineColors[ln]||'#334155';
+        const thead      = isFinish ? `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Qty FG</th><th>Qty NG</th><th>Start</th><th>Finish</th><th>Down Time</th><th>Remark</th><th>Speed</th></tr>`
+            : `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Status</th></tr>`;
+        return `<div style="margin-bottom:40px">
+            <div style="background:${color};color:white;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:18px;font-weight:900;font-style:italic">DOWNSHEAR ${ln} <span style="font-size:10px;opacity:0.7">(${items.length} coil)</span></div>
+                <div style="font-size:20px;font-weight:900">${(totalWeight/1000).toFixed(3)} Ton</div></div>
+            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
+                <table style="width:100%;border-collapse:collapse;font-size:10px">
+                    <thead>${thead}</thead><tbody>${buildRows(items)}</tbody></table></div></div>`;
+    };
+
+    const grandWeight = filtered.reduce((s,i)=>s+parseFloat(i.weight||0),0);
+    const htmlContent = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
+    <title>Report ${line}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;padding:24px;font-size:11px}
+    th,td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+    th{font-size:9px;font-weight:900;text-transform:uppercase;padding:10px}
+    @media print{@page{size:A4 landscape;margin:10mm}}</style></head><body>
+    <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);color:white;padding:28px;border-radius:16px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:9px;opacity:0.6;letter-spacing:0.2em">PT. HSSI — PRODUCTION REPORT</div>
+        <div style="font-size:28px;font-weight:900;font-style:italic">DOWNSHEAR MONITORING</div>
+        <div style="color:#34d399;font-weight:700;margin-top:6px">${line==='ALL'?'ALL LINE':'LINE '+line} · ${isFinish?'FINISH PROCESS':'WAITING LIST'}</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:900">${dateStr}</div>
+        <div style="opacity:0.5">Dicetak ${timeStr} WIB</div>
+        <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end">
+            <div style="background:rgba(255,255,255,0.1);padding:8px 16px;border-radius:8px;text-align:center">
+                <div style="font-size:20px;font-weight:900">${filtered.length}</div><div style="font-size:8px;opacity:0.7">Total Coil</div></div>
+            <div style="background:rgba(52,211,153,0.2);padding:8px 16px;border-radius:8px;text-align:center">
+                <div style="font-size:20px;font-weight:900">${(grandWeight/1000).toFixed(3)}</div><div style="font-size:8px;opacity:0.7">Total Ton</div></div>
+        </div></div></div>
+    ${lines.map(ln=>buildSection(ln)).join('')}
+    <div id="pb" style="display:flex;justify-content:center;gap:12px;margin-top:28px">
+        <button onclick="window.print()" style="background:#0f172a;color:white;border:none;padding:14px 40px;border-radius:12px;font-weight:900;cursor:pointer">🖨️ Print / Save PDF</button>
+        <button onclick="window.close()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:14px 24px;border-radius:12px;font-weight:700;cursor:pointer">Tutup</button></div>
+    <script>window.onbeforeprint=()=>{document.getElementById('pb').style.display='none'};window.onafterprint=()=>{document.getElementById('pb').style.display='flex'};window.addEventListener('load',()=>{setTimeout(()=>window.print(),600)});<\/script>
+    </body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) { showToast('Popup diblokir! Izinkan popup browser.', 'error'); return; }
+    win.document.write(htmlContent); win.document.close();
+    showToast(`Export PDF ${line} berhasil!`, 'success');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ══════════════════════════════════════════════════════════════
+function showModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+    safeCreateIcons();
+}
+function hideModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('flex');
+    el.classList.add('hidden');
+}
+function handleModalOverlayClick(event, modalId) {
+    if (event.target.id === modalId) {
+        hideModal(modalId);
+        if (modalId === 'modal-kendala') selectedItemId = null;
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MISC HELPERS
+// ══════════════════════════════════════════════════════════════
 function handleSearch() {
     searchQuery = document.getElementById('searchInput').value.toLowerCase();
     renderTable();
 }
-
 function setMainMenu(menu) {
     activeMenu = menu;
     const ac = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
     const ic = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
-    document.getElementById('btn-menu-WAITING').className = menu === 'WAITING' ? ac : ic;
-    document.getElementById('btn-menu-FINISH').className  = menu === 'FINISH'  ? ac : ic;
+    document.getElementById('btn-menu-WAITING').className = menu==='WAITING'?ac:ic;
+    document.getElementById('btn-menu-FINISH').className  = menu==='FINISH' ?ac:ic;
     renderTable();
 }
-
 function setLine(line) {
     activeLine = line;
-    document.querySelectorAll('.line-nav').forEach(b => {
-        b.classList.remove('line-active', 'text-white');
-        b.classList.add('text-slate-400');
-    });
+    document.querySelectorAll('.line-nav').forEach(b => { b.classList.remove('line-active','text-white'); b.classList.add('text-slate-400'); });
     const btn = document.getElementById(`btn-${line}`);
     if (btn) { btn.classList.remove('text-slate-400'); btn.classList.add('line-active'); }
     renderTable();
 }
-
 let toastTimer = null;
-function showToast(msg, type = 'success') {
+function showToast(msg, type='success') {
     if (toastTimer) clearTimeout(toastTimer);
     const t = document.getElementById('toast');
-    t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+    t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
     document.getElementById('toast-message').innerText = msg;
     t.classList.remove('hidden');
     toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
     safeCreateIcons();
 }
 
-// ─── SERVICE WORKER ─────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>
