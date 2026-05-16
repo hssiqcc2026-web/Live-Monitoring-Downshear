@@ -1,6 +1,6 @@
 {
     "id": "/",
-    "short_name": "Downshear-Mon",
+    "short_name": "DS Monitoring",
     "name": "Live Monitoring Downshear",
     "icons": [
         {
@@ -20,7 +20,7 @@
     "scope": "./",
     "background_color": "#ffffff",
     "display": "standalone",
-    "orientation": "portrait-primary",
+    "orientation": "landscape-primary",
     "theme_color": "#000000",
     "description": "Aplikasi monitoring produksi Downshear secara real-time."
 }
