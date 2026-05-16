@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>HSSI - Downshear Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
@@ -10,7 +13,7 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0f172a">
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
         body {
@@ -69,6 +72,24 @@
         /* Sync spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .syncing { animation: spin 1s linear infinite; }
+
+        /* ══ PORTRAIT LOCK OVERLAY ══ */
+        #rotate-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 9999;
+            background: #0f172a;
+            flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 24px; text-align: center; padding: 40px;
+        }
+        #rotate-overlay.show { display: flex; }
+        @keyframes rotatePhone {
+            0%   { transform: rotate(0deg); }
+            30%  { transform: rotate(0deg); }
+            70%  { transform: rotate(90deg); }
+            100% { transform: rotate(90deg); }
+        }
+        #rotate-icon { animation: rotatePhone 2.4s ease-in-out infinite; }
     </style>
 </head>
 <body class="text-slate-900">
