@@ -20,7 +20,7 @@
     "scope": "./",
     "background_color": "#ffffff",
     "display": "standalone",
-    "orientation": "landscape-primary",
+    "orientation": "landscape",
     "theme_color": "#000000",
     "description": "Aplikasi monitoring produksi Downshear secara real-time."
 }
