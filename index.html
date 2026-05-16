@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
         body {
@@ -403,6 +405,32 @@
 </footer>
 
 <script>
+    
+function lockLandscape() {
+    // Method 1: Screen Orientation API (Android Chrome, modern browsers)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+            console.warn('Screen Orientation lock gagal (normal di browser biasa):', err.message);
+        });
+    }
+    // Method 2: Deprecated tapi masih jalan di beberapa browser
+    else if (screen.lockOrientation) {
+        screen.lockOrientation('landscape');
+    } else if (screen.mozLockOrientation) {
+        screen.mozLockOrientation('landscape');
+    } else if (screen.msLockOrientation) {
+        screen.msLockOrientation('landscape');
+    }
+}
+ 
+// Jalankan lock saat halaman pertama kali dibuka
+document.addEventListener('DOMContentLoaded', lockLandscape);
+ 
+// Jalankan ulang jika user kembali ke tab ini (misal dari background)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) lockLandscape();
+});
+    
 // ══════════════════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════════════════
