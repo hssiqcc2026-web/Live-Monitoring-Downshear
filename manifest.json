@@ -1,26 +1,26 @@
 {
-    "id": "/",
-    "short_name": "DS Monitoring",
-    "name": "Live Monitoring Downshear",
-    "icons": [
-        {
-            "src": "icon-192.png",
-            "type": "image/png",
-            "sizes": "192x192",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "icon-512.png",
-            "type": "image/png",
-            "sizes": "512x512",
-            "purpose": "any maskable"
-        }
-    ],
-    "start_url": "./index.html",
-    "scope": "./",
-    "background_color": "#ffffff",
-    "display": "standalone",
-    "orientation": "landscape",
-    "theme_color": "#000000",
-    "description": "Aplikasi monitoring produksi Downshear secara real-time."
+  "name": "HSSI Downshear Monitoring",
+  "short_name": "DS Monitor",
+  "description": "Realtime Downshear Production Monitoring — PT Hanwa Steel Service Indonesia",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "lang": "id"
 }
