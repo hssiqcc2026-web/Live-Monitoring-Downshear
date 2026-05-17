@@ -94,6 +94,26 @@
 </head>
 <body class="text-slate-900">
 
+<!-- ══ PORTRAIT LOCK OVERLAY ══
+     Muncul hanya saat device dipegang portrait ketika dipakai sebagai PWA.
+     Di browser biasa tetap tersembunyi. -->
+<div id="rotate-overlay">
+    <div id="rotate-icon">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Tablet body -->
+            <rect x="20" y="8" width="32" height="48" rx="4" stroke="#34d399" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="50" r="2.5" fill="#34d399"/>
+            <!-- Arrow rotate -->
+            <path d="M10 36 Q10 12 36 12" stroke="#6ee7b7" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="4 3"/>
+            <polyline points="32,8 36,12 32,16" stroke="#6ee7b7" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+    <div>
+        <p style="color:#34d399;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 8px">Putar Perangkat</p>
+        <p style="color:#64748b;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;margin:0">Aplikasi ini dioptimalkan untuk<br>tampilan <strong style="color:#94a3b8">Landscape (Horizontal)</strong></p>
+    </div>
+</div>
+
 <!-- HEADER -->
 <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
     <div class="max-w-[1600px] mx-auto flex justify-between items-center">
@@ -446,7 +466,7 @@ const PLANING_EDIT_URLS = {
     DS3: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=2002711566#gid=2002711566"
 };
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYye3gG20qxLBaqVrEJBm0jsjQG2wCE9gUqsIlsBETr_cdVxovtHcyB7uu3x1RaKWn/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv-6W63GHbDa1dVuNhV5DVBW8dupxBCSIFshtSLZUmXRnTz6ccQKMIcGHhkhB18C7J/exec";
 
 // ── Kolom index untuk parsing CSV WAITING ──
 const PLANING_COL = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
@@ -1408,6 +1428,54 @@ function showToast(msg, type='success') {
     t.classList.remove('hidden');
     toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
     safeCreateIcons();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  ORIENTATION LOCK — Paksa Landscape saat dipakai sebagai PWA
+// ══════════════════════════════════════════════════════════════════════
+
+function handleOrientation() {
+    var overlay   = document.getElementById('rotate-overlay');
+    if (!overlay) return;
+
+    // Deteksi apakah sedang berjalan sebagai installed PWA
+    var isStandalone = (
+        window.navigator.standalone === true ||                        // iOS Safari
+        window.matchMedia('(display-mode: standalone)').matches ||     // Android / Chrome
+        window.matchMedia('(display-mode: fullscreen)').matches
+    );
+
+    if (!isStandalone) {
+        // Di browser biasa — jangan tampilkan overlay
+        overlay.classList.remove('show');
+        return;
+    }
+
+    var isPortrait = window.innerHeight > window.innerWidth;
+    if (isPortrait) {
+        overlay.classList.add('show');
+    } else {
+        overlay.classList.remove('show');
+    }
+}
+
+// Coba kunci orientasi via Screen Orientation API (Android Chrome)
+function lockLandscape() {
+    try {
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(function() {
+                // Fallback ke overlay jika API gagal (iOS tidak support lock)
+                console.log('screen.orientation.lock tidak didukung — pakai overlay');
+            });
+        }
+    } catch(e) {}
+}
+
+// Jalankan saat load dan setiap kali orientasi berubah
+window.addEventListener('load',   function() { lockLandscape(); handleOrientation(); });
+window.addEventListener('resize', handleOrientation);
+if (screen.orientation) {
+    screen.orientation.addEventListener('change', handleOrientation);
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
