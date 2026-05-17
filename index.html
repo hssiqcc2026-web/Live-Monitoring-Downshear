@@ -153,6 +153,13 @@
                 <i data-lucide="file-down" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Export PDF</span>
             </button>
+            <!-- ★ Tombol Install PWA — muncul otomatis saat Chrome siap -->
+            <button id="btn-install" onclick="triggerInstall()"
+                title="Install sebagai Aplikasi"
+                class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg ring-2 ring-emerald-400/50">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Install App</span>
+            </button>
             <button onclick="fetchAllData()" id="btn-refresh" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
                 <i data-lucide="refresh-cw" id="refresh-icon" class="w-5 h-5 text-emerald-400 transition-transform"></i>
             </button>
@@ -1478,7 +1485,62 @@ if (screen.orientation) {
     screen.orientation.addEventListener('change', handleOrientation);
 }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+// ══════════════════════════════════════════════════════════════════════
+//  PWA INSTALL  — tangkap beforeinstallprompt, tampilkan tombol Install
+// ══════════════════════════════════════════════════════════════════════
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+    // Cegah Chrome menampilkan mini-infobar otomatis
+    e.preventDefault();
+    deferredInstallPrompt = e;
+
+    // Tampilkan tombol Install di header
+    var btn = document.getElementById('btn-install');
+    if (btn) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+        safeCreateIcons();
+        console.log('✅ PWA install prompt siap — tombol Install ditampilkan');
+    }
+});
+
+function triggerInstall() {
+    if (!deferredInstallPrompt) {
+        showToast('Install tidak tersedia. Coba buka via Chrome & pastikan HTTPS.', 'error');
+        return;
+    }
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(function(result) {
+        console.log('Install choice:', result.outcome);
+        if (result.outcome === 'accepted') {
+            showToast('✅ Aplikasi berhasil diinstall!', 'success');
+            // Sembunyikan tombol setelah install
+            var btn = document.getElementById('btn-install');
+            if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+        }
+        deferredInstallPrompt = null;
+    });
+}
+
+// Sembunyikan tombol jika sudah diinstall
+window.addEventListener('appinstalled', function() {
+    var btn = document.getElementById('btn-install');
+    if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+    deferredInstallPrompt = null;
+    console.log('PWA telah diinstall');
+});
+
+// ── Register Service Worker ──
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+        .then(function(reg) {
+            console.log('SW registered, scope:', reg.scope);
+        })
+        .catch(function(err) {
+            console.warn('SW registration failed:', err);
+        });
+}
 </script>
 </body>
 </html>
