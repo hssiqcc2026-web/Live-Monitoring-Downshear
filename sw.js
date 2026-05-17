@@ -1,46 +1,70 @@
-const CACHE_NAME = 'downshear-v2'; // ← naikkan versi saat update
-const STATIC_ASSETS = [
-    './',
-    './index.html',
-    './manifest.json',
-    './icon-192.png',
-    './icon-512.png'
+// ── HSSI Downshear Monitoring — Service Worker ──
+const CACHE_NAME = 'hssi-ds-v2';
+
+// File yang di-cache untuk offline support
+const PRECACHE_URLS = [
+  './',
+  './index.html'
 ];
 
-// Install: cache static assets
-self.addEventListener('install', e => {
-    e.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(STATIC_ASSETS))
-            .then(() => self.skipWaiting()) // ← langsung aktif tanpa reload
-    );
+// Install: pre-cache shell
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(PRECACHE_URLS).catch(() => {
+        // Abaikan error jika file tidak ada (development mode)
+      });
+    }).then(() => self.skipWaiting())
+  );
 });
 
-// Activate: hapus cache lama  ← FIX BARU
-self.addEventListener('activate', e => {
-    e.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(
-                keys
-                    .filter(key => key !== CACHE_NAME)
-                    .map(key => caches.delete(key))
-            )
-        ).then(() => self.clients.claim())
-    );
+// Activate: hapus cache lama
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
-// Fetch: network first untuk Google Sheets, cache first untuk static
-self.addEventListener('fetch', e => {
-    const url = e.request.url;
+// Fetch: network-first untuk data Google Sheets & Apps Script,
+//        cache-first untuk asset statis
+self.addEventListener('fetch', event => {
+  const url = event.request.url;
 
-    // Google Sheets & Apps Script → selalu network (data dinamis)
-    if (url.includes('docs.google.com') || url.includes('script.google.com')) {
-        e.respondWith(fetch(e.request).catch(() => new Response('', { status: 503 })));
-        return;
-    }
+  // Selalu ke network untuk: Google Sheets CSV, Apps Script, CDN scripts
+  const networkOnly = [
+    'docs.google.com',
+    'script.google.com',
+    'cdn.tailwindcss.com',
+    'unpkg.com',
+    'cdn.jsdelivr.net',
+    'fonts.googleapis.com',
+    'fonts.gstatic.com'
+  ];
 
-    // Static assets → cache first, fallback network
-    e.respondWith(
-        caches.match(e.request).then(res => res || fetch(e.request))
-    );
+  if (networkOnly.some(domain => url.includes(domain))) {
+    // Network only — jangan cache data eksternal
+    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));
+    return;
+  }
+
+  // Cache-first untuk asset lokal
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        // Cache response yang valid
+        if (response && response.status === 200 && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      });
+    }).catch(() => {
+      // Offline fallback
+      return caches.match('./index.html');
+    })
+  );
 });
