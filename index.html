@@ -14,6 +14,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
+    <!-- ★ HARUS di <head> — tangkap beforeinstallprompt sebelum script lain -->
+    <script>
+        // Simpan event install di global agar tidak terlewat
+        window.__pwaInstallEvent = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaInstallEvent = e;
+            console.log('[PWA] beforeinstallprompt captured');
+            // Tampilkan tombol install jika DOM sudah siap
+            var tryShow = function() {
+                var btn = document.getElementById('btn-install');
+                if (btn) {
+                    btn.classList.remove('hidden');
+                    btn.classList.add('flex');
+                    console.log('[PWA] Install button shown');
+                }
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', tryShow);
+            } else {
+                tryShow();
+            }
+        });
+    </script>
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
         body {
@@ -153,10 +177,17 @@
                 <i data-lucide="file-down" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Export PDF</span>
             </button>
-            <!-- ★ Tombol Install PWA — muncul otomatis saat Chrome siap -->
+            <!-- ★ Tombol Install PWA -->
             <button id="btn-install" onclick="triggerInstall()"
                 title="Install sebagai Aplikasi"
                 class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg ring-2 ring-emerald-400/50">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Install App</span>
+            </button>
+            <!-- ★ Tombol panduan iOS (khusus Safari iPhone/iPad) -->
+            <button id="btn-install-ios" onclick="openIosGuide()"
+                title="Cara Install di iOS"
+                class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg">
                 <i data-lucide="download" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Install App</span>
             </button>
@@ -431,6 +462,49 @@
             <div class="flex gap-4">
                 <button onclick="closeKendalaModal()" class="flex-1 px-8 py-4 rounded-2xl font-black text-slate-400 uppercase tracking-widest hover:bg-slate-100 transition-all">Batal</button>
                 <button onclick="saveKendala()" class="flex-[2] bg-rose-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-700 transition-all">Lapor Kendala</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PANDUAN INSTALL iOS -->
+<div id="modal-ios-guide" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay" onclick="handleModalOverlayClick(event,'modal-ios-guide')">
+    <div class="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div class="bg-emerald-700 p-6 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-black italic tracking-tighter">INSTALL APLIKASI</h3>
+                    <p class="text-emerald-200 text-[10px] font-bold uppercase mt-1 tracking-widest">Panduan untuk iPhone / iPad</p>
+                </div>
+                <button onclick="closeIosGuide()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-6 flex flex-col gap-4">
+            <div class="flex items-start gap-4">
+                <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">1</span>
+                <div>
+                    <p class="font-black text-slate-800 text-sm">Tap tombol <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Share &#x2191;</span></p>
+                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Di bawah layar Safari (tengah)</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-4">
+                <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">2</span>
+                <div>
+                    <p class="font-black text-slate-800 text-sm">Pilih <span class="px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Add to Home Screen</span></p>
+                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Scroll ke bawah di menu Share</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-4">
+                <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">3</span>
+                <div>
+                    <p class="font-black text-slate-800 text-sm">Tap <span class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-mono">Add</span> di pojok kanan atas</p>
+                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Aplikasi tersimpan di home screen</p>
+                </div>
+            </div>
+            <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 mt-1">
+                <p class="text-[10px] text-amber-700 font-bold text-center">⚠️ Pastikan dibuka via <strong>Safari</strong>, bukan Chrome/Firefox</p>
             </div>
         </div>
     </div>
@@ -1486,60 +1560,77 @@ if (screen.orientation) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  PWA INSTALL  — tangkap beforeinstallprompt, tampilkan tombol Install
+//  PWA INSTALL
 // ══════════════════════════════════════════════════════════════════════
-let deferredInstallPrompt = null;
 
-window.addEventListener('beforeinstallprompt', function(e) {
-    // Cegah Chrome menampilkan mini-infobar otomatis
-    e.preventDefault();
-    deferredInstallPrompt = e;
-
-    // Tampilkan tombol Install di header
-    var btn = document.getElementById('btn-install');
-    if (btn) {
-        btn.classList.remove('hidden');
-        btn.classList.add('flex');
-        safeCreateIcons();
-        console.log('✅ PWA install prompt siap — tombol Install ditampilkan');
-    }
-});
-
-function triggerInstall() {
-    if (!deferredInstallPrompt) {
-        showToast('Install tidak tersedia. Coba buka via Chrome & pastikan HTTPS.', 'error');
-        return;
-    }
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then(function(result) {
-        console.log('Install choice:', result.outcome);
-        if (result.outcome === 'accepted') {
-            showToast('✅ Aplikasi berhasil diinstall!', 'success');
-            // Sembunyikan tombol setelah install
-            var btn = document.getElementById('btn-install');
-            if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
-        }
-        deferredInstallPrompt = null;
+function hideInstallBtn() {
+    ['btn-install','btn-install-ios'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     });
 }
 
-// Sembunyikan tombol jika sudah diinstall
+// Jangan tampilkan install jika sudah berjalan sebagai standalone PWA
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+if (!isStandalone) {
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        // iOS Safari: tidak punya beforeinstallprompt → tampilkan tombol panduan
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.getElementById('btn-install-ios');
+            if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
+        });
+    } else {
+        // Android/Desktop: cek apakah event sudah tertangkap di <head>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.__pwaInstallEvent) {
+                var btn = document.getElementById('btn-install');
+                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
+            }
+            // Juga listen jika event belum terpicu saat DOMContentLoaded
+            window.addEventListener('beforeinstallprompt', function() {
+                var btn = document.getElementById('btn-install');
+                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
+            });
+        });
+    }
+}
+
+function triggerInstall() {
+    var evt = window.__pwaInstallEvent;
+    if (!evt) {
+        showToast('Buka di Chrome Android & tunggu beberapa detik, lalu coba lagi.', 'error');
+        return;
+    }
+    evt.prompt();
+    evt.userChoice.then(function(result) {
+        if (result.outcome === 'accepted') {
+            showToast('✅ Aplikasi berhasil diinstall!', 'success');
+            hideInstallBtn();
+        }
+        window.__pwaInstallEvent = null;
+    });
+}
+
+// Modal panduan install iOS
+function openIosGuide() { showModal('modal-ios-guide'); }
+function closeIosGuide() { hideModal('modal-ios-guide'); }
+
+// Sembunyikan tombol setelah berhasil install
 window.addEventListener('appinstalled', function() {
-    var btn = document.getElementById('btn-install');
-    if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
-    deferredInstallPrompt = null;
-    console.log('PWA telah diinstall');
+    hideInstallBtn();
+    window.__pwaInstallEvent = null;
+    showToast('✅ Aplikasi berhasil diinstall!', 'success');
 });
 
 // ── Register Service Worker ──
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
-        .then(function(reg) {
-            console.log('SW registered, scope:', reg.scope);
-        })
-        .catch(function(err) {
-            console.warn('SW registration failed:', err);
-        });
+        .then(function(reg) { console.log('[SW] registered, scope:', reg.scope); })
+        .catch(function(err) { console.warn('[SW] failed:', err); });
 }
 </script>
 </body>
