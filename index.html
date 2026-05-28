@@ -1267,7 +1267,7 @@ function updateStats() {
         const tEl  = document.getElementById(`ton-${line.toLowerCase()}`);
         const cEl  = document.getElementById(`count-${line.toLowerCase()}`);
         if (tEl) tEl.innerText = ton.toFixed(2);
-        if (cEl) cEl.innerText = `${done.length} Coil Selesai`;
+        if (cEl) cEl.innerText = `${done.length} Job Selesai`;
         if (charts[line]) {
             charts[line].data.datasets[0].data = [wait.length||1, done.length];
             charts[line].update();
