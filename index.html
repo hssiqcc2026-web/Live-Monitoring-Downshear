@@ -1031,8 +1031,9 @@ function processScan(val) {
 
     if (item.status === "WAITING") {
         // ★ SET STATUS LOKAL dulu (langsung terlihat di device ini)
-        item.status    = "ON PROCESS";
-        item.startTime = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        const _now = new Date();
+        const _pad = n => String(n).padStart(2, '0');
+        item.startTime = `${_pad(_now.getHours())}:${_pad(_now.getMinutes())}:${_pad(_now.getSeconds())}`;
 
         // ★ KIRIM KE SERVER (supaya device lain bisa baca)
         sendStartToServer(item);
