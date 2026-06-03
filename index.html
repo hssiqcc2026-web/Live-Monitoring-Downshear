@@ -14,37 +14,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <!-- ★ HARUS di <head> — tangkap beforeinstallprompt sebelum script lain -->
     <script>
-        // Simpan event install di global agar tidak terlewat
         window.__pwaInstallEvent = null;
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             window.__pwaInstallEvent = e;
-            console.log('[PWA] beforeinstallprompt captured');
-            // Tampilkan tombol install jika DOM sudah siap
             var tryShow = function() {
                 var btn = document.getElementById('btn-install');
-                if (btn) {
-                    btn.classList.remove('hidden');
-                    btn.classList.add('flex');
-                    console.log('[PWA] Install button shown');
-                }
+                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
             };
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', tryShow);
-            } else {
-                tryShow();
-            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryShow);
+            else tryShow();
         });
     </script>
     <style>
         html, body { height: 100%; margin: 0; padding: 0; }
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
-            display: flex; flex-direction: column; min-height: 100vh;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
         main { flex: 1 0 auto; }
         footer { flex-shrink: 0; }
         .card-stat { border-radius: 2.5rem; transition: all 0.3s ease; border: 1px solid #eef2f6; }
@@ -55,11 +40,8 @@
         .modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
         @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        /* ── REALTIME INDICATOR ── */
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
         .pulse-dot { animation: pulse 1.5s ease-in-out infinite; }
-
         #fab-scan {
             position: fixed; bottom: 24px; right: 24px; z-index: 45;
             width: 64px; height: 64px; border-radius: 50%;
@@ -70,64 +52,33 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         #fab-scan:active { transform: scale(0.93); }
-        #fab-scan .fab-ring {
-            position: absolute; inset: -4px; border-radius: 50%;
-            border: 2px solid rgba(5,150,105,0.35);
-            animation: fabPulse 2s ease-in-out infinite;
-        }
+        #fab-scan .fab-ring { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(5,150,105,0.35); animation: fabPulse 2s ease-in-out infinite; }
         @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0} }
         @media (min-width: 1024px) { #fab-scan { display: none; } }
-
         #scanner-container { display: none; }
         #scanner-container.open { display: flex; }
-
         .corner-tl { position:absolute;top:12px;left:12px;width:36px;height:36px;border-top:3px solid #10b981;border-left:3px solid #10b981;border-radius:4px 0 0 0;z-index:10; }
         .corner-tr { position:absolute;top:12px;right:12px;width:36px;height:36px;border-top:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 4px 0 0;z-index:10; }
         .corner-bl { position:absolute;bottom:12px;left:12px;width:36px;height:36px;border-bottom:3px solid #10b981;border-left:3px solid #10b981;border-radius:0 0 0 4px;z-index:10; }
         .corner-br { position:absolute;bottom:12px;right:12px;width:36px;height:36px;border-bottom:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 0 4px 0;z-index:10; }
-        .scan-line {
-            position: absolute; left: 12px; right: 12px; height: 2px;
-            background: linear-gradient(90deg, transparent, #10b981, transparent);
-            z-index: 10; animation: scanLine 2s ease-in-out infinite;
-        }
+        .scan-line { position: absolute; left: 12px; right: 12px; height: 2px; background: linear-gradient(90deg, transparent, #10b981, transparent); z-index: 10; animation: scanLine 2s ease-in-out infinite; }
         @keyframes scanLine { 0%{top:12px;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:calc(100% - 14px);opacity:0} }
-        #last-scan-badge { transition: all 0.3s; }
-
-        /* Sync spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .syncing { animation: spin 1s linear infinite; }
-
-        /* ══ PORTRAIT LOCK OVERLAY ══ */
-        #rotate-overlay {
-            display: none;
-            position: fixed; inset: 0; z-index: 9999;
-            background: #0f172a;
-            flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 24px; text-align: center; padding: 40px;
-        }
+        #rotate-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #0f172a; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-align: center; padding: 40px; }
         #rotate-overlay.show { display: flex; }
-        @keyframes rotatePhone {
-            0%   { transform: rotate(0deg); }
-            30%  { transform: rotate(0deg); }
-            70%  { transform: rotate(90deg); }
-            100% { transform: rotate(90deg); }
-        }
+        @keyframes rotatePhone { 0%{transform:rotate(0deg)} 30%{transform:rotate(0deg)} 70%{transform:rotate(90deg)} 100%{transform:rotate(90deg)} }
         #rotate-icon { animation: rotatePhone 2.4s ease-in-out infinite; }
     </style>
 </head>
 <body class="text-slate-900">
 
-<!-- ══ PORTRAIT LOCK OVERLAY ══
-     Muncul hanya saat device dipegang portrait ketika dipakai sebagai PWA.
-     Di browser biasa tetap tersembunyi. -->
+<!-- PORTRAIT LOCK OVERLAY -->
 <div id="rotate-overlay">
     <div id="rotate-icon">
         <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Tablet body -->
             <rect x="20" y="8" width="32" height="48" rx="4" stroke="#34d399" stroke-width="3" fill="none"/>
             <circle cx="36" cy="50" r="2.5" fill="#34d399"/>
-            <!-- Arrow rotate -->
             <path d="M10 36 Q10 12 36 12" stroke="#6ee7b7" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="4 3"/>
             <polyline points="32,8 36,12 32,16" stroke="#6ee7b7" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -150,7 +101,6 @@
             </div>
             <div>
                 <h1 class="text-xl font-black italic uppercase tracking-tighter leading-none">DOWNSHEAR MONITORING</h1>
-                <!-- ══ REALTIME STATUS INDICATOR ══ -->
                 <div class="flex items-center gap-2 mt-0.5">
                     <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block"></span>
                     <p id="sync-status" class="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">MENGHUBUNGKAN...</p>
@@ -160,38 +110,27 @@
         </div>
         <div class="flex items-center gap-3">
             <div class="relative hidden lg:block">
-                <input type="text" id="manualInput"
-                    placeholder="Cari / Scan CC No..."
+                <input type="text" id="manualInput" placeholder="Cari / Scan CC No..."
                     class="w-72 bg-slate-800 border border-slate-700 text-xs px-5 py-2.5 rounded-2xl outline-none text-white focus:ring-2 focus:ring-emerald-500 transition-all">
                 <button onclick="triggerDesktopScan()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 p-1.5 rounded-lg text-white hover:bg-emerald-500 transition-all">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                 </button>
             </div>
-            <button onclick="openPlaningModal()"
-                class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-indigo-500 shadow-md">
-                <i data-lucide="table-2" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Update Planing</span>
+            <button onclick="openPlaningModal()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-indigo-500 shadow-md">
+                <i data-lucide="table-2" class="w-4 h-4"></i><span class="hidden sm:inline">Update Planing</span>
             </button>
-            <button onclick="openExportModal()"
-                class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-rose-500 shadow-md">
-                <i data-lucide="file-down" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Export PDF</span>
+            <button onclick="openExportModal()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-rose-500 shadow-md">
+                <i data-lucide="file-down" class="w-4 h-4"></i><span class="hidden sm:inline">Export PDF</span>
             </button>
-            <!-- ★ Tombol Install PWA -->
-            <button id="btn-install" onclick="triggerInstall()"
-                title="Install sebagai Aplikasi"
+            <button id="btn-install" onclick="triggerInstall()" title="Install sebagai Aplikasi"
                 class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg ring-2 ring-emerald-400/50">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Install App</span>
+                <i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">Install App</span>
             </button>
-            <!-- ★ Tombol panduan iOS (khusus Safari iPhone/iPad) -->
-            <button id="btn-install-ios" onclick="openIosGuide()"
-                title="Cara Install di iOS"
+            <button id="btn-install-ios" onclick="openIosGuide()" title="Cara Install di iOS"
                 class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Install App</span>
+                <i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">Install App</span>
             </button>
-            <button onclick="fetchAllData()" id="btn-refresh" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 group">
+            <button onclick="fetchAllData()" id="btn-refresh" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700">
                 <i data-lucide="refresh-cw" id="refresh-icon" class="w-5 h-5 text-emerald-400 transition-transform"></i>
             </button>
         </div>
@@ -200,7 +139,6 @@
 
 <!-- MAIN -->
 <main class="max-w-[1600px] mx-auto p-4 md:p-8 w-full">
-    <!-- Stat Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
         <div class="bg-white p-8 card-stat shadow-sm flex justify-between items-center hover:shadow-md">
             <div>
@@ -237,7 +175,6 @@
         </div>
     </div>
 
-    <!-- Menu Nav -->
     <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
         <div class="inline-flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-200">
             <button onclick="setMainMenu('WAITING')" id="btn-menu-WAITING"
@@ -247,7 +184,6 @@
         </div>
     </div>
 
-    <!-- Line Filter + Search -->
     <div class="flex flex-col md:flex-row gap-6 mb-8 items-center">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
             <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all line-active">All</button>
@@ -257,13 +193,11 @@
         </div>
         <div class="relative flex-1 w-full">
             <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-            <input type="text" id="searchInput" oninput="handleSearch()"
-                placeholder="Cari Order / CC / Spec..."
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Cari Order / CC / Spec..."
                 class="w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold shadow-sm outline-none transition-all">
         </div>
     </div>
 
-    <!-- Table -->
     <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse">
@@ -288,9 +222,7 @@
                 <h3 class="font-black italic tracking-wider text-base">SCAN QR / BARCODE</h3>
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Arahkan ke QR Code pada Coil</p>
             </div>
-            <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+            <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
         <div class="p-4 bg-slate-950">
             <div id="scan-viewfinder" class="relative w-full rounded-xl overflow-hidden bg-black" style="aspect-ratio:1">
@@ -311,11 +243,9 @@
         </div>
         <div class="px-4 pb-5">
             <div class="flex gap-2">
-                <input type="text" id="manualInputMobile"
-                    placeholder="Atau ketik CC No. manual..."
+                <input type="text" id="manualInputMobile" placeholder="Atau ketik CC No. manual..."
                     class="flex-1 px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                <button onclick="submitManualMobile()"
-                    class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black text-sm transition-all flex items-center gap-1.5">
+                <button onclick="submitManualMobile()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black text-sm transition-all flex items-center gap-1.5">
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -476,32 +406,24 @@
                     <h3 class="text-xl font-black italic tracking-tighter">INSTALL APLIKASI</h3>
                     <p class="text-emerald-200 text-[10px] font-bold uppercase mt-1 tracking-widest">Panduan untuk iPhone / iPad</p>
                 </div>
-                <button onclick="closeIosGuide()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="closeIosGuide()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
         <div class="p-6 flex flex-col gap-4">
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">1</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Tap tombol <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Share &#x2191;</span></p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Di bawah layar Safari (tengah)</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Tap tombol <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Share &#x2191;</span></p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Di bawah layar Safari (tengah)</p></div>
             </div>
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">2</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Pilih <span class="px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Add to Home Screen</span></p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Scroll ke bawah di menu Share</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Pilih <span class="px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Add to Home Screen</span></p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Scroll ke bawah di menu Share</p></div>
             </div>
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">3</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Tap <span class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-mono">Add</span> di pojok kanan atas</p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Aplikasi tersimpan di home screen</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Tap <span class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-mono">Add</span> di pojok kanan atas</p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Aplikasi tersimpan di home screen</p></div>
             </div>
             <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 mt-1">
                 <p class="text-[10px] text-amber-700 font-bold text-center">⚠️ Pastikan dibuka via <strong>Safari</strong>, bukan Chrome/Firefox</p>
@@ -540,42 +462,76 @@ const SHEET_CONFIG = {
         DS3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5oxW4v4lVSiKmn8vUwaYIuzRDOoTCOhu0jB9zk6_WDM9ar1yAiPwrIZGUFvf3zXAqWcjnCaUyRKAu/pub?gid=923781372&single=true&output=csv"
     }
 };
-
 const PLANING_EDIT_URLS = {
     DS1: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=0#gid=0",
     DS2: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=1839583056#gid=1839583056",
     DS3: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=2002711566#gid=2002711566"
 };
-
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysB6wh26EhX55R_yUaVdfd0d2Ec7TkFftlSgT-EKMgPMWpgMPEjAesCo87jypEpFKu/exec";
-
-// ── Kolom index untuk parsing CSV WAITING ──
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYye3gG20qxLBaqVrEJBm0jsjQG2wCE9gUqsIlsBETr_cdVxovtHcyB7uu3x1RaKWn/exec";
 const PLANING_COL = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
 
 // ══════════════════════════════════════════════════════════════
-//  STATE  (semua variabel dideklarsikan di sini — FIX UTAMA)
+//  STATE
 // ══════════════════════════════════════════════════════════════
-let appData        = [];   // data WAITING
-let finishData     = [];   // data FINISH
-
-// ★ FIX: remoteStatusMap harus dideklarasikan sebelum dipakai
-let remoteStatusMap = {};  // { "CC NO|LINE": { status, startTime } }
-
-let activeMenu     = 'WAITING';
-let activeLine     = 'ALL';
-let searchQuery    = '';
-let selectedItemId = null;
+let appData         = [];
+let finishData      = [];
+let remoteStatusMap = {};
+let activeMenu      = 'WAITING';
+let activeLine      = 'ALL';
+let searchQuery     = '';
+let selectedItemId  = null;
 let finishingItemId = null;
-let html5QrCode    = null;
-let charts         = {};
-let scannerOpen    = false;
-let lastScanLock   = false;
+let html5QrCode     = null;
+let charts          = {};
+let scannerOpen     = false;
+let lastScanLock    = false;
 
-// ── Auto-refresh setiap 15 detik (bukan 2 menit) ──
 const REFRESH_INTERVAL = 15000;
 let autoRefreshTimer   = null;
 let countdownTimer     = null;
 let countdownValue     = REFRESH_INTERVAL / 1000;
+
+// ══════════════════════════════════════════════════════════════
+//  ★ FIX #1 — getTimeString()
+//  Hasilkan waktu HH:mm:ss tanpa bergantung locale browser.
+//  Menggantikan toLocaleTimeString('id-ID') yang tidak konsisten.
+// ══════════════════════════════════════════════════════════════
+function getTimeString(date) {
+    const d   = date || new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ★ FIX #2 — sanitizeTimeDisplay()
+//  Membersihkan string waktu sebelum ditampilkan di UI.
+//  Menangani kasus "Sat Dec 30 1899 01:41:28 GMT+0642 (Waktu Indochina)"
+//  yang terjadi ketika Google Sheets auto-convert time → Date object.
+//
+//  Dipanggil di SETIAP tempat yang menampilkan startTime / finishedAt.
+// ══════════════════════════════════════════════════════════════
+function sanitizeTimeDisplay(val) {
+    if (!val || String(val).trim() === '' || String(val).trim() === '-') return '—';
+    const s = String(val).trim();
+
+    // Sudah bersih HH:mm:ss → kembalikan langsung
+    if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
+
+    // Format HH.mm.ss (titik pemisah, beberapa Android) → konversi
+    if (/^\d{2}\.\d{2}\.\d{2}$/.test(s)) return s.replace(/\./g, ':');
+
+    // Ekstrak HH:mm:ss dari string panjang
+    // Contoh: "Sat Dec 30 1899 01:41:28 GMT+0642 (Waktu Indochina)"
+    const match = s.match(/(\d{2}:\d{2}:\d{2})/);
+    if (match) return match[1];
+
+    // Ekstrak HH.mm.ss dari string panjang
+    const matchDot = s.match(/(\d{2})\.(\d{2})\.(\d{2})/);
+    if (matchDot) return `${matchDot[1]}:${matchDot[2]}:${matchDot[3]}`;
+
+    // Fallback: ambil 8 karakter pertama
+    return s.length >= 8 ? s.slice(0, 8) : s;
+}
 
 // ══════════════════════════════════════════════════════════════
 //  INIT
@@ -587,10 +543,7 @@ window.onload = () => {
     fetchAllData();
     startAutoRefresh();
 };
-
-function safeCreateIcons() {
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
+function safeCreateIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
 
 // ══════════════════════════════════════════════════════════════
 //  AUTO REFRESH + COUNTDOWN UI
@@ -599,79 +552,36 @@ function startAutoRefresh() {
     clearAutoRefresh();
     countdownValue = REFRESH_INTERVAL / 1000;
     updateCountdownUI();
-
-    autoRefreshTimer = setInterval(() => {
-        fetchAllData();
-        countdownValue = REFRESH_INTERVAL / 1000;
-    }, REFRESH_INTERVAL);
-
-    countdownTimer = setInterval(() => {
-        countdownValue = Math.max(0, countdownValue - 1);
-        updateCountdownUI();
-    }, 1000);
+    autoRefreshTimer = setInterval(() => { fetchAllData(); countdownValue = REFRESH_INTERVAL / 1000; }, REFRESH_INTERVAL);
+    countdownTimer   = setInterval(() => { countdownValue = Math.max(0, countdownValue - 1); updateCountdownUI(); }, 1000);
 }
-
 function clearAutoRefresh() {
     if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     if (countdownTimer)   clearInterval(countdownTimer);
 }
-
 function updateCountdownUI() {
     const el = document.getElementById('sync-countdown');
     if (el) el.textContent = `(refresh ${countdownValue}s)`;
 }
 
 // ══════════════════════════════════════════════════════════════
-//  REALTIME STATUS — kirim START ke Apps Script
+//  REALTIME STATUS — kirim ke Apps Script
 // ══════════════════════════════════════════════════════════════
-
-/**
- * ★ FUNGSI BARU: Kirim status ON PROCESS ke Apps Script
- * Dipanggil setiap kali user menekan tombol START.
- * Apps Script akan menyimpan ke sheet "STATUS" sehingga
- * device lain bisa membacanya saat refresh.
- */
 function sendStartToServer(item) {
-    const payload = {
-        action:       "START",
-        "CC NO":      item.ccNo,
-        "LINE":       item.line,
-        "ORDER NO":   item.orderNo || "-",
-        "START TIME": item.startTime
-    };
-    fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        body:   JSON.stringify(payload)
-    }).catch(err => console.warn("Gagal kirim START ke server:", err));
+    fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({
+        action: "START", "CC NO": item.ccNo, "LINE": item.line,
+        "ORDER NO": item.orderNo||"-", "START TIME": item.startTime
+    })}).catch(e => console.warn("Gagal kirim START:", e));
 }
-
-/**
- * ★ FUNGSI BARU: Kirim CLEAR_STATUS ke Apps Script
- * Dipanggil saat FINISH sehingga status ON PROCESS dihapus dari sheet STATUS.
- */
 function sendClearStatusToServer(item) {
-    const payload = {
-        action:  "CLEAR_STATUS",
-        "CC NO": item.ccNo,
-        "LINE":  item.line
-    };
-    fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        body:   JSON.stringify(payload)
-    }).catch(err => console.warn("Gagal kirim CLEAR_STATUS ke server:", err));
+    fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({
+        action: "CLEAR_STATUS", "CC NO": item.ccNo, "LINE": item.line
+    })}).catch(e => console.warn("Gagal kirim CLEAR_STATUS:", e));
 }
 
-/**
- * ★ FUNGSI BARU: Baca status realtime dari Apps Script (GET endpoint)
- * Apps Script harus menangani: ?action=GET_STATUS
- * dan mengembalikan JSON: { status:"ok", data:[{ccNo,line,status,startTime},...] }
- */
 async function fetchRemoteStatus() {
     try {
-        const url = APPS_SCRIPT_URL + "?action=GET_STATUS&t=" + Date.now();
-        const res = await fetch(url);
+        const res  = await fetch(APPS_SCRIPT_URL + "?action=GET_STATUS&t=" + Date.now());
         if (!res.ok) return;
         const json = await res.json();
         if (json && json.status === "ok" && Array.isArray(json.data)) {
@@ -681,17 +591,14 @@ async function fetchRemoteStatus() {
                 const key = row.ccNo.trim() + "|" + row.line.trim().toUpperCase();
                 remoteStatusMap[key] = {
                     status:       row.status       || "ON PROCESS",
-                    startTime:    row.startTime    || "",
-                    // ★ BARU: baca kendala & waktu dari server
+                    // ★ FIX: sanitize startTime dari server sebelum masuk state
+                    startTime:    sanitizeTimeDisplay(row.startTime    || ""),
                     kendala:      row.kendala      || "",
                     kendalaWaktu: row.kendalaWaktu || ""
                 };
             });
-            console.log("✔ Remote status:", Object.keys(remoteStatusMap).length, "item(s) ON PROCESS");
         }
-    } catch(e) {
-        console.warn("GET_STATUS error (normal jika Apps Script belum diupdate):", e.message);
-    }
+    } catch(e) { console.warn("GET_STATUS error:", e.message); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -701,82 +608,46 @@ async function fetchAllData() {
     setSyncStatus('syncing');
     const icon = document.getElementById('refresh-icon');
     if (icon) icon.classList.add('syncing');
-
     try {
-        // ★ Fetch WAITING + FINISH + STATUS secara paralel
         const [rW, rF] = await Promise.all([
             Promise.all(Object.keys(SHEET_CONFIG.WAITING).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.WAITING[ln] + "&t=" + Date.now());
-                    return parseWaitingCSV(ln, await res.text());
-                } catch { return []; }
+                try { const r = await fetch(SHEET_CONFIG.WAITING[ln]+"&t="+Date.now()); return parseWaitingCSV(ln, await r.text()); } catch { return []; }
             })),
             Promise.all(Object.keys(SHEET_CONFIG.FINISH).map(async ln => {
-                try {
-                    const res = await fetch(SHEET_CONFIG.FINISH[ln] + "&t=" + Date.now());
-                    if (!res.ok) return [];
-                    return parseFinishCSV(ln, await res.text());
-                } catch { return []; }
+                try { const r = await fetch(SHEET_CONFIG.FINISH[ln]+"&t="+Date.now()); if (!r.ok) return []; return parseFinishCSV(ln, await r.text()); } catch { return []; }
             }))
         ]);
 
-        // ★ Fetch remote STATUS (bisa berjalan lambat → tidak block render)
-        // Jalankan secara paralel dengan parsing
-        fetchRemoteStatus().then(() => {
-            applyRemoteStatus();
-            renderTable();
-            updateStats();
-        });
+        fetchRemoteStatus().then(() => { applyRemoteStatus(); renderTable(); updateStats(); });
 
-        const newWaiting = rW.flat();
+        const newWaiting    = rW.flat();
         const fetchedFinish = rF.flat();
-        const isValidCC = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
+        const isValidCC     = cc => cc && cc.trim().length >= 3 && cc.trim() !== '-';
 
-        // Gabungkan finishData dari server + localStorage
         let localFinish = [];
-        try {
-            localFinish = JSON.parse(localStorage.getItem('hssi_finish_data') || '[]')
-                           .filter(lf => isValidCC(lf.ccNo));
-        } catch {}
-
+        try { localFinish = JSON.parse(localStorage.getItem('hssi_finish_data')||'[]').filter(lf => isValidCC(lf.ccNo)); } catch {}
         finishData = [...fetchedFinish];
-        localFinish.forEach(lf => {
-            if (!finishData.find(mf => mf.ccNo === lf.ccNo && mf.line === lf.line))
-                finishData.unshift(lf);
-        });
+        localFinish.forEach(lf => { if (!finishData.find(mf => mf.ccNo===lf.ccNo && mf.line===lf.line)) finishData.unshift(lf); });
 
-        // ★ Simpan waiting baru, preserve status ON PROCESS dari memori lokal
         appData = newWaiting.map(item => {
-            const localItem = appData.find(e => e.ccNo === item.ccNo && e.line === item.line);
+            const localItem = appData.find(e => e.ccNo===item.ccNo && e.line===item.line);
             if (localItem && localItem.status === "ON PROCESS") {
-                // Preserve status lokal sambil menunggu remote sync
-                return { ...item, status: "ON PROCESS", startTime: localItem.startTime,
-                         kendala: localItem.kendala || "", kendalaWaktu: localItem.kendalaWaktu || "" };
+                return { ...item, status:"ON PROCESS",
+                    // ★ FIX: sanitize startTime dari memori lokal
+                    startTime: sanitizeTimeDisplay(localItem.startTime || ""),
+                    kendala: localItem.kendala || "", kendalaWaktu: localItem.kendalaWaktu || "" };
             }
             return item;
         });
 
-        // Apply remote status yang sudah kita punya dari sebelumnya
         applyRemoteStatus();
-
         setSyncStatus('connected');
         renderTable();
         updateStats();
-
-    } catch(err) {
-        console.error("fetchAllData error:", err);
-        setSyncStatus('error');
-    } finally {
-        if (icon) icon.classList.remove('syncing');
-        // Reset countdown
-        countdownValue = REFRESH_INTERVAL / 1000;
-    }
+    } catch(err) { console.error("fetchAllData error:", err); setSyncStatus('error'); }
+    finally { if (icon) icon.classList.remove('syncing'); countdownValue = REFRESH_INTERVAL / 1000; }
 }
 
-/**
- * ★ Apply status dari remoteStatusMap ke appData
- * Priority: remote server > lokal (kalau remote ada)
- */
 function applyRemoteStatus() {
     appData = appData.map(item => {
         const key    = item.ccNo + "|" + item.line;
@@ -784,9 +655,9 @@ function applyRemoteStatus() {
         if (remote && remote.status === "ON PROCESS") {
             return {
                 ...item,
-                status:       "ON PROCESS",
+                status: "ON PROCESS",
+                // ★ FIX: remote.startTime sudah disanitize di fetchRemoteStatus()
                 startTime:    remote.startTime    || item.startTime    || "",
-                // ★ BARU: terapkan kendala dari server (prioritas remote > lokal)
                 kendala:      remote.kendala      || item.kendala      || "",
                 kendalaWaktu: remote.kendalaWaktu || item.kendalaWaktu || ""
             };
@@ -796,111 +667,65 @@ function applyRemoteStatus() {
 }
 
 function setSyncStatus(state) {
-    const dot  = document.getElementById('sync-dot');
-    const text = document.getElementById('sync-status');
+    const dot = document.getElementById('sync-dot'), text = document.getElementById('sync-status');
     if (!dot || !text) return;
-    if (state === 'syncing') {
-        dot.className  = 'w-2 h-2 rounded-full bg-amber-400 pulse-dot inline-block';
-        text.className = 'text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]';
-        text.textContent = 'SINKRONISASI...';
-    } else if (state === 'connected') {
-        dot.className  = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block';
-        text.className = 'text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]';
-        text.textContent = 'TERHUBUNG KE SERVER';
+    if (state==='syncing') {
+        dot.className='w-2 h-2 rounded-full bg-amber-400 pulse-dot inline-block';
+        text.className='text-[10px] text-amber-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent='SINKRONISASI...';
+    } else if (state==='connected') {
+        dot.className='w-2 h-2 rounded-full bg-emerald-400 pulse-dot inline-block';
+        text.className='text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent='TERHUBUNG KE SERVER';
     } else {
-        dot.className  = 'w-2 h-2 rounded-full bg-rose-400 inline-block';
-        text.className = 'text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]';
-        text.textContent = 'GAGAL TERHUBUNG';
+        dot.className='w-2 h-2 rounded-full bg-rose-400 inline-block';
+        text.className='text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em]';
+        text.textContent='GAGAL TERHUBUNG';
     }
 }
 
 // ══════════════════════════════════════════════════════════════
-//  CSV PARSERS  (tidak diubah dari versi asli)
+//  CSV PARSERS
 // ══════════════════════════════════════════════════════════════
 function parseCSVLine(row) {
-    let arr = [], cur = "", q = false;
-    for (let c of row) {
-        if (c === '"') q = !q;
-        else if (c === ',' && !q) { arr.push(cur.trim()); cur = ""; }
-        else cur += c;
-    }
-    arr.push(cur.trim());
-    return arr;
+    let arr=[],cur="",q=false;
+    for (let c of row) { if(c==='"')q=!q; else if(c===','&&!q){arr.push(cur.trim());cur="";}else cur+=c; }
+    arr.push(cur.trim()); return arr;
 }
-
 function parseWaitingCSV(line, text) {
-    const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
-    if (rows.length < 2) return [];
-    let headerRowIdx = 0;
-    for (let i = 0; i < Math.min(rows.length, 5); i++) {
-        const t = rows[i].join(' ').toUpperCase();
-        if (t.includes('PACKING') || t.includes('ORDER NO') || t.includes('PROCESS ORDER') || t.includes('CC NO')) {
-            headerRowIdx = i; break;
-        }
-    }
-    const headers = rows[headerRowIdx].map(h => (h||'').toUpperCase().replace(/\s+/g,' ').trim());
-    const autoOrderIdx = headers.findIndex(h => h==='ORDER NO'||h==='ORDER'||h==='NO ORDER'||h==='PROCESS ORDER');
-    const autoCCIdx    = headers.findIndex(h => h.includes('CC NO')||h.includes('CCNO')||h.includes('PACKING NO')||h.includes('PACK NO'));
-    const C = {
-        order: autoOrderIdx !== -1 ? autoOrderIdx : PLANING_COL.order,
-        cc:    autoCCIdx    !== -1 ? autoCCIdx    : PLANING_COL.cc,
-        spec:  PLANING_COL.spec, size: PLANING_COL.size, weight: PLANING_COL.weight,
-        place: PLANING_COL.place, cust: PLANING_COL.cust
-    };
-    const anchorIdx = C.cc;
-    return rows.slice(headerRowIdx + 1)
-        .filter(r => r[anchorIdx] && r[anchorIdx].trim().length > 3)
-        .map((r, i) => {
-            const w = parseFloat((r[C.weight]||'0').replace(/[^\d.]/g,'')) || 0;
-            return {
-                id: `${line}-W-${i}-${(r[C.cc]||'').trim()}`,
-                line, orderNo: (r[C.order]||'').trim(), customer: (r[C.cust]||'').trim(),
-                ccNo: (r[C.cc]||'').trim(), spec: (r[C.spec]||'').trim(),
-                place: (r[C.place]||'').trim(), size: (r[C.size]||'').trim(),
-                weight: w, originalWeight: w, status: 'WAITING', kendala: '', kendalaWaktu: '', startTime: ''
-            };
-        });
+    const rows=text.split(/\r?\n/).map(r=>parseCSVLine(r));
+    if(rows.length<2)return[];
+    let headerRowIdx=0;
+    for(let i=0;i<Math.min(rows.length,5);i++){const t=rows[i].join(' ').toUpperCase();if(t.includes('PACKING')||t.includes('ORDER NO')||t.includes('PROCESS ORDER')||t.includes('CC NO')){headerRowIdx=i;break;}}
+    const headers=rows[headerRowIdx].map(h=>(h||'').toUpperCase().replace(/\s+/g,' ').trim());
+    const autoOrderIdx=headers.findIndex(h=>h==='ORDER NO'||h==='ORDER'||h==='NO ORDER'||h==='PROCESS ORDER');
+    const autoCCIdx=headers.findIndex(h=>h.includes('CC NO')||h.includes('CCNO')||h.includes('PACKING NO')||h.includes('PACK NO'));
+    const C={order:autoOrderIdx!==-1?autoOrderIdx:PLANING_COL.order,cc:autoCCIdx!==-1?autoCCIdx:PLANING_COL.cc,spec:PLANING_COL.spec,size:PLANING_COL.size,weight:PLANING_COL.weight,place:PLANING_COL.place,cust:PLANING_COL.cust};
+    return rows.slice(headerRowIdx+1).filter(r=>r[C.cc]&&r[C.cc].trim().length>3).map((r,i)=>{
+        const w=parseFloat((r[C.weight]||'0').replace(/[^\d.]/g,''))||0;
+        return{id:`${line}-W-${i}-${(r[C.cc]||'').trim()}`,line,orderNo:(r[C.order]||'').trim(),customer:(r[C.cust]||'').trim(),ccNo:(r[C.cc]||'').trim(),spec:(r[C.spec]||'').trim(),place:(r[C.place]||'').trim(),size:(r[C.size]||'').trim(),weight:w,originalWeight:w,status:'WAITING',kendala:'',kendalaWaktu:'',startTime:''};
+    });
 }
-
 function parseFinishCSV(line, text) {
-    const rows = text.split(/\r?\n/).map(r => parseCSVLine(r));
-    if (rows.length < 2) return [];
-    const HEADER_KEYWORDS = ['CC NO','DATE','QTY FG','CUSTOMER','SPEC','ORDER'];
-    let headerRowIdx = 0;
-    for (let i = 0; i < Math.min(rows.length, 10); i++) {
-        const rt = rows[i].join(' ').toUpperCase();
-        if (HEADER_KEYWORDS.filter(k => rt.includes(k)).length >= 3) { headerRowIdx = i; break; }
-    }
-    const headers = rows[headerRowIdx].map(h => h.toUpperCase().replace(/\s+/g,' ').replace(/"/g,'').trim());
-    const fi = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
-    const col = {
-        date:fi(['DATE','TGL']), order:fi(['ORDER NO','ORDER','NO ORDER']), cc:fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),
-        cust:fi(['CUSTOMER','PEMBELI']), spec:fi(['SPEC','MUTU','GRADE']), size:fi(['SIZE']),
-        weight:fi(['WEIGHT','BERAT']), prodSize:fi(['PRODUCT SIZE','PROD SIZE']), qtyFG:fi(['QTY FG','QTYFG']),
-        qtyNG:fi(['QTY NG','QTYNG']), start:fi(['START','MULAI']), finish:fi(['FINISH','SELESAI']),
-        downTime:fi(['DOWN TIME','DOWNTIME']), remark:fi(['REMARK','CATATAN']), speed:fi(['LINE SPEED','SPEED']),
-        lineCol:fi(['LINE'])
-    };
-    const anchorCol = col.cc !== -1 ? col.cc : 2;
-    return rows.slice(headerRowIdx + 1)
-        .filter(r => { if (!r||r.length<=1) return false; const val=(r[anchorCol]||'').trim(); return val.length>=3&&val!=='-'&&val!=='--'; })
-        .map((r, i) => {
-            const g = (c) => c !== -1 ? (r[c]||'').trim() : '';
-            const ccVal = g(col.cc);
-            let lineVal = line;
-            if (col.lineCol !== -1 && r[col.lineCol]) {
-                const lv = r[col.lineCol].trim().toUpperCase().replace(/\s+/g,'');
-                if (['DS1','DS2','DS3'].includes(lv)) lineVal = lv;
-            }
-            return {
-                id: `${line}-F-${i}-${ccVal}`, line: lineVal, orderNo: g(col.order), customer: g(col.cust),
-                ccNo: ccVal, spec: g(col.spec), place: g(col.date), size: g(col.size),
-                weight: parseFloat(g(col.weight).replace(/[^\d.]/g,'')) || 0, productWidth: g(col.prodSize),
-                qtyFG: g(col.qtyFG)||'0', qtyNG: g(col.qtyNG)||'0', startTime: g(col.start),
-                finishedAt: g(col.finish), kendalaWaktu: g(col.downTime)||'0', remark: g(col.remark),
-                speed: g(col.speed)||'0', status: 'COMPLETED'
-            };
-        });
+    const rows=text.split(/\r?\n/).map(r=>parseCSVLine(r));
+    if(rows.length<2)return[];
+    const HK=['CC NO','DATE','QTY FG','CUSTOMER','SPEC','ORDER'];
+    let headerRowIdx=0;
+    for(let i=0;i<Math.min(rows.length,10);i++){const rt=rows[i].join(' ').toUpperCase();if(HK.filter(k=>rt.includes(k)).length>=3){headerRowIdx=i;break;}}
+    const headers=rows[headerRowIdx].map(h=>h.toUpperCase().replace(/\s+/g,' ').replace(/"/g,'').trim());
+    const fi=kws=>headers.findIndex(h=>kws.some(k=>h.includes(k)));
+    const col={date:fi(['DATE','TGL']),order:fi(['ORDER NO','ORDER','NO ORDER']),cc:fi(['CC NO','CCNO','PACKING NO','PACK NO','IDENTITY']),cust:fi(['CUSTOMER','PEMBELI']),spec:fi(['SPEC','MUTU','GRADE']),size:fi(['SIZE']),weight:fi(['WEIGHT','BERAT']),prodSize:fi(['PRODUCT SIZE','PROD SIZE']),qtyFG:fi(['QTY FG','QTYFG']),qtyNG:fi(['QTY NG','QTYNG']),start:fi(['START','MULAI']),finish:fi(['FINISH','SELESAI']),downTime:fi(['DOWN TIME','DOWNTIME']),remark:fi(['REMARK','CATATAN']),speed:fi(['LINE SPEED','SPEED']),lineCol:fi(['LINE'])};
+    const anc=col.cc!==-1?col.cc:2;
+    return rows.slice(headerRowIdx+1).filter(r=>{if(!r||r.length<=1)return false;const v=(r[anc]||'').trim();return v.length>=3&&v!=='-'&&v!=='--';}).map((r,i)=>{
+        const g=c=>c!==-1?(r[c]||'').trim():'';
+        const ccVal=g(col.cc);let lineVal=line;
+        if(col.lineCol!==-1&&r[col.lineCol]){const lv=r[col.lineCol].trim().toUpperCase().replace(/\s+/g,'');if(['DS1','DS2','DS3'].includes(lv))lineVal=lv;}
+        return{id:`${line}-F-${i}-${ccVal}`,line:lineVal,orderNo:g(col.order),customer:g(col.cust),ccNo:ccVal,spec:g(col.spec),place:g(col.date),size:g(col.size),weight:parseFloat(g(col.weight).replace(/[^\d.]/g,''))||0,productWidth:g(col.prodSize),qtyFG:g(col.qtyFG)||'0',qtyNG:g(col.qtyNG)||'0',
+            // ★ FIX: sanitize waktu saat parsing CSV finish
+            startTime:sanitizeTimeDisplay(g(col.start)),
+            finishedAt:sanitizeTimeDisplay(g(col.finish)),
+            kendalaWaktu:g(col.downTime)||'0',remark:g(col.remark),speed:g(col.speed)||'0',status:'COMPLETED'};
+    });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -909,20 +734,11 @@ function parseFinishCSV(line, text) {
 function renderTableHeader() {
     const thead = document.getElementById('table-head');
     if (!thead) return;
-    const th  = 'px-4 py-5 whitespace-nowrap';
-    const thC = th + ' text-center';
-    if (activeMenu === 'FINISH') {
-        thead.innerHTML = `<tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]">
-            <th class="${thC}">Date</th><th class="${th}">Order No</th><th class="${th}">CC No</th>
-            <th class="${th}">Customer</th><th class="${th}">Spec</th><th class="${th}">Size</th>
-            <th class="${thC}">Weight</th><th class="${th}">Product Size</th><th class="${thC}">Qty FG</th>
-            <th class="${thC}">Qty NG</th><th class="${thC}">Start</th><th class="${thC}">Finish</th>
-            <th class="${thC}">Down Time</th><th class="${th}">Remark</th><th class="${thC}">Line Speed</th><th class="${thC}">Line</th></tr>`;
+    const th='px-4 py-5 whitespace-nowrap', thC=th+' text-center';
+    if (activeMenu==='FINISH') {
+        thead.innerHTML=`<tr class="bg-emerald-900/90 text-[10px] font-black text-emerald-100 uppercase tracking-[0.12em]"><th class="${thC}">Date</th><th class="${th}">Order No</th><th class="${th}">CC No</th><th class="${th}">Customer</th><th class="${th}">Spec</th><th class="${th}">Size</th><th class="${thC}">Weight</th><th class="${th}">Product Size</th><th class="${thC}">Qty FG</th><th class="${thC}">Qty NG</th><th class="${thC}">Start</th><th class="${thC}">Finish</th><th class="${thC}">Down Time</th><th class="${th}">Remark</th><th class="${thC}">Line Speed</th><th class="${thC}">Line</th></tr>`;
     } else {
-        thead.innerHTML = `<tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
-            <th class="${thC}">Line</th><th class="${th}">Order / Customer</th><th class="${th}">Packing No</th>
-            <th class="${th}">Spec</th><th class="${th}">Place</th><th class="${th}">Size</th>
-            <th class="${thC}">Berat (KG)</th><th class="${thC}">Status</th><th class="${thC}">Aksi</th></tr>`;
+        thead.innerHTML=`<tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]"><th class="${thC}">Line</th><th class="${th}">Order / Customer</th><th class="${th}">Packing No</th><th class="${th}">Spec</th><th class="${th}">Place</th><th class="${th}">Size</th><th class="${thC}">Berat (KG)</th><th class="${thC}">Status</th><th class="${thC}">Aksi</th></tr>`;
     }
 }
 
@@ -931,19 +747,21 @@ function renderTable() {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
     const isFinish = activeMenu === 'FINISH';
-    let data = (isFinish ? finishData : appData).filter(i => activeLine === 'ALL' || i.line === activeLine);
+    let data = (isFinish ? finishData : appData).filter(i => activeLine==='ALL' || i.line===activeLine);
     if (searchQuery) data = data.filter(i => JSON.stringify(i).toLowerCase().includes(searchQuery));
 
     if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${isFinish?16:9}" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
+        tbody.innerHTML=`<tr><td colspan="${isFinish?16:9}" class="py-20 text-center text-slate-400 italic font-medium">Data tidak ditemukan...</td></tr>`;
         return;
     }
 
     if (isFinish) {
         tbody.innerHTML = data.map(item => {
             const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
-            const td  = 'px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap';
-            const tdc = td + ' text-center';
+            const td='px-4 py-3 text-[11px] text-slate-700 whitespace-nowrap', tdc=td+' text-center';
+            // ★ FIX: sanitizeTimeDisplay() pada startTime dan finishedAt
+            const startClean   = sanitizeTimeDisplay(item.startTime);
+            const finishClean  = sanitizeTimeDisplay(item.finishedAt);
             return `<tr class="hover:bg-emerald-50/40 transition-all border-b border-slate-50">
                 <td class="${tdc}"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-bold text-[9px]">${item.place||'—'}</span></td>
                 <td class="${td} font-bold text-slate-800">${item.orderNo||'—'}</td>
@@ -955,8 +773,8 @@ function renderTable() {
                 <td class="${tdc}">${item.productWidth||'—'}</td>
                 <td class="${tdc}"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-bold text-[9px]">${item.qtyFG||'—'}</span></td>
                 <td class="${tdc}"><span class="px-2 py-0.5 ${parseFloat(item.qtyNG)>0?'bg-rose-50 text-rose-600 border border-rose-100':'bg-slate-50 text-slate-400'} rounded font-bold text-[9px]">${item.qtyNG||'0'}</span></td>
-                <td class="${tdc} text-slate-500">${item.startTime||'—'}</td>
-                <td class="${tdc} text-slate-500">${item.finishedAt||'—'}</td>
+                <td class="${tdc} text-slate-500">${startClean}</td>
+                <td class="${tdc} text-slate-500">${finishClean}</td>
                 <td class="${tdc}">${parseFloat(item.kendalaWaktu)>0?`<span class="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-bold text-[9px]">${item.kendalaWaktu} mnt</span>`:'<span class="text-slate-300 text-[9px]">0</span>'}</td>
                 <td class="${td} max-w-[120px] truncate text-slate-500">${item.remark||'—'}</td>
                 <td class="${tdc}">${item.speed||'—'}</td>
@@ -966,9 +784,10 @@ function renderTable() {
     } else {
         tbody.innerHTML = data.map(item => {
             const lc = item.line==='DS1'?'bg-[#00843d]':item.line==='DS2'?'bg-sky-600':'bg-amber-600';
-            const safeCcNo = (item.ccNo||'').replace(/'/g,"\\'");
-            const safeId   = (item.id||'').replace(/'/g,"\\'");
+            const safeCcNo=(item.ccNo||'').replace(/'/g,"\\'"), safeId=(item.id||'').replace(/'/g,"\\'");
             const isOnProcess = item.status === 'ON PROCESS';
+            // ★ FIX: sanitizeTimeDisplay() pada startTime sebelum ditampilkan
+            const startClean = sanitizeTimeDisplay(item.startTime);
             return `<tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
                 <td class="px-4 py-4 text-center"><span class="px-2 py-1 ${lc} text-white rounded text-[9px] font-black">${item.line}</span></td>
                 <td class="px-4 py-4">
@@ -981,28 +800,17 @@ function renderTable() {
                 <td class="px-4 py-4 font-semibold text-slate-600 tracking-tight">${item.size||'—'}</td>
                 <td class="px-4 py-4 text-center font-bold text-slate-700">${item.weight?item.weight.toLocaleString():'—'}</td>
                 <td class="px-4 py-4 text-center">
-                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${
-                        isOnProcess  ?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse'
-                       :item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200'
-                       :'bg-slate-100 text-slate-400'}">${item.status}</span>
-                    ${item.startTime&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">▶ Start: ${item.startTime}</div>`:''}
-                    ${item.kendala
-                        ? `<div class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-rose-100 border border-rose-200 rounded-full">
-                             <span class="text-[7px] text-rose-600 font-black uppercase">⚠ ${item.kendala}</span>
-                             ${item.kendalaWaktu ? `<span class="text-[7px] text-rose-400 font-bold">${item.kendalaWaktu}mnt</span>` : ''}
-                           </div>`
-                        : ''
-                    }
+                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${isOnProcess?'bg-sky-100 text-sky-600 border border-sky-200 animate-pulse':item.status==='COMPLETED'?'bg-emerald-100 text-emerald-600 border border-emerald-200':'bg-slate-100 text-slate-400'}">${item.status}</span>
+                    ${startClean!=='—'&&isOnProcess?`<div class="text-[7px] text-sky-500 font-black mt-0.5">▶ Start: ${startClean}</div>`:''}
+                    ${item.kendala?`<div class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-rose-100 border border-rose-200 rounded-full"><span class="text-[7px] text-rose-600 font-black uppercase">⚠ ${item.kendala}</span>${item.kendalaWaktu?`<span class="text-[7px] text-rose-400 font-bold">${item.kendalaWaktu}mnt</span>`:''}</div>`:''}
                 </td>
                 <td class="px-4 py-4 text-center">
                     <div class="flex gap-1 justify-center">
-                        <button onclick="processScan('${safeCcNo}')"
-                            title="${isOnProcess?'FINISH':'START'}"
+                        <button onclick="processScan('${safeCcNo}')" title="${isOnProcess?'FINISH':'START'}"
                             class="p-2 ${isOnProcess?'bg-emerald-500 ring-2 ring-emerald-300':'bg-slate-800'} text-white rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all">
                             <i data-lucide="${isOnProcess?'check-square':'play'}" class="w-4 h-4"></i>
                         </button>
-                        <button onclick="openKendalaModal('${safeId}')"
-                            class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
+                        <button onclick="openKendalaModal('${safeId}')" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-all">
                             <i data-lucide="alert-circle" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -1014,37 +822,30 @@ function renderTable() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  SCAN / PROCESS  (★ FIX: kirim START ke server)
+//  SCAN / PROCESS
+//  ★ FIX: getTimeString() — bukan toLocaleTimeString()
 // ══════════════════════════════════════════════════════════════
 function processScan(val) {
     if (!val) return;
-    const raw  = val.trim();
-    let ccNo   = parseQRCodeToCC(raw) || raw;
+    const raw = val.trim();
+    let ccNo  = parseQRCodeToCC(raw) || raw;
 
     let item = appData.find(i => i.ccNo === ccNo);
     if (!item) item = appData.find(i => i.ccNo.toUpperCase() === ccNo.toUpperCase());
-    if (!item) {
-        const noP = ccNo.replace(/^[Pp]/,'');
-        item = appData.find(i => i.ccNo === noP || i.ccNo === 'P'+noP);
-    }
-    if (!item) { showToast(`CC No. "${ccNo}" tidak ada di antrean!`, "error"); return; }
+    if (!item) { const noP=ccNo.replace(/^[Pp]/,''); item=appData.find(i=>i.ccNo===noP||i.ccNo==='P'+noP); }
+    if (!item) { showToast(`CC No. "${ccNo}" tidak ada di antrean!`,"error"); return; }
 
     if (item.status === "WAITING") {
-        // ★ SET STATUS LOKAL dulu (langsung terlihat di device ini)
-        const _now = new Date();
-        const _pad = n => String(n).padStart(2, '0');
-        item.startTime = `${_pad(_now.getHours())}:${_pad(_now.getMinutes())}:${_pad(_now.getSeconds())}`;
+        item.status    = "ON PROCESS";
+        // ★ FIX: getTimeString() — format HH:mm:ss yang konsisten
+        item.startTime = getTimeString();
 
-        // ★ KIRIM KE SERVER (supaya device lain bisa baca)
         sendStartToServer(item);
-
-        // ★ Update remoteStatusMap lokal juga (optimistic update)
         const key = item.ccNo + "|" + item.line;
-        remoteStatusMap[key] = { status: "ON PROCESS", startTime: item.startTime };
+        remoteStatusMap[key] = { status:"ON PROCESS", startTime: item.startTime };
 
         showToast(`▶ START: ${item.ccNo}`, "success");
-        renderTable();
-        updateStats();
+        renderTable(); updateStats();
 
     } else if (item.status === "ON PROCESS") {
         openFinishModal(item.id);
@@ -1057,37 +858,19 @@ function processScan(val) {
 //  FINISH MODAL
 // ══════════════════════════════════════════════════════════════
 let productRowCounter = 0;
-
 function addProductRow(qtyFG='', qtyNG='0', width='') {
     productRowCounter++;
-    const rowId = productRowCounter;
-    const container = document.getElementById('product-rows-container');
-    const isFirst   = container.children.length === 0;
-    const div = document.createElement('div');
-    div.id = `product-row-${rowId}`;
-    div.className = 'bg-slate-50 border border-slate-100 rounded-2xl p-4';
-    div.innerHTML = `
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>
-            ${!isFirst?`<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:''}
-        </div>
+    const rowId=productRowCounter, container=document.getElementById('product-rows-container'), isFirst=container.children.length===0;
+    const div=document.createElement('div'); div.id=`product-row-${rowId}`; div.className='bg-slate-50 border border-slate-100 rounded-2xl p-4';
+    div.innerHTML=`<div class="flex items-center justify-between mb-3"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk #${rowId}</span>${!isFirst?`<button onclick="removeProductRow(${rowId})" class="p-1.5 bg-rose-100 text-rose-500 rounded-lg hover:bg-rose-200 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:''}</div>
         <div class="grid grid-cols-3 gap-4">
-            <div><label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar (MM)</label>
-            <input type="text" id="width-${rowId}" value="${width}" placeholder="0" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
-            <div><label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty FG (KG)</label>
-            <input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0" class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
-            <div><label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty NG (KG)</label>
-            <input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0" class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm"></div>
+            <div><label class="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">Lebar (MM)</label><input type="text" id="width-${rowId}" value="${width}" placeholder="0" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
+            <div><label class="text-[10px] font-black text-emerald-600 uppercase mb-1.5 block">Qty FG (KG)</label><input type="number" id="fg-${rowId}" value="${qtyFG}" placeholder="0" class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"></div>
+            <div><label class="text-[10px] font-black text-rose-500 uppercase mb-1.5 block">Qty NG (KG)</label><input type="number" id="ng-${rowId}" value="${qtyNG}" placeholder="0" class="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm"></div>
         </div>`;
-    container.appendChild(div);
-    safeCreateIcons();
+    container.appendChild(div); safeCreateIcons();
 }
-
-function removeProductRow(rowId) {
-    const el = document.getElementById(`product-row-${rowId}`);
-    if (el) el.remove();
-}
-
+function removeProductRow(rowId) { const el=document.getElementById(`product-row-${rowId}`); if(el)el.remove(); }
 function openFinishModal(id) {
     finishingItemId = id;
     const item = appData.find(i => i.id === id);
@@ -1100,11 +883,11 @@ function openFinishModal(id) {
     addProductRow();
     showModal('modal-finish');
 }
-
-function closeFinishModal() { hideModal('modal-finish'); finishingItemId = null; }
+function closeFinishModal() { hideModal('modal-finish'); finishingItemId=null; }
 
 // ══════════════════════════════════════════════════════════════
-//  SUBMIT FINISH  (★ FIX: kirim CLEAR_STATUS ke server)
+//  SUBMIT FINISH
+//  ★ FIX: getTimeString() — bukan toTimeString().slice(0,8)
 // ══════════════════════════════════════════════════════════════
 function submitFinish() {
     if (!finishingItemId) return;
@@ -1112,69 +895,57 @@ function submitFinish() {
     if (!item) return;
 
     const container = document.getElementById('product-rows-container');
-    const products = [];
+    const products  = [];
     for (const row of container.querySelectorAll('[id^="product-row-"]')) {
         const rowId = row.id.replace('product-row-', '');
         const fg = (document.getElementById(`fg-${rowId}`)?.value||'').trim();
         const ng = (document.getElementById(`ng-${rowId}`)?.value||'0').trim();
         const w  = (document.getElementById(`width-${rowId}`)?.value||'').trim();
-        if (!fg || parseFloat(fg) <= 0) { showToast(`Qty FG produk #${rowId} wajib diisi!`, "error"); return; }
+        if (!fg || parseFloat(fg) <= 0) { showToast(`Qty FG produk #${rowId} wajib diisi!`,"error"); return; }
         products.push({ width:w, fg:parseFloat(fg), ng:parseFloat(ng)||0 });
     }
-    if (products.length === 0) { showToast("Minimal 1 produk wajib diisi!", "error"); return; }
+    if (!products.length) { showToast("Minimal 1 produk wajib diisi!","error"); return; }
 
     const speed  = document.getElementById('finish-speed').value;
     const remark = document.getElementById('finish-remark').value;
-    const now     = new Date();
-    const finishTime = now.toTimeString().slice(0, 8);
+    const now    = new Date();
+    // ★ FIX: getTimeString() — format HH:mm:ss yang konsisten di semua device
+    const finishTime = getTimeString(now);
     const dateStr    = now.toLocaleDateString('id-ID');
 
-    // Kirim FINISH ke Apps Script
     products.forEach(prod => {
-        const payload = {
-            action: "FINISH",
-            "DATE": dateStr, "ORDER NO": item.orderNo||"-", "CC NO": item.ccNo||"-",
-            "CUSTOMER": item.customer||"-", "SPEC": item.spec||"-", "SIZE": item.size||"-",
-            "WEIGHT": item.weight||0, "PRODUCT SIZE": prod.width||"-",
-            "QTY FG": prod.fg, "QTY NG": prod.ng,
-            "START": item.startTime||"-", "FINISH": finishTime,
-            "DOWN TIME": item.kendalaWaktu||"0",
-            "REMARK": remark||(item.kendala?`Kendala: ${item.kendala}`:"-"),
-            "LINE SPEED": speed||"0", "LINE": item.line||"-"
-        };
-        fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
+        fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({
+            action:"FINISH","DATE":dateStr,"ORDER NO":item.orderNo||"-","CC NO":item.ccNo||"-",
+            "CUSTOMER":item.customer||"-","SPEC":item.spec||"-","SIZE":item.size||"-",
+            "WEIGHT":item.weight||0,"PRODUCT SIZE":prod.width||"-","QTY FG":prod.fg,"QTY NG":prod.ng,
+            "START":item.startTime||"-","FINISH":finishTime,"DOWN TIME":item.kendalaWaktu||"0",
+            "REMARK":remark||(item.kendala?`Kendala: ${item.kendala}`:"-"),"LINE SPEED":speed||"0","LINE":item.line||"-"
+        })});
     });
 
-    // ★ Hapus status ON PROCESS dari server (supaya device lain tahu sudah selesai)
     sendClearStatusToServer(item);
-
-    // ★ Hapus dari remoteStatusMap lokal juga (optimistic)
     const key = item.ccNo + "|" + item.line;
     delete remoteStatusMap[key];
 
-    const totalFG = products.reduce((s,p) => s+p.fg, 0);
-    item.status       = "COMPLETED";
-    item.finishedAt   = finishTime;
-    item.productWidth = products.map(p=>p.width).filter(Boolean).join(', ');
-    item.qtyFG        = totalFG;
-    item.qtyNG        = products.reduce((s,p)=>s+p.ng, 0);
-    item.speed        = speed;
-    item.remark       = remark;
-    item.place        = dateStr;
+    const totalFG   = products.reduce((s,p)=>s+p.fg, 0);
+    item.status      = "COMPLETED";
+    item.finishedAt  = finishTime;
+    item.productWidth= products.map(p=>p.width).filter(Boolean).join(', ');
+    item.qtyFG       = totalFG;
+    item.qtyNG       = products.reduce((s,p)=>s+p.ng, 0);
+    item.speed       = speed;
+    item.remark      = remark;
+    item.place       = dateStr;
 
     appData    = appData.filter(i => i.id !== finishingItemId);
     finishData = [item, ...finishData];
-
     try {
-        const localFinish = JSON.parse(localStorage.getItem('hssi_finish_data')||'[]');
-        localFinish.unshift(item);
-        localStorage.setItem('hssi_finish_data', JSON.stringify(localFinish.slice(0, 500)));
+        const lf = JSON.parse(localStorage.getItem('hssi_finish_data')||'[]');
+        lf.unshift(item); localStorage.setItem('hssi_finish_data', JSON.stringify(lf.slice(0,500)));
     } catch {}
 
     showToast(`✓ ${item.ccNo} SELESAI${products.length>1?' ('+products.length+' produk)':''}`, "success");
-    closeFinishModal();
-    renderTable();
-    updateStats();
+    closeFinishModal(); renderTable(); updateStats();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1185,63 +956,35 @@ function openKendalaModal(id) {
     const item = appData.find(i => i.id === id);
     if (!item) return;
     document.getElementById('modal-cc-info').innerText = `${item.orderNo||item.ccNo} | ${item.ccNo}`;
-    // Isi nilai yang sudah ada (jika sebelumnya sudah lapor)
-    document.getElementById('kendala-select').value = "";
+    document.getElementById('kendala-select').value    = "";
     document.getElementById('kendala-other-input').value = "";
     document.getElementById('kendala-waktu-input').value = item.kendalaWaktu || "";
     document.getElementById('kendala-other-container').classList.add('hidden');
     showModal('modal-kendala');
 }
-function closeKendalaModal() { hideModal('modal-kendala'); selectedItemId = null; }
+function closeKendalaModal() { hideModal('modal-kendala'); selectedItemId=null; }
 function toggleOtherKendala() {
-    const v = document.getElementById('kendala-select').value;
-    document.getElementById('kendala-other-container').classList.toggle('hidden', v !== 'OTHER');
+    document.getElementById('kendala-other-container').classList.toggle('hidden', document.getElementById('kendala-select').value !== 'OTHER');
 }
-
-/**
- * ★ BARU: Kirim laporan kendala ke Apps Script
- * Apps Script akan update kolom KENDALA & KENDALA_WAKTU di sheet STATUS
- */
 function sendKendalaToServer(item) {
-    const payload = {
-        action:            "KENDALA",
-        "CC NO":           item.ccNo,
-        "LINE":            item.line,
-        "ORDER NO":        item.orderNo      || "-",
-        "KENDALA":         item.kendala      || "-",
-        "KENDALA WAKTU":   item.kendalaWaktu || "0"
-    };
-    fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        body:   JSON.stringify(payload)
-    }).catch(err => console.warn("Gagal kirim KENDALA ke server:", err));
+    fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({
+        action:"KENDALA","CC NO":item.ccNo,"LINE":item.line,"ORDER NO":item.orderNo||"-",
+        "KENDALA":item.kendala||"-","KENDALA WAKTU":item.kendalaWaktu||"0"
+    })}).catch(e=>console.warn("Gagal kirim KENDALA:", e));
 }
-
 function saveKendala() {
     let jenis = document.getElementById('kendala-select').value;
     const waktu = document.getElementById('kendala-waktu-input').value;
-    if (!jenis) return showToast("Pilih jenis kendala!", "error");
-    if (jenis === 'OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
+    if (!jenis) return showToast("Pilih jenis kendala!","error");
+    if (jenis==='OTHER') jenis = document.getElementById('kendala-other-input').value || "OTHER";
     const item = appData.find(i => i.id === selectedItemId);
     if (item) {
-        item.kendala      = jenis;
-        item.kendalaWaktu = waktu;
-
-        // ★ BARU: kirim kendala ke server (realtime antar device)
+        item.kendala=jenis; item.kendalaWaktu=waktu;
         sendKendalaToServer(item);
-
-        // ★ BARU: update remoteStatusMap lokal secara optimistic
-        const key = item.ccNo + "|" + item.line;
-        if (!remoteStatusMap[key]) {
-            remoteStatusMap[key] = { status: item.status, startTime: item.startTime || "" };
-        }
-        remoteStatusMap[key].kendala      = jenis;
-        remoteStatusMap[key].kendalaWaktu = waktu;
-
-        showToast(`⚠️ Kendala "${jenis}" dilaporkan!`);
-        renderTable();
-        closeKendalaModal();
+        const key = item.ccNo+"|"+item.line;
+        if (!remoteStatusMap[key]) remoteStatusMap[key]={status:item.status,startTime:item.startTime||""};
+        remoteStatusMap[key].kendala=jenis; remoteStatusMap[key].kendalaWaktu=waktu;
+        showToast(`⚠️ Kendala "${jenis}" dilaporkan!`); renderTable(); closeKendalaModal();
     }
 }
 
@@ -1249,30 +992,18 @@ function saveKendala() {
 //  CHART & STATS
 // ══════════════════════════════════════════════════════════════
 function initCharts() {
-    [{ id:'DS1', color:'#00843d' },{ id:'DS2', color:'#0284c7' },{ id:'DS3', color:'#d97706' }].forEach(l => {
-        const canvas = document.getElementById(`chart-${l.id.toLowerCase()}`);
-        if (!canvas) return;
-        charts[l.id] = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
-            data: { labels:['Antri','Selesai'], datasets:[{ data:[1,0], backgroundColor:['#f1f5f9',l.color], borderWidth:0 }] },
-            options: { responsive:true, maintainAspectRatio:false, cutout:'75%', plugins:{ legend:{ display:false } } }
-        });
+    [{id:'DS1',color:'#00843d'},{id:'DS2',color:'#0284c7'},{id:'DS3',color:'#d97706'}].forEach(l=>{
+        const canvas=document.getElementById(`chart-${l.id.toLowerCase()}`); if(!canvas)return;
+        charts[l.id]=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels:['Antri','Selesai'],datasets:[{data:[1,0],backgroundColor:['#f1f5f9',l.color],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'75%',plugins:{legend:{display:false}}}});
     });
 }
-
 function updateStats() {
-    ['DS1','DS2','DS3'].forEach(line => {
-        const done = finishData.filter(i => i.line === line);
-        const wait = appData.filter(i => i.line === line);
-        const ton  = done.reduce((a,c) => a + parseFloat(c.originalWeight||c.weight||0), 0) / 1000;
-        const tEl  = document.getElementById(`ton-${line.toLowerCase()}`);
-        const cEl  = document.getElementById(`count-${line.toLowerCase()}`);
-        if (tEl) tEl.innerText = ton.toFixed(2);
-        if (cEl) cEl.innerText = `${done.length} Job Selesai`;
-        if (charts[line]) {
-            charts[line].data.datasets[0].data = [wait.length||1, done.length];
-            charts[line].update();
-        }
+    ['DS1','DS2','DS3'].forEach(line=>{
+        const done=finishData.filter(i=>i.line===line), wait=appData.filter(i=>i.line===line);
+        const ton=done.reduce((a,c)=>a+parseFloat(c.originalWeight||c.weight||0),0)/1000;
+        const tEl=document.getElementById(`ton-${line.toLowerCase()}`), cEl=document.getElementById(`count-${line.toLowerCase()}`);
+        if(tEl)tEl.innerText=ton.toFixed(2); if(cEl)cEl.innerText=`${done.length} Job Selesai`;
+        if(charts[line]){charts[line].data.datasets[0].data=[wait.length||1,done.length];charts[line].update();}
     });
 }
 
@@ -1280,129 +1011,96 @@ function updateStats() {
 //  QR SCANNER
 // ══════════════════════════════════════════════════════════════
 function parseQRCodeToCC(raw) {
-    if (!raw || !raw.trim()) return null;
-    let str = raw.trim();
-    let hasP = false;
-    if (/^[Pp]/.test(str)) { hasP = true; str = str.slice(1); }
-    const match = str.match(/^([A-Za-z0-9\-]+)/);
-    if (!match) return null;
-    let ccNo = match[1].slice(0, 16);
-    if (hasP) ccNo = 'P' + ccNo;
-    return ccNo;
+    if (!raw||!raw.trim()) return null;
+    let str=raw.trim(), hasP=false;
+    if(/^[Pp]/.test(str)){hasP=true;str=str.slice(1);}
+    const match=str.match(/^([A-Za-z0-9\-]+)/);
+    if(!match)return null;
+    let ccNo=match[1].slice(0,16); if(hasP)ccNo='P'+ccNo; return ccNo;
 }
-
 async function toggleScanner() {
-    const container = document.getElementById('scanner-container');
+    const container=document.getElementById('scanner-container');
     if (scannerOpen) {
-        scannerOpen = false;
-        container.classList.remove('open');
-        if (html5QrCode) {
-            try { await html5QrCode.stop(); html5QrCode.clear(); } catch {}
-            html5QrCode = null;
-        }
-        document.getElementById('last-scan-badge').classList.add('hidden');
-        return;
+        scannerOpen=false; container.classList.remove('open');
+        if (html5QrCode) { try{await html5QrCode.stop();html5QrCode.clear();}catch{} html5QrCode=null; }
+        document.getElementById('last-scan-badge').classList.add('hidden'); return;
     }
-    scannerOpen = true;
-    container.classList.add('open');
-    safeCreateIcons();
-    await new Promise(r => setTimeout(r, 200));
+    scannerOpen=true; container.classList.add('open'); safeCreateIcons();
+    await new Promise(r=>setTimeout(r,200));
     html5QrCode = new Html5Qrcode("reader");
     try {
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            { fps:15, qrbox:{ width:240, height:240 } },
+        await html5QrCode.start({facingMode:"environment"},{fps:15,qrbox:{width:240,height:240}},
             (decodedText) => {
-                if (lastScanLock) return;
-                lastScanLock = true;
-                setTimeout(() => { lastScanLock = false; }, 1500);
-                const ccNo = parseQRCodeToCC(decodedText);
-                if (!ccNo) { showToast("Format QR tidak dikenali!", "error"); return; }
-                document.getElementById('last-scan-value').textContent = ccNo;
+                if(lastScanLock)return; lastScanLock=true; setTimeout(()=>{lastScanLock=false;},1500);
+                const ccNo=parseQRCodeToCC(decodedText);
+                if(!ccNo){showToast("Format QR tidak dikenali!","error");return;}
+                document.getElementById('last-scan-value').textContent=ccNo;
                 document.getElementById('last-scan-badge').classList.remove('hidden');
                 safeCreateIcons();
-                if (navigator.vibrate) navigator.vibrate([100,50,100]);
-                setTimeout(async () => { await toggleScanner(); processScan(ccNo); }, 800);
-            }, () => {}
+                if(navigator.vibrate)navigator.vibrate([100,50,100]);
+                setTimeout(async()=>{await toggleScanner();processScan(ccNo);},800);
+            }, ()=>{}
         );
-    } catch(err) {
-        console.error("Camera error:", err);
-        showToast("Gagal akses kamera. Cek izin browser!", "error");
-        scannerOpen = false;
-        container.classList.remove('open');
-    }
+    } catch(err) { console.error("Camera error:",err); showToast("Gagal akses kamera. Cek izin browser!","error"); scannerOpen=false; container.classList.remove('open'); }
 }
-
 function submitManualMobile() {
-    const val = (document.getElementById('manualInputMobile').value||'').trim();
-    if (!val) return;
-    const ccNo = parseQRCodeToCC(val) || val;
-    if (ccNo.length < 10) { showToast("Format CC No. tidak valid!", "error"); return; }
-    document.getElementById('manualInputMobile').value = '';
-    toggleScanner().then(() => processScan(ccNo));
+    const val=(document.getElementById('manualInputMobile').value||'').trim(); if(!val)return;
+    const ccNo=parseQRCodeToCC(val)||val;
+    if(ccNo.length<10){showToast("Format CC No. tidak valid!","error");return;}
+    document.getElementById('manualInputMobile').value='';
+    toggleScanner().then(()=>processScan(ccNo));
 }
-
 function triggerDesktopScan() { toggleScanner(); }
-
 function setupDesktopInput() {
-    const input = document.getElementById('manualInput');
-    if (!input) return;
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const raw = input.value.trim();
-            if (!raw) return;
-            const ccNo = parseQRCodeToCC(raw) || raw;
-            input.value = '';
-            processScan(ccNo);
-        }
+    const input=document.getElementById('manualInput'); if(!input)return;
+    input.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){const raw=input.value.trim();if(!raw)return;const ccNo=parseQRCodeToCC(raw)||raw;input.value='';processScan(ccNo);}
     });
 }
 
 // ══════════════════════════════════════════════════════════════
 //  PLANING & EXPORT PDF
 // ══════════════════════════════════════════════════════════════
-function openPlaningModal()  { showModal('modal-planing'); }
+function openPlaningModal() { showModal('modal-planing'); }
 function closePlaningModal() { hideModal('modal-planing'); }
 function openPlaningSheet(line) {
-    const url = PLANING_EDIT_URLS[line];
-    if (!url) { showToast(`URL Planing ${line} belum dikonfigurasi!`, 'error'); return; }
-    window.open(url, '_blank');
-    closePlaningModal();
+    const url=PLANING_EDIT_URLS[line];
+    if(!url){showToast(`URL Planing ${line} belum dikonfigurasi!`,'error');return;}
+    window.open(url,'_blank'); closePlaningModal();
 }
-
 function openExportModal() {
-    const label = document.getElementById('export-menu-label');
-    if (label) label.textContent = activeMenu==='FINISH'?'FINISH PROCESS':'WAITING LIST';
+    const label=document.getElementById('export-menu-label');
+    if(label)label.textContent=activeMenu==='FINISH'?'FINISH PROCESS':'WAITING LIST';
     showModal('modal-export');
 }
 function closeExportModal() { hideModal('modal-export'); }
 
 function exportPDF(line) {
     closeExportModal();
-    const isFinish   = activeMenu === 'FINISH';
-    const sourceData = isFinish ? finishData : appData;
-    const filtered   = sourceData.filter(i => line==='ALL' || i.line===line);
-    if (filtered.length === 0) { showToast(`Tidak ada data ${line} untuk di-export!`, 'error'); return; }
-    const now     = new Date();
-    const dateStr = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-    const timeStr = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
-    const lines   = line==='ALL'?['DS1','DS2','DS3']:[line];
-    const lineColors = { DS1:'#00843d', DS2:'#0284c7', DS3:'#d97706' };
+    const isFinish=activeMenu==='FINISH', sourceData=isFinish?finishData:appData;
+    const filtered=sourceData.filter(i=>line==='ALL'||i.line===line);
+    if(!filtered.length){showToast(`Tidak ada data ${line} untuk di-export!`,'error');return;}
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+    const timeStr=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const lines=line==='ALL'?['DS1','DS2','DS3']:[line];
+    const lineColors={DS1:'#00843d',DS2:'#0284c7',DS3:'#d97706'};
 
-    const buildRows = (items) => {
-        if (!items.length) return `<tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px">Tidak ada data</td></tr>`;
-        if (isFinish) {
-            return items.map((item,idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
+    const buildRows = items => {
+        if(!items.length)return`<tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px">Tidak ada data</td></tr>`;
+        if(isFinish){
+            return items.map((item,idx)=>`<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
                 <td>${idx+1}</td><td>${item.place||'—'}</td><td>${item.orderNo||'—'}</td>
                 <td style="font-family:monospace">${item.ccNo||'—'}</td><td>${item.customer||'—'}</td>
                 <td>${item.spec||'—'}</td><td>${item.size||'—'}</td>
                 <td style="text-align:right">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
                 <td>${item.qtyFG||'0'}</td><td>${item.qtyNG||'0'}</td>
-                <td>${item.startTime||'—'}</td><td>${item.finishedAt||'—'}</td>
+                <td>${sanitizeTimeDisplay(item.startTime)}</td>
+                <td>${sanitizeTimeDisplay(item.finishedAt)}</td>
                 <td>${parseFloat(item.kendalaWaktu)>0?item.kendalaWaktu+' mnt':'0'}</td>
                 <td>${item.remark||'—'}</td><td>${item.speed||'—'}</td></tr>`).join('');
-        } else {
-            return items.map((item,idx) => `<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
+        }else{
+            return items.map((item,idx)=>`<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
                 <td>${idx+1}</td><td>${item.orderNo||'—'}</td><td>${item.ccNo||'—'}</td>
                 <td>${item.customer||'—'}</td><td>${item.spec||'—'}</td><td>${item.size||'—'}</td>
                 <td style="text-align:right">${item.weight?Number(item.weight).toLocaleString('id-ID'):'—'}</td>
@@ -1410,228 +1108,101 @@ function exportPDF(line) {
         }
     };
 
-    const buildSection = (ln) => {
-        const items      = filtered.filter(i => i.line===ln);
-        const totalWeight = items.reduce((s,i)=>s+parseFloat(i.weight||0),0);
-        const color      = lineColors[ln]||'#334155';
-        const thead      = isFinish ? `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Qty FG</th><th>Qty NG</th><th>Start</th><th>Finish</th><th>Down Time</th><th>Remark</th><th>Speed</th></tr>`
-            : `<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Status</th></tr>`;
-        return `<div style="margin-bottom:40px">
-            <div style="background:${color};color:white;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center">
-                <div style="font-size:18px;font-weight:900;font-style:italic">DOWNSHEAR ${ln} <span style="font-size:10px;opacity:0.7">(${items.length} coil)</span></div>
-                <div style="font-size:20px;font-weight:900">${(totalWeight/1000).toFixed(3)} Ton</div></div>
-            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
-                <table style="width:100%;border-collapse:collapse;font-size:10px">
-                    <thead>${thead}</thead><tbody>${buildRows(items)}</tbody></table></div></div>`;
+    const buildSection = ln => {
+        const items=filtered.filter(i=>i.line===ln), totalWeight=items.reduce((s,i)=>s+parseFloat(i.weight||0),0), color=lineColors[ln]||'#334155';
+        const thead=isFinish?`<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Date</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Qty FG</th><th>Qty NG</th><th>Start</th><th>Finish</th><th>Down Time</th><th>Remark</th><th>Speed</th></tr>`:`<tr style="background:#0f172a;color:white;font-size:9px"><th>#</th><th>Order No</th><th>CC No</th><th>Customer</th><th>Spec</th><th>Size</th><th>Weight</th><th>Status</th></tr>`;
+        return `<div style="margin-bottom:40px"><div style="background:${color};color:white;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center"><div style="font-size:18px;font-weight:900;font-style:italic">DOWNSHEAR ${ln} <span style="font-size:10px;opacity:0.7">(${items.length} coil)</span></div><div style="font-size:20px;font-weight:900">${(totalWeight/1000).toFixed(3)} Ton</div></div><div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead>${thead}</thead><tbody>${buildRows(items)}</tbody></table></div></div>`;
     };
 
-    const grandWeight = filtered.reduce((s,i)=>s+parseFloat(i.weight||0),0);
-    const htmlContent = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
-    <title>Report ${line}</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;padding:24px;font-size:11px}
-    th,td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-    th{font-size:9px;font-weight:900;text-transform:uppercase;padding:10px}
-    @media print{@page{size:A4 landscape;margin:10mm}}</style></head><body>
+    const grandWeight=filtered.reduce((s,i)=>s+parseFloat(i.weight||0),0);
+    const htmlContent=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Report ${line}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;padding:24px;font-size:11px}th,td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}th{font-size:9px;font-weight:900;text-transform:uppercase;padding:10px}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body>
     <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);color:white;padding:28px;border-radius:16px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:9px;opacity:0.6;letter-spacing:0.2em">PT. HSSI — PRODUCTION REPORT</div>
-        <div style="font-size:28px;font-weight:900;font-style:italic">DOWNSHEAR MONITORING</div>
-        <div style="color:#34d399;font-weight:700;margin-top:6px">${line==='ALL'?'ALL LINE':'LINE '+line} · ${isFinish?'FINISH PROCESS':'WAITING LIST'}</div></div>
-        <div style="text-align:right"><div style="font-size:24px;font-weight:900">${dateStr}</div>
-        <div style="opacity:0.5">Dicetak ${timeStr} WIB</div>
-        <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end">
-            <div style="background:rgba(255,255,255,0.1);padding:8px 16px;border-radius:8px;text-align:center">
-                <div style="font-size:20px;font-weight:900">${filtered.length}</div><div style="font-size:8px;opacity:0.7">Total Coil</div></div>
-            <div style="background:rgba(52,211,153,0.2);padding:8px 16px;border-radius:8px;text-align:center">
-                <div style="font-size:20px;font-weight:900">${(grandWeight/1000).toFixed(3)}</div><div style="font-size:8px;opacity:0.7">Total Ton</div></div>
-        </div></div></div>
+        <div><div style="font-size:9px;opacity:0.6;letter-spacing:0.2em">PT. HSSI — PRODUCTION REPORT</div><div style="font-size:28px;font-weight:900;font-style:italic">DOWNSHEAR MONITORING</div><div style="color:#34d399;font-weight:700;margin-top:6px">${line==='ALL'?'ALL LINE':'LINE '+line} · ${isFinish?'FINISH PROCESS':'WAITING LIST'}</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:900">${dateStr}</div><div style="opacity:0.5">Dicetak ${timeStr} WIB</div><div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end"><div style="background:rgba(255,255,255,0.1);padding:8px 16px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:900">${filtered.length}</div><div style="font-size:8px;opacity:0.7">Total Coil</div></div><div style="background:rgba(52,211,153,0.2);padding:8px 16px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:900">${(grandWeight/1000).toFixed(3)}</div><div style="font-size:8px;opacity:0.7">Total Ton</div></div></div></div></div>
     ${lines.map(ln=>buildSection(ln)).join('')}
-    <div id="pb" style="display:flex;justify-content:center;gap:12px;margin-top:28px">
-        <button onclick="window.print()" style="background:#0f172a;color:white;border:none;padding:14px 40px;border-radius:12px;font-weight:900;cursor:pointer">🖨️ Print / Save PDF</button>
-        <button onclick="window.close()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:14px 24px;border-radius:12px;font-weight:700;cursor:pointer">Tutup</button></div>
-    <script>window.onbeforeprint=()=>{document.getElementById('pb').style.display='none'};window.onafterprint=()=>{document.getElementById('pb').style.display='flex'};window.addEventListener('load',()=>{setTimeout(()=>window.print(),600)});<\/script>
-    </body></html>`;
-    const win = window.open('', '_blank');
-    if (!win) { showToast('Popup diblokir! Izinkan popup browser.', 'error'); return; }
+    <div id="pb" style="display:flex;justify-content:center;gap:12px;margin-top:28px"><button onclick="window.print()" style="background:#0f172a;color:white;border:none;padding:14px 40px;border-radius:12px;font-weight:900;cursor:pointer">🖨️ Print / Save PDF</button><button onclick="window.close()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:14px 24px;border-radius:12px;font-weight:700;cursor:pointer">Tutup</button></div>
+    <script>window.onbeforeprint=()=>{document.getElementById('pb').style.display='none'};window.onafterprint=()=>{document.getElementById('pb').style.display='flex'};window.addEventListener('load',()=>{setTimeout(()=>window.print(),600)});<\/script></body></html>`;
+
+    const win=window.open('','_blank');
+    if(!win){showToast('Popup diblokir! Izinkan popup browser.','error');return;}
     win.document.write(htmlContent); win.document.close();
-    showToast(`Export PDF ${line} berhasil!`, 'success');
+    showToast(`Export PDF ${line} berhasil!`,'success');
 }
 
 // ══════════════════════════════════════════════════════════════
 //  MODAL HELPERS
 // ══════════════════════════════════════════════════════════════
-function showModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-    safeCreateIcons();
-}
-function hideModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('flex');
-    el.classList.add('hidden');
-}
-function handleModalOverlayClick(event, modalId) {
-    if (event.target.id === modalId) {
-        hideModal(modalId);
-        if (modalId === 'modal-kendala') selectedItemId = null;
-    }
-}
+function showModal(id) { const el=document.getElementById(id);if(!el)return;el.classList.remove('hidden');el.classList.add('flex');safeCreateIcons(); }
+function hideModal(id) { const el=document.getElementById(id);if(!el)return;el.classList.remove('flex');el.classList.add('hidden'); }
+function handleModalOverlayClick(event,modalId) { if(event.target.id===modalId){hideModal(modalId);if(modalId==='modal-kendala')selectedItemId=null;} }
 
 // ══════════════════════════════════════════════════════════════
 //  MISC HELPERS
 // ══════════════════════════════════════════════════════════════
-function handleSearch() {
-    searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    renderTable();
-}
+function handleSearch() { searchQuery=document.getElementById('searchInput').value.toLowerCase(); renderTable(); }
 function setMainMenu(menu) {
-    activeMenu = menu;
-    const ac = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
-    const ic = "menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
-    document.getElementById('btn-menu-WAITING').className = menu==='WAITING'?ac:ic;
-    document.getElementById('btn-menu-FINISH').className  = menu==='FINISH' ?ac:ic;
+    activeMenu=menu;
+    const ac="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all bg-[#0f172a] text-white shadow-md";
+    const ic="menu-nav px-8 md:px-16 py-4 rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-700";
+    document.getElementById('btn-menu-WAITING').className=menu==='WAITING'?ac:ic;
+    document.getElementById('btn-menu-FINISH').className=menu==='FINISH'?ac:ic;
     renderTable();
 }
 function setLine(line) {
-    activeLine = line;
-    document.querySelectorAll('.line-nav').forEach(b => { b.classList.remove('line-active','text-white'); b.classList.add('text-slate-400'); });
-    const btn = document.getElementById(`btn-${line}`);
-    if (btn) { btn.classList.remove('text-slate-400'); btn.classList.add('line-active'); }
+    activeLine=line;
+    document.querySelectorAll('.line-nav').forEach(b=>{b.classList.remove('line-active','text-white');b.classList.add('text-slate-400');});
+    const btn=document.getElementById(`btn-${line}`); if(btn){btn.classList.remove('text-slate-400');btn.classList.add('line-active');}
     renderTable();
 }
-let toastTimer = null;
-function showToast(msg, type='success') {
-    if (toastTimer) clearTimeout(toastTimer);
-    const t = document.getElementById('toast');
-    t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
-    document.getElementById('toast-message').innerText = msg;
-    t.classList.remove('hidden');
-    toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
-    safeCreateIcons();
+let toastTimer=null;
+function showToast(msg,type='success') {
+    if(toastTimer)clearTimeout(toastTimer);
+    const t=document.getElementById('toast');
+    t.className=`fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
+    document.getElementById('toast-message').innerText=msg; t.classList.remove('hidden');
+    toastTimer=setTimeout(()=>t.classList.add('hidden'),3000); safeCreateIcons();
 }
 
-// ══════════════════════════════════════════════════════════════════════
-//  ORIENTATION LOCK — Paksa Landscape saat dipakai sebagai PWA
-// ══════════════════════════════════════════════════════════════════════
-
+// ══════════════════════════════════════════════════════════════
+//  ORIENTATION LOCK
+// ══════════════════════════════════════════════════════════════
 function handleOrientation() {
-    var overlay   = document.getElementById('rotate-overlay');
-    if (!overlay) return;
-
-    // Deteksi apakah sedang berjalan sebagai installed PWA
-    var isStandalone = (
-        window.navigator.standalone === true ||                        // iOS Safari
-        window.matchMedia('(display-mode: standalone)').matches ||     // Android / Chrome
-        window.matchMedia('(display-mode: fullscreen)').matches
-    );
-
-    if (!isStandalone) {
-        // Di browser biasa — jangan tampilkan overlay
-        overlay.classList.remove('show');
-        return;
-    }
-
-    var isPortrait = window.innerHeight > window.innerWidth;
-    if (isPortrait) {
-        overlay.classList.add('show');
-    } else {
-        overlay.classList.remove('show');
-    }
+    var overlay=document.getElementById('rotate-overlay'); if(!overlay)return;
+    var isStandalone=(window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: fullscreen)').matches);
+    if(!isStandalone){overlay.classList.remove('show');return;}
+    window.innerHeight>window.innerWidth?overlay.classList.add('show'):overlay.classList.remove('show');
 }
+function lockLandscape() { try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(e){} }
+window.addEventListener('load',()=>{lockLandscape();handleOrientation();});
+window.addEventListener('resize',handleOrientation);
+if(screen.orientation)screen.orientation.addEventListener('change',handleOrientation);
 
-// Coba kunci orientasi via Screen Orientation API (Android Chrome)
-function lockLandscape() {
-    try {
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape').catch(function() {
-                // Fallback ke overlay jika API gagal (iOS tidak support lock)
-                console.log('screen.orientation.lock tidak didukung — pakai overlay');
-            });
-        }
-    } catch(e) {}
-}
-
-// Jalankan saat load dan setiap kali orientasi berubah
-window.addEventListener('load',   function() { lockLandscape(); handleOrientation(); });
-window.addEventListener('resize', handleOrientation);
-if (screen.orientation) {
-    screen.orientation.addEventListener('change', handleOrientation);
-}
-
-// ══════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  PWA INSTALL
-// ══════════════════════════════════════════════════════════════════════
-
-function hideInstallBtn() {
-    ['btn-install','btn-install-ios'].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
-    });
-}
-
-// Jangan tampilkan install jika sudah berjalan sebagai standalone PWA
-var isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-
-if (!isStandalone) {
-    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-
-    if (isIOS) {
-        // iOS Safari: tidak punya beforeinstallprompt → tampilkan tombol panduan
-        document.addEventListener('DOMContentLoaded', function() {
-            var btn = document.getElementById('btn-install-ios');
-            if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
-        });
+// ══════════════════════════════════════════════════════════════
+function hideInstallBtn() { ['btn-install','btn-install-ios'].forEach(id=>{var el=document.getElementById(id);if(el){el.classList.add('hidden');el.classList.remove('flex');}}); }
+var isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+if(!isStandalone) {
+    var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+    if(isIOS) {
+        document.addEventListener('DOMContentLoaded',()=>{var btn=document.getElementById('btn-install-ios');if(btn){btn.classList.remove('hidden');btn.classList.add('flex');safeCreateIcons();}});
     } else {
-        // Android/Desktop: cek apakah event sudah tertangkap di <head>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.__pwaInstallEvent) {
-                var btn = document.getElementById('btn-install');
-                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
-            }
-            // Juga listen jika event belum terpicu saat DOMContentLoaded
-            window.addEventListener('beforeinstallprompt', function() {
-                var btn = document.getElementById('btn-install');
-                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); safeCreateIcons(); }
-            });
+        document.addEventListener('DOMContentLoaded',()=>{
+            if(window.__pwaInstallEvent){var btn=document.getElementById('btn-install');if(btn){btn.classList.remove('hidden');btn.classList.add('flex');safeCreateIcons();}}
+            window.addEventListener('beforeinstallprompt',()=>{var btn=document.getElementById('btn-install');if(btn){btn.classList.remove('hidden');btn.classList.add('flex');safeCreateIcons();}});
         });
     }
 }
-
 function triggerInstall() {
-    var evt = window.__pwaInstallEvent;
-    if (!evt) {
-        showToast('Buka di Chrome Android & tunggu beberapa detik, lalu coba lagi.', 'error');
-        return;
-    }
-    evt.prompt();
-    evt.userChoice.then(function(result) {
-        if (result.outcome === 'accepted') {
-            showToast('✅ Aplikasi berhasil diinstall!', 'success');
-            hideInstallBtn();
-        }
-        window.__pwaInstallEvent = null;
-    });
+    var evt=window.__pwaInstallEvent; if(!evt){showToast('Buka di Chrome Android & tunggu beberapa detik, lalu coba lagi.','error');return;}
+    evt.prompt(); evt.userChoice.then(r=>{if(r.outcome==='accepted'){showToast('✅ Aplikasi berhasil diinstall!','success');hideInstallBtn();}window.__pwaInstallEvent=null;});
 }
-
-// Modal panduan install iOS
 function openIosGuide() { showModal('modal-ios-guide'); }
 function closeIosGuide() { hideModal('modal-ios-guide'); }
+window.addEventListener('appinstalled',()=>{hideInstallBtn();window.__pwaInstallEvent=null;showToast('✅ Aplikasi berhasil diinstall!','success');});
 
-// Sembunyikan tombol setelah berhasil install
-window.addEventListener('appinstalled', function() {
-    hideInstallBtn();
-    window.__pwaInstallEvent = null;
-    showToast('✅ Aplikasi berhasil diinstall!', 'success');
-});
-
-// ── Register Service Worker ──
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-        .then(function(reg) { console.log('[SW] registered, scope:', reg.scope); })
-        .catch(function(err) { console.warn('[SW] failed:', err); });
+if('serviceWorker'in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(r=>console.log('[SW] registered:',r.scope)).catch(e=>console.warn('[SW] failed:',e));
 }
 </script>
 </body>
