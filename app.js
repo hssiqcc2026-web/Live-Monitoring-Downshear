@@ -591,7 +591,7 @@ function addProductRow(qtyFG, qtyNG, width, totalSkid, cut) {
         </div>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div>
-                <label class="text-[9px] font-black text-slate-400 uppercase mb-1.5 block">Prodect Size(MM)</label>
+                <label class="text-[9px] font-black text-slate-400 uppercase mb-1.5 block">Product Size(MM)</label>
                 <input type="text" id="width-${rowId}" value="${width}" placeholder="0"
                     class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
             </div>
