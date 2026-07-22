@@ -15,27 +15,22 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <meta name="theme-color" content="#0f172a">
-
-    <!-- ★ PWA: HARUS di <head> agar beforeinstallprompt tidak terlewat -->
     <script>
         window.__pwaInstallEvent = null;
         window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            window.__pwaInstallEvent = e;
+            e.preventDefault(); window.__pwaInstallEvent = e;
             var tryShow = function() {
                 var btn = document.getElementById('btn-install');
                 if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
             };
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryShow);
+            if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', tryShow);
             else tryShow();
         });
     </script>
 </head>
 <body class="text-slate-900">
 
-<!-- ════════════════════════════════════════
-     PORTRAIT LOCK OVERLAY
-════════════════════════════════════════ -->
+<!-- ════ PORTRAIT LOCK ════ -->
 <div id="rotate-overlay">
     <div id="rotate-icon">
         <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
@@ -51,13 +46,9 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     HEADER
-════════════════════════════════════════ -->
+<!-- ════ HEADER ════ -->
 <header class="bg-[#0f172a] text-white px-6 py-4 sticky top-0 z-40 shadow-2xl border-b-4 border-emerald-500">
     <div class="max-w-[1600px] mx-auto flex justify-between items-center">
-
-        <!-- Logo + Title -->
         <div class="flex items-center space-x-4">
             <div class="flex items-center justify-center" style="min-width:52px;min-height:52px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 74" style="height:48px;width:auto;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5));">
@@ -74,10 +65,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Actions -->
         <div class="flex items-center gap-3">
-            <!-- Desktop search + scan -->
             <div class="relative hidden lg:block">
                 <input type="text" id="manualInput" placeholder="Cari / Scan CC No..."
                     class="w-72 bg-slate-800 border border-slate-700 text-xs px-5 py-2.5 rounded-2xl outline-none text-white focus:ring-2 focus:ring-emerald-500 transition-all">
@@ -85,29 +73,20 @@
                     <i data-lucide="camera" class="w-4 h-4"></i>
                 </button>
             </div>
-            <!-- Update Planing -->
             <button onclick="openPlaningModal()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-indigo-500 shadow-md">
-                <i data-lucide="table-2" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Update Planing</span>
+                <i data-lucide="table-2" class="w-4 h-4"></i><span class="hidden sm:inline">Update Planing</span>
             </button>
-            <!-- Export PDF -->
             <button onclick="openExportModal()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-rose-500 shadow-md">
-                <i data-lucide="file-down" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Export PDF</span>
+                <i data-lucide="file-down" class="w-4 h-4"></i><span class="hidden sm:inline">Export PDF</span>
             </button>
-            <!-- Install App (Android/Chrome) -->
-            <button id="btn-install" onclick="triggerInstall()" title="Install sebagai Aplikasi"
+            <button id="btn-install" onclick="triggerInstall()" title="Install"
                 class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg ring-2 ring-emerald-400/50">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Install App</span>
+                <i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">Install App</span>
             </button>
-            <!-- Install App (iOS Safari) -->
-            <button id="btn-install-ios" onclick="openIosGuide()" title="Cara Install di iOS"
+            <button id="btn-install-ios" onclick="openIosGuide()" title="Install iOS"
                 class="hidden items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl transition-all border border-emerald-500 shadow-lg">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Install App</span>
+                <i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">Install App</span>
             </button>
-            <!-- Refresh -->
             <button onclick="fetchAllData()" id="btn-refresh" class="bg-slate-800 p-2.5 rounded-2xl hover:bg-slate-700 transition-all border border-slate-700">
                 <i data-lucide="refresh-cw" id="refresh-icon" class="w-5 h-5 text-emerald-400 transition-transform"></i>
             </button>
@@ -115,9 +94,7 @@
     </div>
 </header>
 
-<!-- ════════════════════════════════════════
-     MAIN CONTENT
-════════════════════════════════════════ -->
+<!-- ════ MAIN ════ -->
 <main class="max-w-[1600px] mx-auto p-4 md:p-8 w-full">
 
     <!-- Stat Cards -->
@@ -157,7 +134,7 @@
         </div>
     </div>
 
-    <!-- Main Menu Tabs -->
+    <!-- Menu Tabs -->
     <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
         <div class="inline-flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-200">
             <button onclick="setMainMenu('WAITING')" id="btn-menu-WAITING"
@@ -168,7 +145,7 @@
     </div>
 
     <!-- Line Filter + Search -->
-    <div class="flex flex-col md:flex-row gap-6 mb-8 items-center">
+    <div class="flex flex-col md:flex-row gap-6 mb-6 items-center">
         <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
             <button onclick="setLine('ALL')" id="btn-ALL" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all line-active">All</button>
             <button onclick="setLine('DS1')" id="btn-DS1" class="line-nav px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all text-slate-400">DS 1</button>
@@ -182,7 +159,26 @@
         </div>
     </div>
 
-    <!-- Data Table -->
+    <!-- Legenda Tombol -->
+    <div class="flex flex-wrap gap-3 mb-5 px-1">
+        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+            <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center"><i data-lucide="play" class="w-3 h-3 text-white"></i></span> Start
+        </div>
+        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+            <span class="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center"><i data-lucide="check-square" class="w-3 h-3 text-white"></i></span> Finish
+        </div>
+        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+            <span class="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center"><i data-lucide="pause" class="w-3 h-3 text-white"></i></span> Pause (Ganti Shift)
+        </div>
+        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+            <span class="w-6 h-6 rounded-md bg-sky-500 flex items-center justify-center"><i data-lucide="play-circle" class="w-3 h-3 text-white"></i></span> Resume (Lanjut Shift)
+        </div>
+        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+            <span class="w-6 h-6 rounded-md bg-rose-100 flex items-center justify-center"><i data-lucide="alert-circle" class="w-3 h-3 text-rose-600"></i></span> Lapor Kendala
+        </div>
+    </div>
+
+    <!-- Table -->
     <div class="table-container shadow-xl overflow-hidden min-h-[400px]">
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse">
@@ -193,17 +189,13 @@
     </div>
 </main>
 
-<!-- ════════════════════════════════════════
-     FAB SCAN BUTTON (Mobile)
-════════════════════════════════════════ -->
+<!-- ════ FAB SCAN ════ -->
 <button id="fab-scan" onclick="toggleScanner()" title="Scan QR Code">
     <span class="fab-ring"></span>
     <i data-lucide="scan-line" class="w-7 h-7 relative z-10"></i>
 </button>
 
-<!-- ════════════════════════════════════════
-     MODAL: QR SCANNER
-════════════════════════════════════════ -->
+<!-- ════ MODAL: QR SCANNER ════ -->
 <div id="scanner-container" class="fixed inset-0 z-[60] items-center justify-center p-4 modal-overlay">
     <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden">
         <div class="bg-slate-900 px-6 py-5 text-white flex justify-between items-center">
@@ -211,9 +203,7 @@
                 <h3 class="font-black italic tracking-wider text-base">SCAN QR / BARCODE</h3>
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Arahkan ke QR Code pada Coil</p>
             </div>
-            <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+            <button onclick="toggleScanner()" class="hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
         <div class="p-4 bg-slate-950">
             <div id="scan-viewfinder" class="relative w-full rounded-xl overflow-hidden bg-black" style="aspect-ratio:1">
@@ -240,24 +230,18 @@
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </div>
-            <p class="text-[9px] text-slate-400 text-center mt-2 font-bold uppercase tracking-wider">
-                Format: <span class="text-slate-600 font-mono">260123039-100000</span>
-            </p>
+            <p class="text-[9px] text-slate-400 text-center mt-2 font-bold uppercase tracking-wider">Format: <span class="text-slate-600 font-mono">260123039-100000</span></p>
         </div>
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: UPDATE PLANING
-════════════════════════════════════════ -->
+<!-- ════ MODAL: UPDATE PLANING ════ -->
 <div id="modal-planing" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay" onclick="handleModalOverlayClick(event,'modal-planing')">
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-indigo-700 p-8 text-white">
             <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-2xl font-black italic tracking-tighter">UPDATE PLANING</h3>
-                    <p class="text-indigo-200 text-xs font-bold uppercase mt-1 tracking-widest">Pilih Line Downshear</p>
-                </div>
+                <div><h3 class="text-2xl font-black italic tracking-tighter">UPDATE PLANING</h3>
+                <p class="text-indigo-200 text-xs font-bold uppercase mt-1 tracking-widest">Pilih Line Downshear</p></div>
                 <button onclick="closePlaningModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
@@ -265,34 +249,30 @@
             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">Klik tombol untuk membuka spreadsheet planing</p>
             <button onclick="openPlaningSheet('DS1')" class="flex items-center gap-5 w-full bg-[#00843d]/10 hover:bg-[#00843d]/20 border border-[#00843d]/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-[#00843d] text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">1</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 1 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 1</div></div>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 1 Planing</div></div>
                 <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="openPlaningSheet('DS2')" class="flex items-center gap-5 w-full bg-sky-600/10 hover:bg-sky-600/20 border border-sky-600/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">2</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 2 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 2</div></div>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 2 Planing</div></div>
                 <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
             <button onclick="openPlaningSheet('DS3')" class="flex items-center gap-5 w-full bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 rounded-2xl px-6 py-5 transition-all group">
                 <span class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">3</span>
-                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 3 Planing</div><div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Downshear Line 3</div></div>
+                <div class="text-left"><div class="font-black text-slate-800 uppercase tracking-wider text-sm">DS 3 Planing</div></div>
                 <i data-lucide="external-link" class="w-4 h-4 text-slate-400 ml-auto"></i>
             </button>
         </div>
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: EXPORT PDF
-════════════════════════════════════════ -->
+<!-- ════ MODAL: EXPORT PDF ════ -->
 <div id="modal-export" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay" onclick="handleModalOverlayClick(event,'modal-export')">
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-rose-700 p-8 text-white">
             <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-2xl font-black italic tracking-tighter">EXPORT PDF</h3>
-                    <p class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">Production Report</p>
-                </div>
+                <div><h3 class="text-2xl font-black italic tracking-tighter">EXPORT PDF</h3>
+                <p class="text-rose-200 text-xs font-bold uppercase mt-1 tracking-widest">Production Report</p></div>
                 <button onclick="closeExportModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
@@ -326,16 +306,18 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: FINISH PRODUKSI  ★ FORMAT BARU
-════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════
+     MODAL: FINISH / PAUSE PRODUKSI
+     ★ Berisi 4 field baru: Actual Width MC, Total Length,
+       Coil Set Set Lifter, Produk keluar dari mesin
+════════════════════════════════════════════════════════ -->
 <div id="modal-finish" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay">
     <div class="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 max-h-[95vh] flex flex-col">
 
-        <!-- Header -->
-        <div class="bg-[#0f172a] p-7 text-white flex justify-between items-start flex-shrink-0">
+        <!-- Header (dinamis: dark=finish, amber=pause) -->
+        <div id="finish-modal-header" class="bg-[#0f172a] p-7 text-white flex justify-between items-start flex-shrink-0">
             <div>
-                <h3 class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
+                <h3 id="finish-modal-title" class="text-2xl font-black italic tracking-tighter">FINISH PRODUKSI</h3>
                 <p id="finish-order-info" class="text-emerald-400 text-xs font-bold uppercase mt-1 tracking-widest">ORDER NO | CC NO</p>
             </div>
             <button onclick="closeFinishModal()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
@@ -343,21 +325,47 @@
             </button>
         </div>
 
-        <!-- Body (scrollable) -->
-        <div class="p-7 overflow-y-auto flex-1 custom-scrollbar space-y-6">
+        <!-- Banner Shift (muncul saat PAUSE) -->
+        <div id="finish-shift-banner" class="hidden bg-amber-50 border-b border-amber-200 px-7 py-3 flex items-center gap-3">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+            <p id="finish-shift-info" class="text-[11px] text-amber-700 font-bold"></p>
+        </div>
 
-            <!-- Line Speed -->
-            <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Line Speed (MPM)</label>
-                <input type="number" id="finish-speed"
-                    class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                    placeholder="0">
+        <!-- Body (scrollable) -->
+        <div class="p-7 overflow-y-auto flex-1 custom-scrollbar space-y-5">
+
+            <!-- ★ BARIS 1: Field Global (tidak per-produk) -->
+            <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-5">
+                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">📐 Data Mesin & Proses</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Line Speed -->
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase mb-1.5 block">Line Speed (MPM)</label>
+                        <input type="number" id="finish-speed" placeholder="0"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm">
+                    </div>
+                    <!-- ★ NEW: Actual Width MC -->
+                    <div>
+                        <label class="text-[9px] font-black text-indigo-600 uppercase mb-1.5 block">★ Actual Width MC (MM)</label>
+                        <input type="text" id="finish-actual-width-mc" placeholder="misal: 1219"
+                            class="w-full px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                    </div>
+                    <!-- ★ NEW: Produk keluar dari mesin -->
+                    <div>
+                        <label class="text-[9px] font-black text-rose-600 uppercase mb-1.5 block">★ Produk Keluar dari Mesin</label>
+                        <input type="text" id="finish-produk-keluar" placeholder="misal: 3 coil"
+                            class="w-full px-4 py-3 bg-rose-50 border border-rose-200 rounded-xl font-bold text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 transition-all text-sm">
+                    </div>
+                </div>
             </div>
 
-            <!-- Hasil Produk -->
+            <!-- Hasil Produk (per-produk, termasuk Total Length & Coil Set Lifter) -->
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hasil Produk</p>
+                        <p class="text-[9px] text-slate-400 mt-0.5">★ Total Length & Coil Set Lifter diisi per-produk</p>
+                    </div>
                     <button onclick="addProductRow()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Produk
                     </button>
@@ -365,7 +373,7 @@
                 <div id="product-rows-container" class="flex flex-col gap-3"></div>
             </div>
 
-            <!-- ★ Down Time Per Jenis Kendala (FORMAT BARU) -->
+            <!-- Down Time Per Kendala -->
             <div class="bg-rose-50/70 border border-rose-100 rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-[10px] font-black text-rose-600 uppercase tracking-widest">⏱ Down Time Per Kendala (Menit)</p>
@@ -375,46 +383,37 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">TBM</label>
-                        <input type="number" id="dt-tbm" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Packing Coil Back</label>
-                        <input type="number" id="dt-packing" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Waiting M/C</label>
-                        <input type="number" id="dt-waiting-mc" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Waiting Crane</label>
-                        <input type="number" id="dt-waiting-crane" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Winder Top/End</label>
-                        <input type="number" id="dt-winder" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Cleaning Machine</label>
-                        <input type="number" id="dt-cleaning" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Problem Machine</label>
-                        <input type="number" id="dt-problem" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Other</label>
-                        <input type="number" id="dt-other" min="0" placeholder="0" oninput="updateDTTotal()"
-                            class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm">
-                    </div>
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">TBM</label>
+                    <input type="number" id="dt-tbm" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Packing Coil Back</label>
+                    <input type="number" id="dt-packing" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Waiting M/C</label>
+                    <input type="number" id="dt-waiting-mc" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Waiting Crane</label>
+                    <input type="number" id="dt-waiting-crane" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Winder Top/End</label>
+                    <input type="number" id="dt-winder" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Cleaning Machine</label>
+                    <input type="number" id="dt-cleaning" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Problem Machine</label>
+                    <input type="number" id="dt-problem" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
+
+                    <div><label class="text-[9px] font-black text-rose-500 uppercase mb-1.5 block">Other</label>
+                    <input type="number" id="dt-other" min="0" placeholder="0" oninput="updateDTTotal()"
+                        class="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-400 transition-all text-sm"></div>
                 </div>
             </div>
 
@@ -427,19 +426,18 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer Button (dinamis) -->
         <div class="px-7 pb-7 flex-shrink-0">
-            <button onclick="submitFinish()"
+            <button id="finish-submit-btn" onclick="submitFinish()"
                 class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
-                <i data-lucide="check-circle" class="w-5 h-5"></i> Simpan & Selesaikan
+                <i id="finish-submit-icon" data-lucide="check-circle" class="w-5 h-5"></i>
+                <span id="finish-submit-text">Simpan & Selesaikan</span>
             </button>
         </div>
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: LAPORAN KENDALA
-════════════════════════════════════════ -->
+<!-- ════ MODAL: LAPORAN KENDALA ════ -->
 <div id="modal-kendala" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay" onclick="handleModalOverlayClick(event,'modal-kendala')">
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-rose-600 p-8 text-white">
@@ -452,14 +450,10 @@
                 <select id="kendala-select" onchange="toggleOtherKendala()"
                     class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-500">
                     <option value="">-- Pilih Kendala --</option>
-                    <option>TBM</option>
-                    <option>PACKING COILBACK</option>
-                    <option>WAITING M/C</option>
-                    <option>WAITING CRANE</option>
-                    <option>WINDER TOP/END</option>
-                    <option>CLEANING MACHINE</option>
-                    <option>PROBLEM MACHINE</option>
-                    <option>PENDING PROCESS</option>
+                    <option>TBM</option><option>PACKING COILBACK</option>
+                    <option>WAITING M/C</option><option>WAITING CRANE</option>
+                    <option>WINDER TOP/END</option><option>CLEANING MACHINE</option>
+                    <option>PROBLEM MACHINE</option><option>PENDING PROCESS</option>
                     <option value="OTHER">OTHER (LAINNYA)</option>
                 </select>
             </div>
@@ -483,43 +477,31 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: PANDUAN INSTALL iOS
-════════════════════════════════════════ -->
+<!-- ════ MODAL: PANDUAN INSTALL iOS ════ -->
 <div id="modal-ios-guide" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-overlay" onclick="handleModalOverlayClick(event,'modal-ios-guide')">
     <div class="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
         <div class="bg-emerald-700 p-6 text-white">
             <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-xl font-black italic tracking-tighter">INSTALL APLIKASI</h3>
-                    <p class="text-emerald-200 text-[10px] font-bold uppercase mt-1 tracking-widest">Panduan untuk iPhone / iPad</p>
-                </div>
-                <button onclick="closeIosGuide()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div><h3 class="text-xl font-black italic tracking-tighter">INSTALL APLIKASI</h3>
+                <p class="text-emerald-200 text-[10px] font-bold uppercase mt-1 tracking-widest">Panduan untuk iPhone / iPad</p></div>
+                <button onclick="closeIosGuide()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
         </div>
         <div class="p-6 flex flex-col gap-4">
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">1</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Tap tombol <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Share &#x2191;</span></p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Di bawah layar Safari (tengah)</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Tap tombol <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Share &#x2191;</span></p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Di bawah layar Safari (tengah)</p></div>
             </div>
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">2</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Pilih <span class="px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Add to Home Screen</span></p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Scroll ke bawah di menu Share</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Pilih <span class="px-2 py-0.5 bg-slate-100 rounded text-[11px] font-mono">Add to Home Screen</span></p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Scroll ke bawah di menu Share</p></div>
             </div>
             <div class="flex items-start gap-4">
                 <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm flex-shrink-0">3</span>
-                <div>
-                    <p class="font-black text-slate-800 text-sm">Tap <span class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-mono">Add</span> di pojok kanan atas</p>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Aplikasi tersimpan di home screen</p>
-                </div>
+                <div><p class="font-black text-slate-800 text-sm">Tap <span class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-mono">Add</span> di pojok kanan atas</p>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Aplikasi tersimpan di home screen</p></div>
             </div>
             <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 mt-1">
                 <p class="text-[10px] text-amber-700 font-bold text-center">⚠️ Pastikan dibuka via <strong>Safari</strong>, bukan Chrome/Firefox</p>
@@ -528,17 +510,13 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     TOAST NOTIFICATION
-════════════════════════════════════════ -->
+<!-- ════ TOAST ════ -->
 <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-[11px] text-white shadow-2xl z-[150] flex items-center gap-3 uppercase tracking-widest animate-slide-up">
     <i data-lucide="check-circle" class="w-5 h-5"></i>
     <span id="toast-message">Pesan</span>
 </div>
 
-<!-- ════════════════════════════════════════
-     FOOTER
-════════════════════════════════════════ -->
+<!-- ════ FOOTER ════ -->
 <footer class="bg-[#0f172a] border-t-2 border-emerald-500/30">
     <div class="max-w-[1600px] mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-1">
         <p class="text-[9px] text-slate-400 font-bold uppercase tracking-[.2em]">© QCC 2026 - PT Hanwa Steel Service Indonesia</p>
