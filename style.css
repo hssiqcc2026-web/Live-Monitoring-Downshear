@@ -1,5 +1,5 @@
 /* ================================================================
-   HSSI DOWNSHEAR MONITORING — STYLESHEET
+   HSSI DOWNSHEAR MONITORING — STYLESHEET (v4, 26-col)
    ================================================================ */
 
 /* ── Base ── */
@@ -13,27 +13,16 @@ main   { flex: 1 0 auto; }
 footer { flex-shrink: 0; }
 
 /* ── Components ── */
-.card-stat {
-    border-radius: 2.5rem;
-    transition: all 0.3s ease;
-    border: 1px solid #eef2f6;
-}
+.card-stat { border-radius: 2.5rem; transition: all 0.3s ease; border: 1px solid #eef2f6; }
 .line-active { background-color: #059669 !important; color: white !important; }
-.table-container {
-    border-radius: 1.5rem;
-    background: white;
-    border: 1px solid #eef2f6;
-}
+.table-container { border-radius: 1.5rem; background: white; border: 1px solid #eef2f6; }
 
-/* ── Custom Scrollbar ── */
+/* ── Scrollbar ── */
 .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
 /* ── Modal Overlay ── */
-.modal-overlay {
-    background-color: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(4px);
-}
+.modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
 
 /* ── Animations ── */
 @keyframes slideUp {
@@ -51,7 +40,7 @@ footer { flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .syncing { animation: spin 1s linear infinite; }
 
-/* ── FAB Scan Button ── */
+/* ── FAB Scan ── */
 #fab-scan {
     position: fixed; bottom: 24px; right: 24px; z-index: 45;
     width: 64px; height: 64px; border-radius: 50%;
@@ -67,60 +56,81 @@ footer { flex-shrink: 0; }
     border: 2px solid rgba(5,150,105,0.35);
     animation: fabPulse 2s ease-in-out infinite;
 }
-@keyframes fabPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%       { transform: scale(1.15); opacity: 0; }
-}
+@keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0} }
 @media (min-width: 1024px) { #fab-scan { display: none; } }
 
 /* ── QR Scanner ── */
 #scanner-container { display: none; }
 #scanner-container.open { display: flex; }
 
-.corner-tl, .corner-tr, .corner-bl, .corner-br {
-    position: absolute; width: 36px; height: 36px; z-index: 10;
-}
-.corner-tl { top:12px;    left:12px;  border-top:3px solid #10b981;    border-left:3px solid #10b981;  border-radius:4px 0 0 0; }
-.corner-tr { top:12px;    right:12px; border-top:3px solid #10b981;    border-right:3px solid #10b981; border-radius:0 4px 0 0; }
-.corner-bl { bottom:12px; left:12px;  border-bottom:3px solid #10b981; border-left:3px solid #10b981;  border-radius:0 0 0 4px; }
-.corner-br { bottom:12px; right:12px; border-bottom:3px solid #10b981; border-right:3px solid #10b981; border-radius:0 0 4px 0; }
+.corner-tl,.corner-tr,.corner-bl,.corner-br { position:absolute;width:36px;height:36px;z-index:10; }
+.corner-tl { top:12px;left:12px;border-top:3px solid #10b981;border-left:3px solid #10b981;border-radius:4px 0 0 0; }
+.corner-tr { top:12px;right:12px;border-top:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 4px 0 0; }
+.corner-bl { bottom:12px;left:12px;border-bottom:3px solid #10b981;border-left:3px solid #10b981;border-radius:0 0 0 4px; }
+.corner-br { bottom:12px;right:12px;border-bottom:3px solid #10b981;border-right:3px solid #10b981;border-radius:0 0 4px 0; }
 
 .scan-line {
-    position: absolute; left: 12px; right: 12px; height: 2px;
-    background: linear-gradient(90deg, transparent, #10b981, transparent);
-    z-index: 10;
-    animation: scanLine 2s ease-in-out infinite;
+    position:absolute;left:12px;right:12px;height:2px;
+    background:linear-gradient(90deg,transparent,#10b981,transparent);
+    z-index:10;animation:scanLine 2s ease-in-out infinite;
 }
-@keyframes scanLine {
-    0%   { top: 12px; opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { top: calc(100% - 14px); opacity: 0; }
-}
+@keyframes scanLine { 0%{top:12px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:calc(100% - 14px);opacity:0} }
 
-/* ── Portrait Lock Overlay ── */
+/* ── Portrait Lock ── */
 #rotate-overlay {
-    display: none;
-    position: fixed; inset: 0; z-index: 9999;
-    background: #0f172a;
-    flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 24px; text-align: center; padding: 40px;
+    display:none;position:fixed;inset:0;z-index:9999;background:#0f172a;
+    flex-direction:column;align-items:center;justify-content:center;
+    gap:24px;text-align:center;padding:40px;
 }
-#rotate-overlay.show { display: flex; }
-
+#rotate-overlay.show { display:flex; }
 @keyframes rotatePhone {
-    0%   { transform: rotate(0deg); }
-    30%  { transform: rotate(0deg); }
-    70%  { transform: rotate(90deg); }
-    100% { transform: rotate(90deg); }
+    0%{transform:rotate(0deg)}30%{transform:rotate(0deg)}
+    70%{transform:rotate(90deg)}100%{transform:rotate(90deg)}
 }
-#rotate-icon { animation: rotatePhone 2.4s ease-in-out infinite; }
+#rotate-icon { animation:rotatePhone 2.4s ease-in-out infinite; }
 
-/* ── DT Header toggle ── */
-.dt-th-toggle {
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s;
+/* ── DT column toggle ── */
+.dt-th-toggle { cursor:pointer;user-select:none;transition:background 0.2s; }
+.dt-th-toggle:hover { filter:brightness(1.2); }
+
+/* ══ STATUS PAUSED ══ */
+@keyframes pausedPulse { 0%,100%{opacity:1}50%{opacity:0.55} }
+.status-paused-pulse { animation:pausedPulse 2.2s ease-in-out infinite; }
+
+/* ══ Shift Badge ══ */
+.shift-badge {
+    display:inline-flex;align-items:center;gap:3px;
+    padding:2px 6px;border-radius:9999px;
+    font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;
+    background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe;
 }
-.dt-th-toggle:hover { filter: brightness(1.2); }
+
+/* ══ Modal Finish transition ══ */
+#finish-modal-header { transition:background-color 0.25s ease; }
+#finish-submit-btn   { transition:background-color 0.25s ease; }
+
+/* ══ Banner info shift ══ */
+#finish-shift-banner {
+    display:flex;align-items:center;gap:12px;
+    padding:12px 28px;background:#fffbeb;border-bottom:1px solid #fde68a;
+}
+#finish-shift-banner.hidden { display:none !important; }
+
+/* ══ Zebra rows tabel WAITING ══ */
+#table-body tr:nth-child(even)       { background-color:#f8fafc; }
+#table-body tr:nth-child(even):hover { background-color:#f1f5f9; }
+#table-body tr:nth-child(odd):hover  { background-color:#f8fafc; }
+
+/* ══ Input group styling untuk kolom baru di modal ══ */
+.input-group-new {
+    border-left:3px solid #6366f1;
+    padding-left:12px;
+    border-radius:0 12px 12px 0;
+}
+.input-new-label { color:#6366f1 !important; }
+.input-new-field {
+    background:#eef2ff !important;
+    border-color:#c7d2fe !important;
+    color:#3730a3 !important;
+}
+.input-new-field:focus { ring-color:#6366f1 !important; }
