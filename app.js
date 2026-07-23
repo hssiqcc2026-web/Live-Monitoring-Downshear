@@ -22,7 +22,7 @@ const PLANING_EDIT_URLS = {
     DS2: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=1839583056#gid=1839583056",
     DS3: "https://docs.google.com/spreadsheets/d/1ilrNI9xBlDZTXOqjRChtov9BFG6ICA9T3IM3KVgqkg8/edit?gid=2002711566#gid=2002711566"
 };
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWcCKraHuqiQPoBmz0JJlQNw0HnUP6JAvArLd6QrJ6S4JtmLOZziYoSBvtLJ2t62mS/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9wQBlaR73m0re0nUrG8qQYsPm8crdTTvH-qbteXi7B6XYILHsCl8Wxf3NV7CKEJBP/exec";
 const PLANING_COL     = { order:2, cc:6, spec:8, size:10, weight:12, place:5, cust:19 };
 const REFRESH_INTERVAL = 15000;
 
